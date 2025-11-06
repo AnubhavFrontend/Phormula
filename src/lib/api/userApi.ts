@@ -57,9 +57,9 @@ export const userApi = baseApi.injectEndpoints({
       }),
     }),
 
-    passCountryFromProfiles: build.query<PassCountryRes, void>({
-      query: () => ({ url: "/passcountryfromprofiles", method: "GET" }),
-    }),
+    // passCountryFromProfiles: build.query<PassCountryRes, void>({
+    //   query: () => ({ url: "/passcountryfromprofiles", method: "GET" }),
+    // }),
   }),
 });
 
@@ -68,5 +68,5 @@ export const {
   useGetUploadHistoryQuery,
   useSelectFormMutation,
   useResendVerificationMutation,
-  usePassCountryFromProfilesQuery,
+  // usePassCountryFromProfilesQuery,
 } = userApi;
