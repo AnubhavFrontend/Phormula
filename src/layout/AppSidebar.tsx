@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState,useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useSidebar } from "../context/SidebarContext";
 import {
   BoxCubeIcon,
@@ -17,6 +17,12 @@ import {
   TableIcon,
   UserCircleIcon,
 } from "../icons/index";
+
+import RegionSelect, { RegionOption } from "@/components/sidebar/RegionSelect";
+import { useGetProfileCountriesQuery, useGetUploadHistoryQuery } from "@/lib/api/feePreviewApi";
+import { buildRegionOptions } from "@/lib/utils/region";
+import { handleRegionChangeNext } from "@/lib/utils/handleRegionChange-next";
+
 
 type NavItem = {
   name: string;
@@ -93,37 +99,96 @@ const othersItems: NavItem[] = [
   },
 ];
 
-// const dashboardItems: NavItem[] = [
-//    {
-//     icon: <CalenderIcon />,
-//     name: "Profit and Expense",
-//     path: "/calendar",
-//   },
-//   {
-//     icon: <BoxCubeIcon />,
-//     name: "UI Elements",
-//     subItems: [
-//       { name: "Alerts", path: "/alerts", pro: false },
-//       { name: "Avatar", path: "/avatars", pro: false },
-//       { name: "Badge", path: "/badge", pro: false },
-//       { name: "Buttons", path: "/buttons", pro: false },
-//       { name: "Images", path: "/images", pro: false },
-//       { name: "Videos", path: "/videos", pro: false },
-//     ],
-//   },
-//   {
-//     icon: <PlugInIcon />,
-//     name: "Authentication",
-//     subItems: [
-//       { name: "Sign In", path: "/signin", pro: false },
-//       { name: "Sign Up", path: "/signup", pro: false },
-//     ],
-//   },
-// ];
+const dashboardItems: NavItem[] = [
+   {
+    icon: <CalenderIcon />,
+    name: "Dashboard",
+    path: "/",
+  },
+   {
+    icon: <CalenderIcon />,
+    name: "Profit and Expense",
+    path: "/",
+  },
+   {
+    icon: <CalenderIcon />,
+    name: "SKU-Wise Profit",
+    path: "/",
+  },
+   {
+    icon: <CalenderIcon />,
+    name: "Cash Flow",
+    path: "/",
+  },
+  // {
+  //   icon: <BoxCubeIcon />,
+  //   name: "UI Elements",
+  //   subItems: [
+  //     { name: "Alerts", path: "/alerts", pro: false },
+  //     { name: "Avatar", path: "/avatars", pro: false },
+  //     { name: "Badge", path: "/badge", pro: false },
+  //     { name: "Buttons", path: "/buttons", pro: false },
+  //     { name: "Images", path: "/images", pro: false },
+  //     { name: "Videos", path: "/videos", pro: false },
+  //   ],
+  // },
+  // {
+  //   icon: <PlugInIcon />,
+  //   name: "Authentication",
+  //   subItems: [
+  //     { name: "Sign In", path: "/signin", pro: false },
+  //     { name: "Sign Up", path: "/signup", pro: false },
+  //   ],
+  // },
+];
 
 const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
   const pathname = usePathname();
+  const router = useRouter();
+
+    // ===== Region data from RTK Query (only countries user has) =====
+  const { data: countriesData } = useGetProfileCountriesQuery();
+  const { data: uploadsData } = useGetUploadHistoryQuery();
+  const countryList = countriesData?.countries ?? [];
+  const uploadHistory = uploadsData?.uploads ?? [];
+  const regionOptions: RegionOption[] = buildRegionOptions(countryList);
+
+  // ===== Selected country =====
+  const [selectedCountry, setSelectedCountry] = useState<string>(() => {
+    // prefer saved choice if exists
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("selectedCountry");
+      if (saved) return saved;
+    }
+    // else first option or "us" fallback
+    return regionOptions[0]?.value ?? "us";
+  });
+
+// keep in sync if countries load later / first time
+  useEffect(() => {
+    if (!regionOptions.length) return;
+    if (!selectedCountry || !regionOptions.find(o => o.value === selectedCountry)) {
+      setSelectedCountry(regionOptions[0].value);
+    }
+  }, [regionOptions, selectedCountry]);
+
+  const onRegionChange = (val: string) => {
+    setSelectedCountry(val);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("selectedCountry", val);
+      localStorage.removeItem("chatHistory");
+    }
+    handleRegionChangeNext({
+      value: val,
+      ranged: undefined, // default "QTD" inside util; set if you want.
+      uploadHistory,
+      push: router.push,
+      onAddMore: () => router.push("/settings/countries"), // change to your "add more" page
+      onBeforeNavigate: () => localStorage.removeItem("chatHistory"),
+    });
+  };
+
 
   const renderMenuItems = (
     navItems: NavItem[],
@@ -317,7 +382,7 @@ const AppSidebar: React.FC = () => {
 
   return (
     <aside
-      className={`fixed mt-16 flex flex-col lg:mt-0 top-0 px-5 left-0 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 h-screen transition-all duration-300 ease-in-out z-50 border-r border-gray-200 
+      className={`fixed mt-16 flex flex-col lg:mt-0 top-0 px-5 left-0 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 h-screen transition-all duration-300 ease-in-out z-50 
         ${
           isExpanded || isMobileOpen
             ? "w-[290px]"
@@ -355,7 +420,7 @@ const AppSidebar: React.FC = () => {
             </>
           ) : (
             <Image
-              src="/images/logo/logo_small.png"
+              src="/images/logo/Logo_small.png"
               alt="Logo"
               width={50}
               height={50}
@@ -363,27 +428,33 @@ const AppSidebar: React.FC = () => {
           )}
         </Link>
       </div>
+
+{(isExpanded || isHovered || isMobileOpen) && regionOptions.length > 0 && (
+        <RegionSelect
+          selectedCountry={selectedCountry}
+          options={regionOptions}
+          onChange={onRegionChange}
+          className="mb-2"
+        />
+      )}
+
       <div className="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar">
         <nav className="mb-6">
           <div className="flex flex-col gap-4">
-            <div>
-              <h2
-                className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${
-                  !isExpanded && !isHovered
-                    ? "lg:justify-center"
-                    : "justify-start"
-                }`}
-              >
-                {isExpanded || isHovered || isMobileOpen ? (
-                  "Dashboard"
-                ) : (
-                  <HorizontaLDots />
-                )}
-              </h2>
-              {renderMenuItems(navItems, "main")}
-            </div>
+           {/* Dashboard Items section */}
+<div>
+  <h2
+    className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${
+      !isExpanded && !isHovered ? "lg:justify-center" : "justify-start"
+    }`}
+  >
+    {isExpanded || isHovered || isMobileOpen ? "Dashboard" : <HorizontaLDots />}
+  </h2>
+  {renderMenuItems(dashboardItems, "main")}
+</div>
 
-            {/* <div>
+
+            <div>
               <h2
                 className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${
                   !isExpanded && !isHovered
@@ -398,7 +469,7 @@ const AppSidebar: React.FC = () => {
                 )}
               </h2>
               {renderMenuItems(navItems, "main")}
-            </div> */}
+            </div>
 
             <div className="">
               <h2

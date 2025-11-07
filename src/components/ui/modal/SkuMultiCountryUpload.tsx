@@ -5,6 +5,9 @@ import Papa from "papaparse";
 import * as XLSX from "xlsx";
 import { FiDownload } from "react-icons/fi";
 import { useUploadSkuMultiCountryMutation } from "@/lib/api/skuApi";
+import DataTable, { Row as TableRow, ColumnDef } from "../table/DataTable";
+import Button from "../button/Button";
+import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 
 type Row = Record<string, string | number | null | undefined>;
 type Props = { onClose: () => void };
@@ -14,10 +17,9 @@ export default function SkuMultiCountryUpload({ onClose }: Props) {
   const [file, setFile] = React.useState<File | null>(null);
   const [fileName, setFileName] = React.useState<string>("No File Chosen");
 
-  // second-step modal state
   const [showConfirm, setShowConfirm] = React.useState<boolean>(false);
-  const [tableColumns, setTableColumns] = React.useState<string[]>([]);
-  const [tableRows, setTableRows] = React.useState<Row[]>([]);
+  const [columns, setColumns] = React.useState<ColumnDef<TableRow>[]>([]);
+  const [rows, setRows] = React.useState<TableRow[]>([]);
 
   const [uploadSku, { isLoading: isUploading }] = useUploadSkuMultiCountryMutation();
 
@@ -39,15 +41,20 @@ export default function SkuMultiCountryUpload({ onClose }: Props) {
       });
   }, []);
 
-  const buildColumns = (rows: Row[]): string[] =>
-    rows.length ? Object.keys(rows[0]) : [];
+  const buildColumns = (r: Row[]): ColumnDef<TableRow>[] => {
+    const keys = r.length ? Object.keys(r[0]) : [];
+    return keys.map((k) => ({
+      key: k,
+      header: k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+    }));
+  };
 
   const parseCSVFile = (f: File) => {
     Papa.parse<Row>(f, {
       complete: (result) => {
         const cleaned = cleanParsedData(result.data as unknown[]);
-        setTableRows(cleaned);
-        setTableColumns(buildColumns(cleaned));
+        setRows(cleaned as TableRow[]);
+        setColumns(buildColumns(cleaned));
         setShowConfirm(true);
       },
       header: true,
@@ -62,8 +69,8 @@ export default function SkuMultiCountryUpload({ onClose }: Props) {
       const sheet = wb.Sheets[wb.SheetNames[0]];
       const json = XLSX.utils.sheet_to_json(sheet, { defval: "" }) as unknown[];
       const cleaned = cleanParsedData(json);
-      setTableRows(cleaned);
-      setTableColumns(buildColumns(cleaned));
+      setRows(cleaned as TableRow[]);
+      setColumns(buildColumns(cleaned));
       setShowConfirm(true);
     };
     reader.readAsArrayBuffer(f);
@@ -74,8 +81,8 @@ export default function SkuMultiCountryUpload({ onClose }: Props) {
     const selected = e.target.files?.[0] || null;
     setError("");
     setShowConfirm(false);
-    setTableRows([]);
-    setTableColumns([]);
+    setRows([]);
+    setColumns([]);
 
     if (!selected) {
       setFile(null);
@@ -104,7 +111,6 @@ export default function SkuMultiCountryUpload({ onClose }: Props) {
   };
 
   const onDownloadTemplate = () => {
-    // make sure this file is present in /public
     const a = document.createElement("a");
     a.href = `/SKU%20Information%20global%20file.xlsx`;
     a.download = "SKU Information Global file format.xlsx";
@@ -119,13 +125,11 @@ export default function SkuMultiCountryUpload({ onClose }: Props) {
       await uploadSku({ file }).unwrap();
       // reset + close after success
       setShowConfirm(false);
-      setTableRows([]);
-      setTableColumns([]);
+      setRows([]);
+      setColumns([]);
       setFile(null);
       setFileName("No File Chosen");
       onClose();
-      // Optionally hard refresh:
-      // window.location.reload();
     } catch (e: unknown) {
       const err = e as { data?: { error?: string; message?: string } };
       setError(err?.data?.error || err?.data?.message || "Upload failed.");
@@ -135,12 +139,13 @@ export default function SkuMultiCountryUpload({ onClose }: Props) {
   // ---------- UI ----------
   return (
     <div className="w-full">
-      {/* Step 1: Uploader (shown when confirm modal is hidden) */}
+      {/* Step 1: uploader */}
       {!showConfirm && (
         <div className="w-full max-w-[520px] mx-auto">
-          <h2 className="text-center text-[28px] font-semibold text-[#5EA68E] mb-5">
+          {/* <h2 className="text-center text-[28px] font-semibold text-[#5EA68E] mb-5">
             Upload SKU Data
-          </h2>
+          </h2> */}
+           <PageBreadcrumb pageTitle="Upload SKU Data" variant="table"/>
 
           <div className="rounded-2xl p-3">
             <div className="flex items-center gap-2 rounded-md border border-gray-300 bg-white px-2 py-1.5">
@@ -176,77 +181,66 @@ export default function SkuMultiCountryUpload({ onClose }: Props) {
           )}
 
           <div className="mt-4 flex justify-center">
-            <button
-              onClick={() => setShowConfirm(true)}
-              disabled={!file}
-              className="rounded-md bg-[#2c3e50] px-6 py-2 text-sm font-bold text-[#fdf6e4] shadow hover:opacity-95 disabled:opacity-60"
-            >
-              Next
-            </button>
-          </div>
+  <Button
+    onClick={() => setShowConfirm(true)}
+    disabled={!file}
+    size="sm"
+    variant="primary"
+    className="font-bold shadow "
+  >
+    Next
+  </Button>
+</div>
         </div>
       )}
 
-      {/* Step 2: Confirmation modal with parsed table */}
+      {/* Step 2: confirmation modal with reusable DataTable */}
       {showConfirm && (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 p-4">
           <div
             className="w-[90vw] max-w-5xl rounded-xl bg-white p-5 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="mb-3 text-center text-2xl font-semibold text-[#5EA68E]">
+            {/* <h3 className="mb-3 text-center text-2xl font-semibold text-[#5EA68E]">
               Confirm SKU Data
-            </h3>
+            </h3> */}
+            <PageBreadcrumb pageTitle="Confirm SKU Data" variant="table"/>
 
-            <div className="max-h-[60vh] overflow-auto rounded border border-gray-200">
-              <table className="min-w-[720px] w-max border-collapse text-sm">
-                <thead className="sticky top-0 bg-[#5EA68E] text-white">
-                  <tr>
-                    {tableColumns.map((col) => (
-                      <th key={col} className="border px-3 py-2 text-left">
-                        {col}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {tableRows.map((row, i) => (
-                    <tr key={i} className="even:bg-gray-50">
-                      {tableColumns.map((col) => (
-                        <td
-                          key={col}
-                          className="max-w-xs truncate border px-3 py-2"
-                          title={String(row[col] ?? "")}
-                        >
-                          {String(row[col] ?? "")}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <DataTable
+              columns={columns}
+              data={rows}
+                pageSize={10}  
+              maxHeight="60vh"
+              stickyHeader
+              zebra
+              emptyMessage="No parsed rows."
+              className="mb-4"
+            />
 
             {error && (
-              <p className="mt-3 text-sm text-red-600 text-center">{error}</p>
+              <p className="mt-2 text-sm text-red-600 text-center">{error}</p>
             )}
 
-            <div className="mt-5 flex justify-center gap-3">
-              <button
-                onClick={onConfirmUpload}
-                disabled={isUploading || !file}
-                className="rounded-md bg-[#2c3e50] px-5 py-2 text-sm font-semibold text-[#fdf6e4] hover:opacity-95 disabled:opacity-60"
-              >
-                {isUploading ? "Uploading…" : "Confirm & Upload"}
-              </button>
-              <button
-                onClick={() => setShowConfirm(false)}
-                disabled={isUploading}
-                className="rounded-md bg-[#2c3e50] px-5 py-2 text-sm font-semibold text-[#fdf6e4] hover:opacity-95 disabled:opacity-60"
-              >
-                Cancel
-              </button>
-            </div>
+            <div className="mt-4 flex justify-center gap-3">
+  <Button
+    onClick={onConfirmUpload}
+    disabled={isUploading || !file}
+    size="sm"
+    variant="primary"
+  >
+    {isUploading ? "Uploading…" : "Confirm & Upload"}
+  </Button>
+
+  <Button
+    onClick={() => setShowConfirm(false)}
+    disabled={isUploading}
+    size="sm"
+    variant="outline"
+  >
+    Cancel
+  </Button>
+</div>
+
           </div>
         </div>
       )}

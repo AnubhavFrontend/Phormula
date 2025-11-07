@@ -4,7 +4,9 @@
 
 @theme {
   --font-*: initial;
-  --font-outfit: Outfit, sans-serif;
+  /* --font-outfit: Outfit, sans-serif; */
+  --font-outfit: var(--font-lato), Lato, sans-serif;
+
 
   --breakpoint-*: initial;
   --breakpoint-2xsm: 375px;
@@ -32,6 +34,14 @@
   --text-theme-sm--line-height: 20px;
   --text-theme-xs: 12px;
   --text-theme-xs--line-height: 18px;
+
+/* New Project Colors */
+  --color-green-500: #5EA68E;
+  --color-blue-700: #37455F;
+  --color-blue-600: #4A5671;
+  --color-yellow-200: #F8EDCE;
+  --color-charcoal-500: #414042;
+  --color-gray-custom: #D9D9D9;
 
   --color-current: currentColor;
   --color-transparent: transparent;
@@ -189,6 +199,17 @@
   }
   body {
     @apply relative font-normal font-outfit z-1 bg-gray-50;
+  }
+}
+
+@layer base {
+  :root {
+    --tw-color-green-500: var(--color-green-500);
+    --tw-color-blue-700: var(--color-blue-700);
+    --tw-color-blue-600: var(--color-blue-600);
+    --tw-color-yellow-200: var(--color-yellow-200);
+    --tw-color-neutral-800: var(--color-charcoal-500);
+    --tw-color-gray-400: var(--color-gray-custom);
   }
 }
 

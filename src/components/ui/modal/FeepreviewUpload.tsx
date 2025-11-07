@@ -3,6 +3,8 @@
 import React from "react";
 import { useGetCountriesQuery, useGetCountryProfileQuery } from "@/lib/api/feePreviewApi";
 import ConfirmationFeepreview from "@/components/ui/modal/ConfirmationFeepreview";
+import PageBreadcrumb from "@/components/common/PageBreadCrumb";
+import Button from "../button/Button";
 
 type FeepreviewUploadProps = {
   country: string;
@@ -50,6 +52,7 @@ export default function FeepreviewUpload({ country: initialCountry, onClose }: F
           file={file}
           transitTime={transitTime}
           stockUnit={stockUnit}
+          onBack={() => setShowConfirm(false)}
         />
       </div>
     );
@@ -58,7 +61,7 @@ export default function FeepreviewUpload({ country: initialCountry, onClose }: F
   // ⬇️ Form view (shown until "Next")
   return (
     <div className="w-full">
-      <h3 className="mb-4 text-xl font-semibold text-emerald-700">Fee Preview Upload</h3>
+      <PageBreadcrumb pageTitle="Fee Preview Upload" variant="table"/>
 
       <form onSubmit={onSubmit} className="space-y-4" encType="multipart/form-data">
         <div>
@@ -69,7 +72,7 @@ export default function FeepreviewUpload({ country: initialCountry, onClose }: F
             value={country}
             onChange={onCountryChange}
             required
-            className="w-full rounded-lg border border-gray-400 px-4 py-2.5 text-sm focus:border-emerald-400 focus:outline-hidden focus:ring-2 focus:ring-emerald-500/10"
+            className="w-full rounded-lg border border-gray-400 px-4 py-2.5 text-sm focus:border-green-500 focus:outline-hidden focus:ring-2 focus:ring-emerald-500/10"
           >
             <option value="" disabled>
               {loadingCountries ? "Loading…" : "Select Country"}
@@ -93,7 +96,7 @@ export default function FeepreviewUpload({ country: initialCountry, onClose }: F
             type="text"
             value="Amazon"
             readOnly
-            className="w-full rounded-lg border border-gray-400 bg-gray-50 px-4 py-2.5 text-sm"
+            className="w-full rounded-lg border border-gray-400 bg-gray-50 px-4 py-2.5 text-sm focus:border-green-500 focus:outline-hidden focus:ring-2 focus:ring-emerald-500/10"
           />
         </div>
 
@@ -109,7 +112,7 @@ export default function FeepreviewUpload({ country: initialCountry, onClose }: F
             value={transitTime}
             onChange={(e) => setTransitTime(e.target.value)}
             required
-            className="w-full rounded-lg border border-gray-400 px-4 py-2.5 text-sm focus:border-emerald-400 focus:outline-hidden focus:ring-2 focus:ring-emerald-500/10"
+            className="w-full rounded-lg border border-gray-400 px-4 py-2.5 text-sm focus:border-green-500 focus:outline-hidden focus:ring-2 focus:ring-emerald-500/10"
           />
           {loadingProfile && (
             <p className="mt-1 text-xs text-gray-500">Loading existing profile…</p>
@@ -128,7 +131,7 @@ export default function FeepreviewUpload({ country: initialCountry, onClose }: F
             value={stockUnit}
             onChange={(e) => setStockUnit(e.target.value)}
             required
-            className="w-full rounded-lg border border-gray-400 px-4 py-2.5 text-sm focus:border-emerald-400 focus:outline-hidden focus:ring-2 focus:ring-emerald-500/10"
+            className="w-full rounded-lg border border-gray-400 px-4 py-2.5 text-sm focus:border-green-500 focus:outline-hidden focus:ring-2 focus:ring-emerald-500/10"
           />
         </div>
 
@@ -153,19 +156,22 @@ export default function FeepreviewUpload({ country: initialCountry, onClose }: F
         </div>
 
         <div className="flex items-center justify-end gap-3 pt-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            className="rounded-md bg-[#2c3854] px-4 py-2 text-sm font-semibold text-[#f8edcf] hover:opacity-95"
-          >
-            Next
-          </button>
+            <Button
+    variant="outline"
+    size="sm"
+    onClick={onClose}
+  >
+    Cancel
+  </Button>
+
+  {/* Next Button */}
+  <Button
+    variant="primary"
+    size="sm"
+    type="submit"
+  >
+    Next
+  </Button>
         </div>
       </form>
     </div>

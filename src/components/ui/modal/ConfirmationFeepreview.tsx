@@ -8,19 +8,22 @@ import {
   useUploadFeePreviewMutation,
 } from "@/lib/api/feePreviewApi";
 import Modalmsg from "./Modalmsg";
+import PageBreadcrumb from "@/components/common/PageBreadCrumb";
+import DataTable, { ColumnDef } from "../table/DataTable";
+import Button from "../button/Button";
 
 type Props = {
-  country: string;       // e.g. "us"
-  marketplace: string;   // "Amazon"
-  file: File | null;     // original uploaded file
-  transitTime: string;   // months (string OK; we coerce to int)
-  stockUnit: string;     // months (string OK; we coerce to int)
+  country: string;
+  marketplace: string;
+  file: File | null;
+  transitTime: string;
+  stockUnit: string;
+  onBack?: () => void;
 };
 
-// A single cell can be string/number/null/undefined
 type Cell = string | number | null | undefined;
-type Row = Cell[];
-type TableData = Row[];
+type RowArr = Cell[];
+type TableData = RowArr[];
 
 // normalize header names
 const norm = (s: unknown): string =>
@@ -31,14 +34,12 @@ const norm = (s: unknown): string =>
     .replace(/_/g, "-");
 
 const countryMap: Record<string, string> = {
-  // codes → names
   CA: "Canada",
   SG: "Singapore",
   IN: "India",
   GB: "United Kingdom",
   UK: "United Kingdom",
   US: "United States",
-  // names → codes
   Canada: "CA",
   Singapore: "SG",
   India: "IN",
@@ -52,6 +53,7 @@ export default function ConfirmationFeepreview({
   file,
   transitTime,
   stockUnit,
+onBack: onBackProp
 }: Props) {
   const router = useRouter();
   const { data: confirmText } = useGetFeePreviewConfirmationTextQuery();
@@ -62,7 +64,6 @@ export default function ConfirmationFeepreview({
   const [showModal, setShowModal] = React.useState<boolean>(false);
   const [modalMessage, setModalMessage] = React.useState<string>("");
 
-  // Parse + filter rows by store/country
   React.useEffect(() => {
     if (!file) return;
 
@@ -86,7 +87,7 @@ export default function ConfirmationFeepreview({
           return;
         }
 
-        const headers = (json[0] ?? []) as Row;
+        const headers = (json[0] ?? []) as RowArr;
         const normalized = headers.map(norm);
 
         const aliases = ["amazon-store", "amazon store", "store", "marketplace"].map(norm);
@@ -113,7 +114,7 @@ export default function ConfirmationFeepreview({
           return;
         }
 
-        // Pad to max column count for neat table
+        // Pad rows to same length
         const maxCols = Math.max(...filtered.map((r) => r.length));
         const padded = filtered.map((r) =>
           r.length < maxCols ? [...r, ...Array(maxCols - r.length).fill("")] : r
@@ -162,7 +163,6 @@ export default function ConfirmationFeepreview({
         type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       });
 
-      // matches feePreviewApi upload signature below
       const res = await uploadFeePreview({
         country,
         marketplace,
@@ -184,70 +184,82 @@ export default function ConfirmationFeepreview({
     }
   };
 
-  const onBack = () => {
+const onBack = () => {
+  if (onBackProp) return onBackProp();        // ✅ use parent's callback
+  if (typeof window !== "undefined" && window.history.length > 1) {
+    router.back();                            // fallback if used via routing
+  } else {
     router.push(`/country/QTD/${country}/NA/NA`);
-  };
+  }
+};
+
+
+  /** ---------- Build DataTable columns + rows from AOA ---------- */
+  const columns = React.useMemo<ColumnDef<Record<string, React.ReactNode>>[]>(() => {
+    if (tableData.length === 0) return [];
+    const headers = tableData[0];
+    return headers.map((h, i) => ({
+      key: (norm(h) || `col-${i}`) as string,
+      header: String(h || `Column ${i + 1}`),
+      // Optional per-column width or classes:
+      // width: i === 0 ? "220px" : undefined,
+      // headerClassName: "capitalize",
+      // cellClassName: "truncate",
+    }));
+  }, [tableData]);
+
+  const dataRows = React.useMemo<Record<string, React.ReactNode>[]>(() => {
+    if (tableData.length <= 1) return [];
+    const headerKeys = columns.map((c) => String(c.key));
+    return tableData.slice(1).map((row) => {
+      const obj: Record<string, React.ReactNode> = {};
+      headerKeys.forEach((k, i) => {
+        obj[k] = row[i] ?? "\u00A0";
+      });
+      return obj;
+    });
+  }, [tableData, columns]);
 
   return (
     <div className="w-full">
       <div className="mx-auto max-w-[95vw]">
-        <h2 className="mb-4 text-center text-2xl font-semibold text-slate-700">
-          Amazon Fee-preview Information
-        </h2>
-        {confirmText?.message && (
-          <p className="mb-4 text-center text-sm text-gray-600">{confirmText.message}</p>
-        )}
+        <PageBreadcrumb pageTitle="Amazon Fee Preview Information" variant="table" />
 
-        {tableData.length > 0 && (
-          <div className="max-h-[60vh] w-full overflow-hidden rounded-lg border">
-            <div className="max-h-[60vh] w-full overflow-auto">
-              <table className="w-full border-collapse text-sm">
-                <thead className="bg-emerald-600 text-amber-100">
-                  <tr>
-                    {tableData[0].map((cell, i) => (
-                      <th key={i} className="border border-slate-300 px-3 py-2 text-left">
-                        {String(cell ?? "")}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {tableData.slice(1).map((row, ri) => (
-                    <tr key={ri} className="odd:bg-white even:bg-gray-50 hover:bg-emerald-50/80">
-                      {row.map((cell, ci) => (
-                        <td
-                          key={ci}
-                          className="max-w-[240px] truncate border border-slate-200 px-3 py-2"
-                          title={String(cell ?? "\u00A0")}
-                        >
-                          {cell ?? "\u00A0"}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
+        {/* ✅ DataTable replaces the manual <table> */}
+        <div className="mt-2">
+          <DataTable
+            columns={columns}
+            data={dataRows}
+            maxHeight="60vh"
+            stickyHeader
+            zebra
+            tableClassName="text-sm"
+            emptyMessage="No rows after filtering for the selected country."
+            // pageSize={20} // uncomment to change pagination size
+          />
+        </div>
 
         {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
 
         <div className="mx-auto mt-6 flex w-full max-w-md items-center justify-center gap-3">
-          <button
+          <Button
             onClick={onUpload}
             disabled={isUploading}
-            className="rounded-md bg-slate-800 px-5 py-2 text-sm font-semibold text-amber-100 hover:opacity-95 disabled:opacity-60"
+            type="submit"
+            variant="primary"
+            size="sm"
           >
             {isUploading ? "Uploading…" : "Upload"}
-          </button>
-          <button
+          </Button>
+
+          <Button
             onClick={onBack}
             disabled={isUploading}
-            className="rounded-md bg-slate-800 px-5 py-2 text-sm font-semibold text-amber-100 hover:opacity-95 disabled:opacity-60"
+            variant="outline"
+            size="sm"
           >
             Back
-          </button>
+          </Button>
         </div>
       </div>
 
