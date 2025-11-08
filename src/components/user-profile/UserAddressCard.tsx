@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useModal } from "../../hooks/useModal";
 import { Modal } from "../ui/modal";
 import { MdEdit } from "react-icons/md";
@@ -8,6 +8,7 @@ import { TiUpload } from "react-icons/ti";
 import { useGetCountriesQuery } from "@/lib/api/profileApi";
 import FeepreviewUpload from "../ui/modal/FeepreviewUpload";
 import SkuMultiCountryUpload from "../ui/modal/SkuMultiCountryUpload";
+import { useSelector } from "react-redux";
 
 export default function UserAddressCard() {
   // Fee Preview modal state
@@ -17,8 +18,17 @@ export default function UserAddressCard() {
   // SKU Upload modal state
   const skuModal = useModal();
 
+   // Access state from Redux store
+ const userData = useSelector((state: any) => state.auth.user);
+
+useEffect(() => {
+  console.log("User Data from Redux (auth.user):", userData);
+}, [userData]);
+
+
   // Countries for Fee Preview chips
   const { data, isLoading, isError, error } = useGetCountriesQuery();
+  console.log(data)
   const countries: string[] = data?.countries ?? [];
 
   const openFeePreview = (country: string) => {

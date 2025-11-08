@@ -1,7 +1,8 @@
+// src/lib/api/uploadsApi.ts
 import { baseApi } from "./baseApi";
 
 export type UploadHistory = {
-  uploads?: Array<unknown>; // shape not specified; keep generic
+  uploads?: Array<any>;
 };
 
 export const uploadsApi = baseApi.injectEndpoints({
@@ -10,7 +11,22 @@ export const uploadsApi = baseApi.injectEndpoints({
       query: () => ({ url: "/upload_history", method: "GET" }),
       providesTags: ["Uploads"],
     }),
+
+    // ⬇️ This must pass FormData directly; no Content-Type!
+    uploadFiles: build.mutation<any, FormData>({
+      query: (formData) => ({
+        url: "/upload",
+        method: "POST",
+        body: formData, // <- browser will set multipart/form-data with boundary
+        // do NOT set headers here
+      }),
+      invalidatesTags: ["Uploads"],
+    }),
   }),
 });
 
-export const { useGetUploadHistoryQuery, useLazyGetUploadHistoryQuery } = uploadsApi;
+export const {
+  useGetUploadHistoryQuery,
+  useLazyGetUploadHistoryQuery,
+  useUploadFilesMutation,
+} = uploadsApi;

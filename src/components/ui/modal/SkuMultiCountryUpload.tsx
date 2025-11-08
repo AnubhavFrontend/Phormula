@@ -10,9 +10,9 @@ import Button from "../button/Button";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 
 type Row = Record<string, string | number | null | undefined>;
-type Props = { onClose: () => void };
+type Props = { onClose: () => void; onComplete: () => void; };
 
-export default function SkuMultiCountryUpload({ onClose }: Props) {
+export default function SkuMultiCountryUpload({ onClose, onComplete }: Props) {
   const [error, setError] = React.useState<string>("");
   const [file, setFile] = React.useState<File | null>(null);
   const [fileName, setFileName] = React.useState<string>("No File Chosen");

@@ -13,7 +13,7 @@ const PageBreadcrumb: React.FC<BreadcrumbProps> = ({
   pageTitle,
   variant = "page",
   align = "center",
-  className = "font-bold ",
+  className = "font-bold",
 }) => {
   const colorByVariant: Record<NonNullable<BreadcrumbProps["variant"]>, string> = {
     page: "text-charcoal-500 dark:text-white/90",

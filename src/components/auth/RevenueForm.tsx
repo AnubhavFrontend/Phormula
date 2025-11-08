@@ -119,16 +119,6 @@ export default function RevenueForm() {
 
   return (
     <div className="flex flex-col flex-1 lg:w-1/2 w-full">
-      {/* Top backlink (same style as SignIn/Brand) */}
-      <div className="w-full max-w-md sm:pt-10 mx-auto mb-5">
-        <Link
-          href="/"
-          className="inline-flex items-center text-sm text-gray-500 transition-colors hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
-        >
-          <ChevronLeftIcon />
-          Back to dashboard
-        </Link>
-      </div>
 
       {/* Form column */}
       <div className="flex flex-col justify-center flex-1 w-full max-w-md mx-auto">
