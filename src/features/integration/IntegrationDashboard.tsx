@@ -75,6 +75,8 @@ export default function IntegrationDashboard() {
         }
     }, []);
 
+    const FileUploadFormAny = FileUploadForm as any;
+
 
     return (
         <div className="font-lato bg-white box-border">
@@ -161,7 +163,7 @@ export default function IntegrationDashboard() {
                     className="m-4 max-w-3xl"
                     showCloseButton
                 >
-                    <FileUploadForm
+                    <FileUploadFormAny
                         onClose={() => {
                             setMtdUploaded(true);
                             localStorage.setItem(LS_KEYS.mtdDone(selectedCountry), "true");
@@ -195,8 +197,6 @@ export default function IntegrationDashboard() {
     />
   </Modal>
 )}
-
-
 
             {showShopifyConnect && (
                 <ConnectShopifyModal onClose={() => setShowShopifyConnect(false)} />
