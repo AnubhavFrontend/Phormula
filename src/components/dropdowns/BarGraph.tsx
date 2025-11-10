@@ -1,0 +1,491 @@
+"use client";
+
+import React, { useEffect, useMemo, useState } from "react";
+import { Bar } from "react-chartjs-2";
+import {
+    Chart as ChartJS,
+    CategoryScale,
+    LinearScale,
+    BarElement,
+    Title as ChartTitle,
+    Tooltip,
+    Legend,
+    PointElement,
+    ChartData,
+    ChartOptions,
+    TooltipItem,
+} from "chart.js";
+import * as XLSX from "xlsx";
+import { useRouter } from "next/navigation";
+import PageBreadcrumb from "../common/PageBreadCrumb";
+
+ChartJS.register(CategoryScale, LinearScale, BarElement, PointElement, ChartTitle, Tooltip, Legend);
+
+type BargraphProps = {
+    range: "monthly" | "quarterly" | "yearly";
+    selectedMonth: string;
+    selectedYear: number | string;
+    countryName: string;
+};
+
+type UploadRow = {
+    country: string;
+    month: string;
+    year: string | number;
+    total_sales: number;
+    total_amazon_fee: number;
+    total_cous: number;
+    advertising_total: number;
+    otherwplatform: number;
+    taxncredit?: number;
+    cm2_profit: number;
+    total_profit: number;
+};
+
+const getCurrencySymbol = (country: string) => {
+    switch (country.toLowerCase()) {
+        case "uk":
+            return "£";
+        case "india":
+            return "₹";
+        case "us":
+            return "$";
+        case "europe":
+        case "eu":
+            return "€";
+        case "global":
+            return "$";
+        default:
+            return "¤";
+    }
+};
+
+const Bargraph: React.FC<BargraphProps> = ({ range, selectedMonth, selectedYear, countryName }) => {
+    const router = useRouter();
+    const currencySymbol = getCurrencySymbol(countryName || "");
+
+    const [data, setData] = useState<UploadRow[]>([]);
+    const [selectedGraphs, setSelectedGraphs] = useState({
+        sales: true,
+        profit: true,
+        profit2: true,
+        AmazonExpense: true,
+        total_cous: true,
+        sellingFees: true, // retained for parity
+        advertisingCosts: true,
+        Other: true,
+        taxncredit: true,
+    });
+
+    const capitalizeFirstLetter = (str: string) =>
+        str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+    const convertToAbbreviatedMonth = (m?: string) => (m ? capitalizeFirstLetter(m).slice(0, 3) : "");
+
+    // profile data for Excel header
+    const token = typeof window !== "undefined" ? localStorage.getItem("jwtToken") : null;
+    const [userData, setUserData] = useState<{ company_name?: string; brand_name?: string } | null>(
+        null
+    );
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const response = await fetch(`http://127.0.0.1:5000/upload_history`, {
+                    method: "GET",
+                    headers: token ? { Authorization: `Bearer ${token}` } : {},
+                });
+                const result = (await response.json()) as { uploads?: UploadRow[] };
+                if (result.uploads) {
+                    const filtered = result.uploads.filter(
+                        (item) => item.country.toLowerCase() === countryName.toLowerCase()
+                    );
+                    setData(filtered);
+                }
+            } catch (error) {
+                console.error("Failed to fetch upload history:", error);
+            }
+        };
+        fetchData();
+    }, [countryName, token]);
+
+    useEffect(() => {
+        const fetchUser = async () => {
+            if (!token) return;
+            try {
+                const response = await fetch("http://127.0.0.1:5000/get_user_data", {
+                    method: "GET",
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                if (!response.ok) return;
+                const j = (await response.json()) as { company_name?: string; brand_name?: string };
+                setUserData(j);
+            } catch {
+                // ignore
+            }
+        };
+        fetchUser();
+    }, [token]);
+
+    const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, checked } = e.target;
+        const selectedCount = Object.values(selectedGraphs).filter(Boolean).length;
+        const newSelectedCount = checked ? selectedCount + 1 : selectedCount - 1;
+
+        // Keep at least 2 metrics selected
+        if (!checked && newSelectedCount < 2) return;
+
+        setSelectedGraphs((prev) => ({ ...prev, [name]: checked }));
+    };
+
+    const formattedMonthYear = useMemo(
+        () => `${convertToAbbreviatedMonth(selectedMonth)}'${String(selectedYear).slice(-2)}`,
+        [selectedMonth, selectedYear]
+    );
+
+    const getExtraRows = () => {
+        const formattedCountry =
+            countryName?.toLowerCase() === "global" ? "GLOBAL" : countryName?.toUpperCase();
+        return [
+            [`${userData?.brand_name || "N/A"}`],
+            [`${userData?.company_name || "N/A"}`],
+            [`Profit Breakup (SKU Level) - ${formattedMonthYear}`],
+            [`Currency:  ${currencySymbol}`],
+            [`Country: ${formattedCountry}`],
+            [`Platform: Amazon`],
+        ];
+    };
+
+    const metricMapping: Record<
+        | "Sales"
+        | "COGS"
+        | "Amazon Fees"
+        | "Taxes & Credits"
+        | "CM1 Profit"
+        | "Advertising Cost"
+        | "Other"
+        | "CM2 Profit",
+        keyof UploadRow
+    > = {
+        Sales: "total_sales",
+        COGS: "total_cous",
+        "Amazon Fees": "total_amazon_fee",
+        "Taxes & Credits": "taxncredit",
+        "CM1 Profit": "total_profit",
+        "Advertising Cost": "advertising_total",
+        Other: "otherwplatform",
+        "CM2 Profit": "cm2_profit",
+    };
+
+    const colorMapping: Record<
+        | "Sales"
+        | "COGS"
+        | "Amazon Fees"
+        | "Taxes & Credits"
+        | "CM1 Profit"
+        | "Advertising Cost"
+        | "Other"
+        | "CM2 Profit",
+        string
+    > = {
+        Sales: "#2CA9E0",
+        COGS: "#AB64B5",
+        "Amazon Fees": "#ff5c5c",
+        "Advertising Cost": "#F47A00",
+        Other: "#00627D",
+        "Taxes & Credits": "#154B9B",
+        "CM1 Profit": "#5EA49B",
+        "CM2 Profit": "#87AD12",
+    };
+
+    const preferredOrder = [
+        "Sales",
+        "COGS",
+        "Amazon Fees",
+        "Taxes & Credits",
+        "CM1 Profit",
+        "Advertising Cost",
+        "Other",
+        "CM2 Profit",
+    ] as const;
+
+    const {
+        chartData,
+        chartOptions,
+        exportToExcel,
+        allValuesZero,
+    }: {
+        chartData: ChartData<"bar">;
+        chartOptions: ChartOptions<"bar">;
+        exportToExcel: () => void;
+        allValuesZero: boolean;
+    } = useMemo(() => {
+        if (!data || data.length === 0) {
+            const emptyData: ChartData<"bar"> = { labels: [], datasets: [] };
+            const emptyOptions: ChartOptions<"bar"> = {};
+            const noop = () => { };
+            return {
+                chartData: emptyData,
+                chartOptions: emptyOptions,
+                exportToExcel: noop,
+                allValuesZero: true,
+            };
+        }
+
+        const selectedMonthYearKey = `${selectedMonth} ${selectedYear}`.toLowerCase();
+        const monthData = data.find(
+            (upload) => `${upload.month} ${upload.year}`.toLowerCase() === selectedMonthYearKey
+        );
+
+        const metricsToShow = (Object.entries(selectedGraphs)
+            .filter(([, isChecked]) => isChecked)
+            .map(([key]) => {
+                switch (key) {
+                    case "sales":
+                        return "Sales";
+                    case "total_cous":
+                        return "COGS";
+                    case "AmazonExpense":
+                        return "Amazon Fees";
+                    case "taxncredit":
+                        return "Taxes & Credits";
+                    case "profit2":
+                        return "CM1 Profit";
+                    case "advertisingCosts":
+                        return "Advertising Cost";
+                    case "Other":
+                        return "Other";
+                    case "profit":
+                        return "CM2 Profit";
+                    default:
+                        return null;
+                }
+            })
+            .filter(Boolean) as typeof preferredOrder[number][])
+            .sort((a, b) => preferredOrder.indexOf(a) - preferredOrder.indexOf(b));
+
+        const labels = metricsToShow as string[];
+
+        const viewportWidth = typeof window !== "undefined" ? window.innerWidth : 1200;
+        const barWidthInPixels = viewportWidth * 0.05;
+
+        let values = metricsToShow.map((label) => {
+            const field = metricMapping[label];
+            const v = monthData ? Math.abs(Number(monthData?.[field] ?? 0)) : 0;
+            return v;
+        });
+
+        const zero = values.every((v) => v === 0);
+
+        // Inject dummy values for display if zero
+        if (zero) values = metricsToShow.map(() => Math.floor(Math.random() * 1000 + 100));
+
+        const chartData: ChartData<"bar"> = {
+            labels,
+            datasets: [
+                {
+                    label: formattedMonthYear,
+                    data: values,
+                    maxBarThickness: barWidthInPixels,
+                    backgroundColor: metricsToShow.map((l) => colorMapping[l]),
+                    borderWidth: 0,
+                },
+            ],
+        };
+
+        const options: ChartOptions<"bar"> = {
+            responsive: true,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    intersect: false,
+                    callbacks: {
+                        title: (tooltipItems: TooltipItem<"bar">[]) => tooltipItems[0]?.label ?? "",
+                        label: (context: TooltipItem<"bar">) => {
+                            const value = Number(context.raw ?? 0);
+                            // compute % of Sales
+                            const salesIndex = (labels as string[]).findIndex((l) => l === "Sales");
+                            const salesValue =
+                                salesIndex >= 0
+                                    ? Number((chartData.datasets[0].data as number[])[salesIndex] ?? 1)
+                                    : 1;
+                            const percentage = (value / (salesValue || 1)) * 100;
+                            const metricLabel = String(context.label ?? "");
+                            const formattedValue = Number(value.toFixed(2)).toLocaleString();
+                            return `${metricLabel}: ${currencySymbol}${formattedValue} (${percentage.toFixed(
+                                1
+                            )}%)`;
+                        },
+                    },
+                },
+            },
+            scales: {
+                x: {
+                    ticks: {
+                        callback: (_value, index) => String(labels[index] ?? ""),
+                    },
+                    title: { display: true, text: formattedMonthYear },
+                },
+                y: {
+                    title: { display: true, text: `Amount (${currencySymbol})` },
+                },
+            },
+        };
+
+        const exportToExcel = () => {
+            const extraRows = getExtraRows();
+            const blankRow = [""];
+
+            const sheetHeader: (string | number)[][] = [["Metric", "", `Amount (${currencySymbol})`]];
+
+            const signs: Record<(typeof preferredOrder)[number], string> = {
+                Sales: "(+)",
+                COGS: "(-)",
+                "Amazon Fees": "(-)",
+                "Taxes & Credits": "(+)",
+                "CM1 Profit": "",
+                "Advertising Cost": "(-)",
+                Other: "(-)",
+                "CM2 Profit": "",
+            };
+
+            values.forEach((v, idx) => {
+                const label = metricsToShow[idx];
+                sheetHeader.push([label, signs[label], Number(v.toFixed(2))]);
+            });
+
+            const totalValue = values.reduce((acc, v) => acc + v, 0);
+            sheetHeader.push(["Total", "", Number(totalValue.toFixed(2))]);
+
+            const finalSheetData = [...extraRows, blankRow, ...sheetHeader];
+            const ws = XLSX.utils.aoa_to_sheet(finalSheetData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Sales Data");
+            XLSX.writeFile(wb, `Metrics-${formattedMonthYear}.xlsx`);
+        };
+
+        return { chartData, chartOptions: options, exportToExcel, allValuesZero: zero };
+    }, [
+        data,
+        selectedGraphs,
+        selectedMonth,
+        selectedYear,
+        countryName,
+        formattedMonthYear,
+        currencySymbol,
+    ]);
+
+    return (
+        <div className="relative">
+            {/* Title */}
+            {/* <h2 className="text-[18px] font-bold text-[#414042] bg-white rounded-md mb-2">
+        Tracking Profitability - <span className="text-[#5EA68E]">MTD</span>
+      </h2> */}
+            <PageBreadcrumb pageTitle="Tracking Profitability - " variant="page" align="left" textSize="2xl" />
+
+            {/* Toggle group */}
+            {/* Toggle group */}
+            <div
+                className={[
+                    "mx-auto w-full flex flex-wrap items-center justify-between",
+                    "gap-3 md:gap-4 lg:gap-5 mt-2",
+                    "max-w-[1100px]",
+                    allValuesZero ? "opacity-30" : "opacity-100",
+                    "transition-opacity duration-300",
+                ].join(" ")}
+            >
+                {[
+                    { name: "sales", label: "Sales", color: "#2CA9E0" },
+                    { name: "total_cous", label: "COGS", color: "#AB64B5" },
+                    { name: "AmazonExpense", label: "Amazon Fees", color: "#ff5c5c" },
+                    { name: "taxncredit", label: "Taxes & Credits", color: "#154B9B" },
+                    { name: "profit2", label: "CM1 Profit", color: "#5EA49B" },
+                    { name: "advertisingCosts", label: "Advertising Cost", color: "#F47A00" },
+                    { name: "Other", label: "Other", color: "#00627D" },
+                    { name: "profit", label: "CM2 Profit", color: "#87AD12" },
+                ].map(({ name, label, color }) => {
+                    const checked = selectedGraphs[name as keyof typeof selectedGraphs];
+                    const isOnlyOneLeft =
+                        checked && Object.values(selectedGraphs).filter(Boolean).length === 1;
+
+                    return (
+                        <label
+                            key={name}
+                            className="flex items-center gap-2 text-[13px] sm:text-[14px] md:text-[15px] font-medium select-none whitespace-nowrap"
+                            style={{ color }}
+                        >
+                            <input
+                                type="checkbox"
+                                name={name}
+                                checked={checked}
+                                disabled={isOnlyOneLeft}
+                                onChange={handleCheckboxChange}
+                                className="h-3.5 w-3.5 sm:h-4 sm:w-4 rounded-[3px] cursor-pointer appearance-none checked:[&:before]:content-['✓'] checked:before:text-white checked:before:text-[10px] checked:before:leading-3 checked:before:font-bold grid place-content-center"
+                                style={{ backgroundColor: color }}
+                            />
+                            <span className="tracking-normal">{label.toUpperCase()}</span>
+                        </label>
+                    );
+                })}
+            </div>
+
+
+            {/* Chart container */}
+            <div
+                className={[
+                    "mx-auto mt-4",
+                    "w-full max-w-[1100px]",
+                    "h-[46vh] sm:h-[48vh] md:h-[50vh]",
+                    "flex items-center justify-center",
+                    allValuesZero ? "opacity-30" : "opacity-100",
+                    "transition-opacity duration-300",
+                ].join(" ")}
+            >
+                {chartData.datasets.length > 0 && <Bar data={chartData} options={chartOptions} />}
+            </div>
+
+            {/* Export */}
+            <div className="w-full max-w-[1100px] mx-auto mt-1 text-right">
+                <button
+                    className="styled-button inline-flex items-center gap-2 rounded-md bg-[#5EA68E] text-white px-4 py-2 font-semibold hover:bg-[#4d8d78] transition-colors"
+                    onClick={exportToExcel}
+                >
+                    Download {formattedMonthYear} Metrics (.xlsx)
+                    <i className="fa-solid fa-download fa-beat" />
+                </button>
+            </div>
+
+            {/* No data overlay */}
+            {allValuesZero && (
+                <div className="absolute inset-0 z-[30]">
+                    <div
+                        className={[
+                            "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2",
+                            "bg-white/90 border border-[#e0e0e0] rounded-xl shadow-lg backdrop-blur",
+                            "max-w-[450px] w-[90%] p-6 text-center",
+                        ].join(" ")}
+                    >
+                        <div className="text-5xl text-gray-300 mb-4">🔒</div>
+                        <h3 className="text-[18px] font-semibold text-[#333] mb-3">No Data Available</h3>
+                        <p className="text-sm text-gray-600 leading-6">
+                            To see performance metrics, you need to upload more files for{" "}
+                            <strong>{capitalizeFirstLetter(countryName)}</strong>
+                        </p>
+                        <div className="mt-4 px-3 py-2 bg-gray-50 rounded text-xs text-gray-500">
+                            Sample data shown for preview
+                        </div>
+                        <button
+                            onClick={() =>
+                                router.push(`/Upload/${countryName === "global" ? "uk" : countryName}`)
+                            }
+                            className="mt-4 inline-flex items-center justify-center rounded-md bg-[#5EA68E] px-4 py-2 font-semibold text-white hover:bg-[#4d8d78] transition-colors"
+                        >
+                            Upload MTD(s)
+                        </button>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
+export default Bargraph;

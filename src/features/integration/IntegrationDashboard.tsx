@@ -1,6 +1,464 @@
+// // "use client";
+
+// // import React, { useMemo, useState } from "react";
+// // import { useParams } from "next/navigation";
+// // import { useMediaQuery } from "react-responsive";
+
+// // import { useIntegrationProgress, LS_KEYS } from "./useIntegrationProgress";
+
+// // import { Step1ProductList } from "./steps/Step1ProductList";
+// // import { Step2Integration } from "./steps/Step2Integration";
+// // import { Step3FeePreview } from "./steps/Step3FeePreview";
+// // import { Step4MTD } from "./steps/Step4MTD";
+
+// // import SkuMultiCountryUpload from "@/components/ui/modal/SkuMultiCountryUpload";
+// // import FeepreviewUpload from "@/components/ui/modal/FeepreviewUpload";
+
+// // import AmazonConnect from "./AmazonConnect";
+// // import { Modal } from "@/components/ui/modal";
+// // import FileUploadForm from "@/app/(admin)/(ui-elements)/modals/FileUploadForm";
+// // import AmazonFinancialDashboard from "./AmazonFinancialDashboard";
+// // import ConnectShopifyModal from "./ConnectShopifyModal";
+
+// // const regionForCountry = (c: string) =>
+// //     c === "uk" ? "eu-west-1" : c === "us" ? "us-east-1" : "ca-central-1";
+
+// // export default function IntegrationDashboard() {
+// //     const { countryName } = useParams<{ countryName: string }>();
+// //     const selectedCountry = (countryName || "").toLowerCase();
+// //     const [fileUploadedLocal, setFileUploadedLocal] = useState(false);
+
+// //     const {
+// //         fileUploaded,
+// //         profileExists,
+// //         integrationMethod,
+// //         setIntegrationMethod,
+// //         amazonConnected,
+// //         mtdUploaded,
+// //         setMtdUploaded,
+// //     } = useIntegrationProgress(selectedCountry);
+
+// //     const [activePopup, setActivePopup] = useState<number | null>(null);
+// //     const [showAmazonConnect, setShowAmazonConnect] = useState(false);
+// //     const [showShopifyConnect, setShowShopifyConnect] = useState(false);
+// //     const isMobile = useMediaQuery({ maxWidth: 768 });
+
+// //     const steps = useMemo(() => {
+// //         const step1Done = (fileUploaded || fileUploadedLocal);  // 👈 use local flip OR hook value
+
+// //         const manual = [
+// //             { id: 1, completed: step1Done, enabled: true, action: () => setActivePopup(1) },
+// //             { id: 2, completed: !!integrationMethod, enabled: step1Done },
+// //             { id: 3, completed: profileExists, enabled: !!integrationMethod, action: () => setActivePopup(2) },
+// //             { id: 4, completed: mtdUploaded, enabled: profileExists, action: () => setActivePopup(3) },
+// //         ];
+// //         const amazon = [
+// //             { id: 1, completed: step1Done, enabled: true, action: () => setActivePopup(1) },
+// //             { id: 2, completed: !!integrationMethod && amazonConnected, enabled: step1Done },
+// //             { id: 3, completed: mtdUploaded, enabled: !!integrationMethod && amazonConnected, action: () => setActivePopup(3) },
+// //         ];
+// //         return integrationMethod === "amazon" ? amazon : manual;
+// //     }, [integrationMethod, amazonConnected, fileUploaded, fileUploadedLocal, profileExists, mtdUploaded]);
+
+
+// //     const chooseIntegration = (key: "amazon" | "shopify") => {
+// //         setIntegrationMethod(key);
+// //         localStorage.setItem(LS_KEYS.integrationMethod, key);
+// //         setActivePopup(null);
+// //         if (key === "amazon") setShowAmazonConnect(true);
+// //         if (key === "shopify") setShowShopifyConnect(true);
+// //     };
+
+// //     React.useEffect(() => {
+// //         if (localStorage.getItem("fileUploaded") === "true") {
+// //             setFileUploadedLocal(true);
+// //         }
+// //     }, []);
+
+// //     const FileUploadFormAny = FileUploadForm as any;
+
+
+// //     return (
+// //         <div className="font-lato bg-white box-border">
+// //             <h2 className="text-[#414042] font-semibold text-lg md:text-xl mb-4">
+// //                 Start your Journey with Phormula!
+// //             </h2>
+
+// //             <Step1ProductList
+// //                 completed={steps[0].completed}
+// //                 onOpen={() => steps[0].enabled && steps[0].action?.()}
+// //             />
+
+// //             <Step2Integration
+// //                 locked={!steps[1].enabled}
+// //                 completed={steps[1].completed}
+// //                 onChoose={chooseIntegration}
+// //             />
+
+// //             {integrationMethod === "manual" && (
+// //                 <>
+// //                     <Step3FeePreview
+// //                         enabled={steps[2].enabled}
+// //                         completed={steps[2].completed}
+// //                         onOpen={() => steps[2].enabled && steps[2].action?.()}
+// //                     />
+// //                     <Step4MTD
+// //                         enabled={steps[3]?.enabled}
+// //                         completed={steps[3]?.completed}
+// //                         selectedCountry={selectedCountry}
+// //                         onOpenForCountry={(code) => code === selectedCountry && setActivePopup(3)}
+// //                     />
+// //                 </>
+// //             )}
+
+// //             {/* Step 1 modal */}
+// //             {activePopup === 1 && (
+// //                 <Modal
+// //                     isOpen={activePopup === 1}
+// //                     onClose={() => setActivePopup(null)}
+// //                     className="m-4 max-w-sm"
+// //                     showCloseButton
+// //                 >
+// //                     <SkuMultiCountryUpload
+// //                         onClose={() => setActivePopup(null)}
+// //                         onComplete={() => {
+// //                             // instant UI unlock
+// //                             setFileUploadedLocal(true);
+
+// //                             // persist across reloads (the hook / page can also read this)
+// //                             localStorage.setItem("fileUploaded", "true");
+
+// //                             // optional broadcast for any listeners
+// //                             window.dispatchEvent(new CustomEvent("inventory:productListUploaded"));
+
+// //                             // close the modal
+// //                             setActivePopup(null);
+// //                         }}
+// //                     />
+// //                 </Modal>
+// //             )}
+
+
+// //             {/* Step 3 modal (Fee Preview) */}
+// //             {activePopup === 2 && (
+// //                 <Modal
+// //                     isOpen={activePopup === 2}
+// //                     onClose={() => setActivePopup(null)}
+// //                     className="m-4 max-w-3xl"
+// //                     showCloseButton
+// //                 >
+// //                     <FeepreviewUpload
+// //                         country={selectedCountry}
+// //                         onClose={() => setActivePopup(null)}
+// //                     />
+// //                 </Modal>
+
+// //             )}
+
+// //             {/* Step 4 modal (MTD Upload) */}
+// //             {activePopup === 3 && (
+// //                 <Modal
+// //                     isOpen={activePopup === 3}
+// //                     onClose={() => setActivePopup(null)}
+// //                     className="m-4 max-w-3xl"
+// //                     showCloseButton
+// //                 >
+// //                     <FileUploadFormAny
+// //                         onClose={() => {
+// //                             setMtdUploaded(true);
+// //                             localStorage.setItem(LS_KEYS.mtdDone(selectedCountry), "true");
+// //                             setActivePopup(null);
+// //                         }}
+// //                     />
+// //                 </Modal>
+// //             )}
+
+// //             {showAmazonConnect && (
+// //   <Modal
+// //     isOpen={showAmazonConnect}
+// //     onClose={() => setShowAmazonConnect(false)}
+// //     className="m-4 max-w-xl"
+// //     showCloseButton
+// //   >
+// //     <AmazonConnect
+// //       onClose={() => setShowAmazonConnect(false)}
+// //       onConnected={(refreshToken?: string) => {
+// //         // mark Amazon connected, if your hook listens to localStorage you can store here:
+// //         localStorage.setItem("amazonRefreshToken", String(refreshToken ?? ""));
+// //         // optionally unlock the next step immediately:
+// //         // window.dispatchEvent(new Event("storage"));
+// //         setShowAmazonConnect(false);
+// //       }}
+// //       onChooseManual={() => {
+// //         setShowAmazonConnect(false);
+// //         setIntegrationMethod("manual");
+// //         localStorage.setItem(LS_KEYS.integrationMethod, "manual");
+// //       }}
+// //     />
+// //   </Modal>
+// // )}
+
+// //             {showShopifyConnect && (
+// //                 <ConnectShopifyModal onClose={() => setShowShopifyConnect(false)} />
+// //             )}
+// //         </div>
+// //     );
+// // }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// "use client";
+
+// import React, { useMemo, useState, useEffect } from "react";
+// import { useParams } from "next/navigation";
+// import { useMediaQuery } from "react-responsive";
+
+// import { useIntegrationProgress, LS_KEYS } from "./useIntegrationProgress";
+
+// import { Step1ProductList } from "./steps/Step1ProductList";
+// import { Step2Integration } from "./steps/Step2Integration";
+// import { Step3FeePreview } from "./steps/Step3FeePreview";
+// import { Step4MTD } from "./steps/Step4MTD";
+
+// import SkuMultiCountryUpload from "@/components/ui/modal/SkuMultiCountryUpload";
+// import FeepreviewUpload from "@/components/ui/modal/FeepreviewUpload";
+
+// import AmazonConnect from "./AmazonConnect";
+// import { Modal } from "@/components/ui/modal";
+// import FileUploadForm from "@/app/(admin)/(ui-elements)/modals/FileUploadForm";
+// import ConnectShopifyModal from "./ConnectShopifyModal";
+
+// const regionForCountry = (c: string) =>
+//   c === "uk" ? "eu-west-1" : c === "us" ? "us-east-1" : "ca-central-1";
+
+// export default function IntegrationDashboard() {
+//   const { countryName } = useParams<{ countryName: string }>();
+//   const selectedCountry = (countryName || "").toLowerCase();
+
+//   const {
+//     fileUploaded,
+//     profileExists,
+//     integrationMethod,
+//     setIntegrationMethod,
+//     amazonConnected,
+//     mtdUploaded,
+//     setMtdUploaded,
+//   } = useIntegrationProgress(selectedCountry);
+
+//   const [activePopup, setActivePopup] = useState<number | null>(null);
+//   const [showAmazonConnect, setShowAmazonConnect] = useState(false);
+//   const [showShopifyConnect, setShowShopifyConnect] = useState(false);
+//   const [fileUploadedLocal, setFileUploadedLocal] = useState(false);
+
+//   // NEW: which country was clicked in Step 4
+//   const [uploadCountry, setUploadCountry] = useState<string | null>(null);
+
+//   const isMobile = useMediaQuery({ maxWidth: 768 });
+
+//   useEffect(() => {
+//     if (typeof window !== "undefined" && localStorage.getItem("fileUploaded") === "true") {
+//       setFileUploadedLocal(true);
+//     }
+//   }, []);
+
+//   const steps = useMemo(() => {
+//     const step1Done = fileUploaded || fileUploadedLocal;
+
+//     const manual = [
+//       { id: 1, completed: step1Done, enabled: true, action: () => setActivePopup(1) },
+//       { id: 2, completed: !!integrationMethod, enabled: step1Done },
+//       { id: 3, completed: profileExists, enabled: !!integrationMethod, action: () => setActivePopup(2) },
+//       { id: 4, completed: mtdUploaded, enabled: profileExists, action: () => setActivePopup(3) },
+//     ];
+//     const amazon = [
+//       { id: 1, completed: step1Done, enabled: true, action: () => setActivePopup(1) },
+//       { id: 2, completed: !!integrationMethod && amazonConnected, enabled: step1Done },
+//       { id: 3, completed: mtdUploaded, enabled: !!integrationMethod && amazonConnected, action: () => setActivePopup(3) },
+//     ];
+//     return integrationMethod === "amazon" ? amazon : manual;
+//   }, [integrationMethod, amazonConnected, fileUploaded, fileUploadedLocal, profileExists, mtdUploaded]);
+
+//   const chooseIntegration = (key: "amazon" | "shopify") => {
+//     setIntegrationMethod(key);
+//     localStorage.setItem(LS_KEYS.integrationMethod, key);
+//     setActivePopup(null);
+//     if (key === "amazon") setShowAmazonConnect(true);
+//     if (key === "shopify") setShowShopifyConnect(true);
+//   };
+
+//   return (
+//     <div className="font-lato bg-white box-border">
+//       <h2 className="text-[#414042] font-semibold text-lg md:text-xl mb-4">
+//         Start your Journey with Phormula!
+//       </h2>
+
+//       <Step1ProductList
+//         completed={steps[0].completed}
+//         onOpen={() => steps[0].enabled && steps[0].action?.()}
+//       />
+
+//       <Step2Integration
+//         locked={!steps[1].enabled}
+//         completed={steps[1].completed}
+//         onChoose={chooseIntegration}
+//       />
+
+//       {integrationMethod === "manual" && (
+//         <>
+//           <Step3FeePreview
+//             enabled={steps[2].enabled}
+//             completed={steps[2].completed}
+//             onOpen={() => steps[2].enabled && steps[2].action?.()}
+//           />
+//           <Step4MTD
+//             enabled={steps[3]?.enabled}
+//             completed={steps[3]?.completed}
+//             selectedCountry={selectedCountry}
+//             onOpenForCountry={(code) => {
+//               if (code === selectedCountry) {
+//                 setUploadCountry(code);   // remember which one
+//                 setActivePopup(3);        // open the modal
+//               }
+//             }}
+//           />
+//         </>
+//       )}
+
+//       {/* Step 1 modal */}
+//       {activePopup === 1 && (
+//         <Modal
+//           isOpen
+//           onClose={() => setActivePopup(null)}
+//           className="m-4 max-w-sm"
+//           showCloseButton
+//         >
+//           <SkuMultiCountryUpload
+//             onClose={() => setActivePopup(null)}
+//             onComplete={() => {
+//               setFileUploadedLocal(true);
+//               localStorage.setItem("fileUploaded", "true");
+//               window.dispatchEvent(new CustomEvent("inventory:productListUploaded"));
+//               setActivePopup(null);
+//             }}
+//           />
+//         </Modal>
+//       )}
+
+//       {/* Step 3 modal (Fee Preview) */}
+//       {activePopup === 2 && (
+//         <Modal
+//           isOpen
+//           onClose={() => setActivePopup(null)}
+//           className="m-4 max-w-3xl"
+//           showCloseButton
+//         >
+//           <FeepreviewUpload
+//             country={selectedCountry}
+//             onClose={() => setActivePopup(null)}
+//           />
+//         </Modal>
+//       )}
+
+//       {/* Step 4 modal (MTD Upload) */}
+//       {activePopup === 3 && (
+//         <Modal
+//           isOpen
+//           onClose={() => {
+//             setActivePopup(null);
+//             setUploadCountry(null);
+//           }}
+//           className="m-4 max-w-3xl"
+//           showCloseButton
+//         >
+//           <FileUploadForm
+//             initialCountry={(uploadCountry ?? selectedCountry) || ""}
+//             onComplete={() => {
+//               setMtdUploaded(true);
+//               localStorage.setItem(LS_KEYS.mtdDone(selectedCountry), "true");
+//               setActivePopup(null);
+//               setUploadCountry(null);
+//             }}
+//             onClose={() => {
+//               setActivePopup(null);
+//               setUploadCountry(null);
+//             }}
+//           />
+//         </Modal>
+//       )}
+
+//       {showAmazonConnect && (
+//         <Modal
+//           isOpen
+//           onClose={() => setShowAmazonConnect(false)}
+//           className="m-4 max-w-xl"
+//           showCloseButton
+//         >
+//           <AmazonConnect
+//             onClose={() => setShowAmazonConnect(false)}
+//             onConnected={(refreshToken?: string) => {
+//               localStorage.setItem("amazonRefreshToken", String(refreshToken ?? ""));
+//               setShowAmazonConnect(false);
+//             }}
+//             onChooseManual={() => {
+//               setShowAmazonConnect(false);
+//               setIntegrationMethod("manual");
+//               localStorage.setItem(LS_KEYS.integrationMethod, "manual");
+//             }}
+//           />
+//         </Modal>
+//       )}
+
+//       {showShopifyConnect && (
+//         <ConnectShopifyModal onClose={() => setShowShopifyConnect(false)} />
+//       )}
+//     </div>
+//   );
+// }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// IntegrationDashboard.tsx (only the changed bits)
+
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { useMediaQuery } from "react-responsive";
 
@@ -17,190 +475,186 @@ import FeepreviewUpload from "@/components/ui/modal/FeepreviewUpload";
 import AmazonConnect from "./AmazonConnect";
 import { Modal } from "@/components/ui/modal";
 import FileUploadForm from "@/app/(admin)/(ui-elements)/modals/FileUploadForm";
-import AmazonFinancialDashboard from "./AmazonFinancialDashboard";
 import ConnectShopifyModal from "./ConnectShopifyModal";
 
-const regionForCountry = (c: string) =>
-    c === "uk" ? "eu-west-1" : c === "us" ? "us-east-1" : "ca-central-1";
-
 export default function IntegrationDashboard() {
-    const { countryName } = useParams<{ countryName: string }>();
-    const selectedCountry = (countryName || "").toLowerCase();
-    const [fileUploadedLocal, setFileUploadedLocal] = useState(false);
+  const { countryName } = useParams<{ countryName: string }>();
+  const selectedCountry = (countryName || "").toLowerCase();
 
-    const {
-        fileUploaded,
-        profileExists,
-        integrationMethod,
-        setIntegrationMethod,
-        amazonConnected,
-        mtdUploaded,
-        setMtdUploaded,
-    } = useIntegrationProgress(selectedCountry);
+  const {
+    fileUploaded,
+    profileExists,
+    integrationMethod,
+    setIntegrationMethod,
+    amazonConnected,
+    mtdUploaded,
+    setMtdUploaded,
+  } = useIntegrationProgress(selectedCountry);
 
-    const [activePopup, setActivePopup] = useState<number | null>(null);
-    const [showAmazonConnect, setShowAmazonConnect] = useState(false);
-    const [showShopifyConnect, setShowShopifyConnect] = useState(false);
-    const isMobile = useMediaQuery({ maxWidth: 768 });
+  const [activePopup, setActivePopup] = useState<number | null>(null);
+  const [showAmazonConnect, setShowAmazonConnect] = useState(false);
+  const [showShopifyConnect, setShowShopifyConnect] = useState(false);
+  const [fileUploadedLocal, setFileUploadedLocal] = useState(false);
 
-    const steps = useMemo(() => {
-        const step1Done = (fileUploaded || fileUploadedLocal);  // 👈 use local flip OR hook value
+  // NEW: which country was clicked in Step 4
+  const [mtdCountry, setMtdCountry] = useState<string>("");
 
-        const manual = [
-            { id: 1, completed: step1Done, enabled: true, action: () => setActivePopup(1) },
-            { id: 2, completed: !!integrationMethod, enabled: step1Done },
-            { id: 3, completed: profileExists, enabled: !!integrationMethod, action: () => setActivePopup(2) },
-            { id: 4, completed: mtdUploaded, enabled: profileExists, action: () => setActivePopup(3) },
-        ];
-        const amazon = [
-            { id: 1, completed: step1Done, enabled: true, action: () => setActivePopup(1) },
-            { id: 2, completed: !!integrationMethod && amazonConnected, enabled: step1Done },
-            { id: 3, completed: mtdUploaded, enabled: !!integrationMethod && amazonConnected, action: () => setActivePopup(3) },
-        ];
-        return integrationMethod === "amazon" ? amazon : manual;
-    }, [integrationMethod, amazonConnected, fileUploaded, fileUploadedLocal, profileExists, mtdUploaded]);
+  const isMobile = useMediaQuery({ maxWidth: 768 });
 
+  useEffect(() => {
+    if (localStorage.getItem("fileUploaded") === "true") {
+      setFileUploadedLocal(true);
+    }
+  }, []);
 
-    const chooseIntegration = (key: "amazon" | "shopify") => {
-        setIntegrationMethod(key);
-        localStorage.setItem(LS_KEYS.integrationMethod, key);
-        setActivePopup(null);
-        if (key === "amazon") setShowAmazonConnect(true);
-        if (key === "shopify") setShowShopifyConnect(true);
-    };
+  const steps = useMemo(() => {
+    const step1Done = fileUploaded || fileUploadedLocal;
 
-    React.useEffect(() => {
-        if (localStorage.getItem("fileUploaded") === "true") {
-            setFileUploadedLocal(true);
-        }
-    }, []);
+    const manual = [
+      { id: 1, completed: step1Done, enabled: true, action: () => setActivePopup(1) },
+      { id: 2, completed: !!integrationMethod, enabled: step1Done },
+      { id: 3, completed: profileExists, enabled: !!integrationMethod, action: () => setActivePopup(2) },
+      { id: 4, completed: mtdUploaded, enabled: profileExists, action: () => setActivePopup(3) },
+    ];
+    const amazon = [
+      { id: 1, completed: step1Done, enabled: true, action: () => setActivePopup(1) },
+      { id: 2, completed: !!integrationMethod && amazonConnected, enabled: step1Done },
+      { id: 3, completed: mtdUploaded, enabled: !!integrationMethod && amazonConnected, action: () => setActivePopup(3) },
+    ];
+    return integrationMethod === "amazon" ? amazon : manual;
+  }, [integrationMethod, amazonConnected, fileUploaded, fileUploadedLocal, profileExists, mtdUploaded]);
 
-    const FileUploadFormAny = FileUploadForm as any;
+  const chooseIntegration = (key: "amazon" | "shopify") => {
+    setIntegrationMethod(key);
+    localStorage.setItem(LS_KEYS.integrationMethod, key);
+    setActivePopup(null);
+    if (key === "amazon") setShowAmazonConnect(true);
+    if (key === "shopify") setShowShopifyConnect(true);
+  };
 
+  return (
+    <div className="font-lato bg-white box-border">
+      <h2 className="text-[#414042] font-semibold text-lg md:text-xl mb-4">
+        Start your Journey with Phormula!
+      </h2>
 
-    return (
-        <div className="font-lato bg-white box-border">
-            <h2 className="text-[#414042] font-semibold text-lg md:text-xl mb-4">
-                Start your Journey with Phormula!
-            </h2>
+      <Step1ProductList
+        completed={steps[0].completed}
+        onOpen={() => steps[0].enabled && steps[0].action?.()}
+      />
 
-            <Step1ProductList
-                completed={steps[0].completed}
-                onOpen={() => steps[0].enabled && steps[0].action?.()}
-            />
+      <Step2Integration
+        locked={!steps[1].enabled}
+        completed={steps[1].completed}
+        onChoose={chooseIntegration}
+      />
 
-            <Step2Integration
-                locked={!steps[1].enabled}
-                completed={steps[1].completed}
-                onChoose={chooseIntegration}
-            />
+      {integrationMethod === "manual" && (
+        <>
+          <Step3FeePreview
+            enabled={steps[2].enabled}
+            completed={steps[2].completed}
+            onOpen={() => steps[2].enabled && steps[2].action?.()}
+          />
 
-            {integrationMethod === "manual" && (
-                <>
-                    <Step3FeePreview
-                        enabled={steps[2].enabled}
-                        completed={steps[2].completed}
-                        onOpen={() => steps[2].enabled && steps[2].action?.()}
-                    />
-                    <Step4MTD
-                        enabled={steps[3]?.enabled}
-                        completed={steps[3]?.completed}
-                        selectedCountry={selectedCountry}
-                        onOpenForCountry={(code) => code === selectedCountry && setActivePopup(3)}
-                    />
-                </>
-            )}
+          {/* IMPORTANT: pass selectedCountry and capture which button was clicked */}
+          <Step4MTD
+            enabled={steps[3]?.enabled}
+            completed={steps[3]?.completed}
+            selectedCountry={selectedCountry}
+            onOpenForCountry={(code) => {
+              // only allow current country, Step4 already guards that, but be explicit:
+              if (code !== selectedCountry) return;
+              setMtdCountry(code);       // << remember which country was clicked
+              setActivePopup(3);         // open modal
+            }}
+          />
+        </>
+      )}
 
-            {/* Step 1 modal */}
-            {activePopup === 1 && (
-                <Modal
-                    isOpen={activePopup === 1}
-                    onClose={() => setActivePopup(null)}
-                    className="m-4 max-w-sm"
-                    showCloseButton
-                >
-                    <SkuMultiCountryUpload
-                        onClose={() => setActivePopup(null)}
-                        onComplete={() => {
-                            // instant UI unlock
-                            setFileUploadedLocal(true);
+      {/* Step 1 modal */}
+      {activePopup === 1 && (
+        <Modal
+          isOpen
+          onClose={() => setActivePopup(null)}
+          className="m-4 max-w-sm"
+          showCloseButton
+        >
+          <SkuMultiCountryUpload
+            onClose={() => setActivePopup(null)}
+            onComplete={() => {
+              setFileUploadedLocal(true);
+              localStorage.setItem("fileUploaded", "true");
+              window.dispatchEvent(new CustomEvent("inventory:productListUploaded"));
+              setActivePopup(null);
+            }}
+          />
+        </Modal>
+      )}
 
-                            // persist across reloads (the hook / page can also read this)
-                            localStorage.setItem("fileUploaded", "true");
+      {/* Step 3 modal (Fee Preview) */}
+      {activePopup === 2 && (
+        <Modal
+          isOpen
+          onClose={() => setActivePopup(null)}
+          className="m-4 max-w-3xl"
+          showCloseButton
+        >
+          <FeepreviewUpload country={selectedCountry} onClose={() => setActivePopup(null)} />
+        </Modal>
+      )}
 
-                            // optional broadcast for any listeners
-                            window.dispatchEvent(new CustomEvent("inventory:productListUploaded"));
+      {/* Step 4 modal (MTD Upload) */}
+      {activePopup === 3 && (
+        <Modal
+          isOpen
+          onClose={() => setActivePopup(null)}
+          className="m-4 max-w-3xl"
+          showCloseButton
+        >
+          {/* PASS THE COUNTRY HERE */}
+          <FileUploadForm
+            initialCountry={mtdCountry || selectedCountry}
+            onClose={() => {
+              setActivePopup(null);
+            }}
+            onComplete={() => {
+              // mark MTD step done
+              setMtdUploaded(true);
+              localStorage.setItem(LS_KEYS.mtdDone(selectedCountry), "true");
+              setActivePopup(null);
+            }}
+          />
+        </Modal>
+      )}
 
-                            // close the modal
-                            setActivePopup(null);
-                        }}
-                    />
-                </Modal>
-            )}
+      {/* Amazon connect modal */}
+      {showAmazonConnect && (
+        <Modal
+          isOpen
+          onClose={() => setShowAmazonConnect(false)}
+          className="m-4 max-w-xl"
+          showCloseButton
+        >
+          <AmazonConnect
+            onClose={() => setShowAmazonConnect(false)}
+            onConnected={(refreshToken?: string) => {
+              localStorage.setItem("amazonRefreshToken", String(refreshToken ?? ""));
+              setShowAmazonConnect(false);
+            }}
+            onChooseManual={() => {
+              setShowAmazonConnect(false);
+              setIntegrationMethod("manual");
+              localStorage.setItem(LS_KEYS.integrationMethod, "manual");
+            }}
+          />
+        </Modal>
+      )}
 
-
-            {/* Step 3 modal (Fee Preview) */}
-            {activePopup === 2 && (
-                <Modal
-                    isOpen={activePopup === 2}
-                    onClose={() => setActivePopup(null)}
-                    className="m-4 max-w-3xl"
-                    showCloseButton
-                >
-                    <FeepreviewUpload
-                        country={selectedCountry}
-                        onClose={() => setActivePopup(null)}
-                    />
-                </Modal>
-
-            )}
-
-            {/* Step 4 modal (MTD Upload) */}
-            {activePopup === 3 && (
-                <Modal
-                    isOpen={activePopup === 3}
-                    onClose={() => setActivePopup(null)}
-                    className="m-4 max-w-3xl"
-                    showCloseButton
-                >
-                    <FileUploadFormAny
-                        onClose={() => {
-                            setMtdUploaded(true);
-                            localStorage.setItem(LS_KEYS.mtdDone(selectedCountry), "true");
-                            setActivePopup(null);
-                        }}
-                    />
-                </Modal>
-            )}
-
-            {showAmazonConnect && (
-  <Modal
-    isOpen={showAmazonConnect}
-    onClose={() => setShowAmazonConnect(false)}
-    className="m-4 max-w-xl"
-    showCloseButton
-  >
-    <AmazonConnect
-      onClose={() => setShowAmazonConnect(false)}
-      onConnected={(refreshToken?: string) => {
-        // mark Amazon connected, if your hook listens to localStorage you can store here:
-        localStorage.setItem("amazonRefreshToken", String(refreshToken ?? ""));
-        // optionally unlock the next step immediately:
-        // window.dispatchEvent(new Event("storage"));
-        setShowAmazonConnect(false);
-      }}
-      onChooseManual={() => {
-        setShowAmazonConnect(false);
-        setIntegrationMethod("manual");
-        localStorage.setItem(LS_KEYS.integrationMethod, "manual");
-      }}
-    />
-  </Modal>
-)}
-
-            {showShopifyConnect && (
-                <ConnectShopifyModal onClose={() => setShowShopifyConnect(false)} />
-            )}
-        </div>
-    );
+      {showShopifyConnect && (
+        <ConnectShopifyModal onClose={() => setShowShopifyConnect(false)} />
+      )}
+    </div>
+  );
 }
+

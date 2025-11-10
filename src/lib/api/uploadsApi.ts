@@ -1,4 +1,3 @@
-// src/lib/api/uploadsApi.ts
 import { baseApi } from "./baseApi";
 
 export type UploadHistory = {
@@ -12,13 +11,12 @@ export const uploadsApi = baseApi.injectEndpoints({
       providesTags: ["Uploads"],
     }),
 
-    // ⬇️ This must pass FormData directly; no Content-Type!
+    // IMPORTANT: send FormData directly; do NOT set Content-Type headers.
     uploadFiles: build.mutation<any, FormData>({
       query: (formData) => ({
         url: "/upload",
         method: "POST",
-        body: formData, // <- browser will set multipart/form-data with boundary
-        // do NOT set headers here
+        body: formData,
       }),
       invalidatesTags: ["Uploads"],
     }),

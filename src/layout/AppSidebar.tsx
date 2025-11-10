@@ -543,6 +543,7 @@ import {
   TableIcon,
   UserCircleIcon,
 } from "../icons/index";
+import { GiTakeMyMoney } from "react-icons/gi";
 
 import RegionSelect, { RegionOption } from "@/components/sidebar/RegionSelect";
 import { useGetProfileCountriesQuery, useGetUploadHistoryQuery } from "@/lib/api/feePreviewApi";
@@ -550,7 +551,7 @@ import { buildRegionOptions } from "@/lib/utils/region";
 import { handleRegionChangeNext } from "@/lib/utils/handleRegionChange-next";
 
 /* ---------- Types (updated) ---------- */
-type PathParams = { ranged: string; countryName: string; month: string; year: string };
+type PathParams = { ranged: string; countryName: string; month: string; year: string; productname?: string };
 
 type NavItem = {
   name: string;
@@ -629,8 +630,8 @@ const othersItems: NavItem[] = [
 
 /* ---------- Month helper ---------- */
 const monthNames = [
-  "january","february","march","april","may","june",
-  "july","august","september","october","november","december",
+  "january", "february", "march", "april", "may", "june",
+  "july", "august", "september", "october", "november", "december",
 ];
 
 const AppSidebar: React.FC = () => {
@@ -696,22 +697,38 @@ const AppSidebar: React.FC = () => {
     {
       icon: <CalenderIcon />,
       name: "Dashboard",
-      path: "/",
+      path: "/dashboard",
     },
     {
-      icon: <CalenderIcon />,
+      icon: <GiTakeMyMoney />,
       name: "Profit and Expense",
       path: ({ ranged, countryName, month, year }) => `/country/${ranged}/${countryName}/${month}/${year}`,
     },
     {
-      icon: <CalenderIcon />,
+      icon: <GiTakeMyMoney />,
       name: "SKU-Wise Profit",
-      path: "/",
+      path: ({
+        productname,
+        countryName,
+        month,
+        year }
+      ) => `/productwiseperformance/${productname}/${countryName}/${month}/${year}`,
     },
     {
       icon: <CalenderIcon />,
       name: "Cash Flow",
-      path: "/",
+      path: ({
+        countryName,
+        month,
+        year,
+      }: {
+        countryName: string;
+        month: string;
+        year: string;
+      }) =>
+        `/cashflow/${encodeURIComponent(countryName)}/${encodeURIComponent(
+          month
+        )}/${encodeURIComponent(year)}`,
     },
   ];
 
@@ -772,20 +789,17 @@ const AppSidebar: React.FC = () => {
             {nav.subItems ? (
               <button
                 onClick={() => handleSubmenuToggle(index, menuType)}
-                className={`menu-item group ${
-                  openSubmenu?.type === menuType && openSubmenu?.index === index
+                className={`menu-item group ${openSubmenu?.type === menuType && openSubmenu?.index === index
                     ? "menu-item-active"
                     : "menu-item-inactive"
-                } cursor-pointer ${
-                  !isExpanded && !isHovered ? "lg:justify-center" : "lg:justify-start"
-                }`}
+                  } cursor-pointer ${!isExpanded && !isHovered ? "lg:justify-center" : "lg:justify-start"
+                  }`}
               >
                 <span
-                  className={`${
-                    openSubmenu?.type === menuType && openSubmenu?.index === index
+                  className={`${openSubmenu?.type === menuType && openSubmenu?.index === index
                       ? "menu-item-icon-active"
                       : "menu-item-icon-inactive"
-                  }`}
+                    }`}
                 >
                   {nav.icon}
                 </span>
@@ -794,11 +808,10 @@ const AppSidebar: React.FC = () => {
                 )}
                 {(isExpanded || isHovered || isMobileOpen) && (
                   <ChevronDownIcon
-                    className={`ml-auto w-5 h-5 transition-transform duration-200 ${
-                      openSubmenu?.type === menuType && openSubmenu?.index === index
+                    className={`ml-auto w-5 h-5 transition-transform duration-200 ${openSubmenu?.type === menuType && openSubmenu?.index === index
                         ? "rotate-180 text-brand-500"
                         : ""
-                    }`}
+                      }`}
                   />
                 )}
               </button>
@@ -806,16 +819,14 @@ const AppSidebar: React.FC = () => {
               resolvedPath && (
                 <Link
                   href={resolvedPath}
-                  className={`menu-item group ${
-                    isActive(resolvedPath) ? "menu-item-active" : "menu-item-inactive"
-                  }`}
+                  className={`menu-item group ${isActive(resolvedPath) ? "menu-item-active" : "menu-item-inactive"
+                    }`}
                 >
                   <span
-                    className={`${
-                      isActive(resolvedPath)
+                    className={`${isActive(resolvedPath)
                         ? "menu-item-icon-active"
                         : "menu-item-icon-inactive"
-                    }`}
+                      }`}
                   >
                     {nav.icon}
                   </span>
@@ -844,32 +855,29 @@ const AppSidebar: React.FC = () => {
                     <li key={subItem.name}>
                       <Link
                         href={subItem.path}
-                        className={`menu-dropdown-item ${
-                          isActive(subItem.path)
+                        className={`menu-dropdown-item ${isActive(subItem.path)
                             ? "menu-dropdown-item-active"
                             : "menu-dropdown-item-inactive"
-                        }`}
+                          }`}
                       >
                         {subItem.name}
                         <span className="flex items-center gap-1 ml-auto">
                           {subItem.new && (
                             <span
-                              className={`ml-auto ${
-                                isActive(subItem.path)
+                              className={`ml-auto ${isActive(subItem.path)
                                   ? "menu-dropdown-badge-active"
                                   : "menu-dropdown-badge-inactive"
-                              } menu-dropdown-badge`}
+                                } menu-dropdown-badge`}
                             >
                               new
                             </span>
                           )}
                           {subItem.pro && (
                             <span
-                              className={`ml-auto ${
-                                isActive(subItem.path)
+                              className={`ml-auto ${isActive(subItem.path)
                                   ? "menu-dropdown-badge-active"
                                   : "menu-dropdown-badge-inactive"
-                              } menu-dropdown-badge`}
+                                } menu-dropdown-badge`}
                             >
                               pro
                             </span>
@@ -924,9 +932,8 @@ const AppSidebar: React.FC = () => {
             {/* Dashboard Items */}
             <div>
               <h2
-                className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${
-                  !isExpanded && !isHovered ? "lg:justify-center" : "justify-start"
-                }`}
+                className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${!isExpanded && !isHovered ? "lg:justify-center" : "justify-start"
+                  }`}
               >
                 {isExpanded || isHovered || isMobileOpen ? "Dashboard" : <HorizontaLDots />}
               </h2>
@@ -936,9 +943,8 @@ const AppSidebar: React.FC = () => {
             {/* Menu */}
             <div>
               <h2
-                className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${
-                  !isExpanded && !isHovered ? "lg:justify-center" : "justify-start"
-                }`}
+                className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${!isExpanded && !isHovered ? "lg:justify-center" : "justify-start"
+                  }`}
               >
                 {isExpanded || isHovered || isMobileOpen ? "Menu" : <HorizontaLDots />}
               </h2>
@@ -948,9 +954,8 @@ const AppSidebar: React.FC = () => {
             {/* Others */}
             <div>
               <h2
-                className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${
-                  !isExpanded && !isHovered ? "lg:justify-center" : "justify-start"
-                }`}
+                className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${!isExpanded && !isHovered ? "lg:justify-center" : "justify-start"
+                  }`}
               >
                 {isExpanded || isHovered || isMobileOpen ? "Others" : <HorizontaLDots />}
               </h2>

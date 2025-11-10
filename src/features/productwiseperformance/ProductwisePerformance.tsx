@@ -1,0 +1,841 @@
+"use client";
+
+import React, { useEffect, useMemo, useState } from "react";
+import { useParams } from "next/navigation";
+import dynamic from "next/dynamic";
+import {
+    Chart as ChartJS,
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    Title as ChartTitle,
+    Tooltip,
+    Legend,
+    Filler,
+} from "chart.js";
+import PageBreadcrumb from "@/components/common/PageBreadCrumb";
+import Button from "@/components/ui/button/Button";
+
+// react-chartjs-2 needs to be dynamically imported in Next.js app router sometimes
+const Line = dynamic(() => import("react-chartjs-2").then((m) => m.Line), {
+    ssr: false,
+});
+
+ChartJS.register(
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    ChartTitle,
+    Tooltip,
+    Legend,
+    Filler
+);
+
+// -------------------------
+// Types
+// -------------------------
+
+type CountryKey = "uk" | "us" | "global" | string;
+
+type MonthDatum = {
+    month: string; // e.g., "January"
+    net_sales: number;
+    quantity: number;
+    profit: number; // CM1 profit
+};
+
+type APIResponse = {
+    success: boolean;
+    message?: string;
+    data: Record<CountryKey, MonthDatum[]>;
+};
+
+interface ProductwisePerformanceProps {
+    productname?: string;
+}
+
+// -------------------------
+// Component
+// -------------------------
+
+const ProductwisePerformance: React.FC<ProductwisePerformanceProps> = ({
+    productname: propProductName,
+}) => {
+    const params = useParams();
+    const urlProductName = (params?.productname as string) || undefined;
+    const countryName = (params?.countryName as string) || undefined;
+    const month = (params?.month as string) || undefined;
+    const yearParam = (params?.year as string) || undefined;
+
+    const productname = propProductName || urlProductName || "Menthol";
+
+    const [data, setData] = useState<APIResponse | null>(null);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string>("");
+
+    const authToken = typeof window !== "undefined" ? localStorage.getItem("jwtToken") : null;
+
+    const getCurrencySymbol = (country?: string) => {
+        if (!country) return "¤";
+        switch (country.toLowerCase()) {
+            case "uk":
+                return "£";
+            case "india":
+                return "₹";
+            case "us":
+                return "$";
+            case "europe":
+            case "eu":
+                return "€";
+            case "global":
+                return "$";
+            default:
+                return "¤"; // generic currency symbol
+        }
+    };
+
+    const currencySymbol = countryName ? getCurrencySymbol(countryName) : "¤";
+
+    // -------------------------
+    // Search State
+    // -------------------------
+    const [searchQuery, setSearchQuery] = useState("");
+    const [searchResults, setSearchResults] = useState<{ product_name: string }[]>([]);
+    const [showSearchResults, setShowSearchResults] = useState(false);
+    const [searchLoading, setSearchLoading] = useState(false);
+
+    // -------------------------
+    // Controls State
+    // -------------------------
+    type TimeRange = "Yearly" | "Quarterly";
+    const [timeRange, setTimeRange] = useState<TimeRange>("Yearly");
+    const initialYear = useMemo(() => new Date().getFullYear(), []);
+    const [selectedYear, setSelectedYear] = useState<number>(
+        yearParam ? Number(yearParam) : initialYear
+    );
+    const [selectedQuarter, setSelectedQuarter] = useState("1");
+    const [selectedCountries, setSelectedCountries] = useState<Record<CountryKey, boolean>>({
+        uk: true,
+        us: true,
+        global: true,
+    });
+
+    const years = useMemo(
+        () => Array.from({ length: 2 }, (_, i) => new Date().getFullYear() - i),
+        []
+    );
+    const quarters = [
+        { value: "1", label: "Q1" },
+        { value: "2", label: "Q2" },
+        { value: "3", label: "Q3" },
+        { value: "4", label: "Q4" },
+    ];
+
+    const handleCountryChange = (country: CountryKey) => {
+        setSelectedCountries((prev) => ({
+            ...prev,
+            [country]: !prev[country],
+        }));
+    };
+
+    // -------------------------
+    // Search function (debounced)
+    // -------------------------
+    useEffect(() => {
+        const timeoutId = setTimeout(async () => {
+            if (!searchQuery.trim()) {
+                setSearchResults([]);
+                setShowSearchResults(false);
+                return;
+            }
+            setSearchLoading(true);
+            try {
+                const res = await fetch(
+                    `http://localhost:5000/Product_search?query=${encodeURIComponent(searchQuery)}`,
+                    {
+                        method: "GET",
+                        headers: {
+                            Authorization: `Bearer ${authToken ?? ""}`,
+                            "Content-Type": "application/json",
+                        },
+                    }
+                );
+                if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+                const json = await res.json();
+                setSearchResults(json.products || []);
+                setShowSearchResults(true);
+            } catch (e) {
+                console.error("Search error:", e);
+                setSearchResults([]);
+                setShowSearchResults(false);
+            } finally {
+                setSearchLoading(false);
+            }
+        }, 300);
+
+        return () => clearTimeout(timeoutId);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [searchQuery]);
+
+    const handleProductSelect = (product: { product_name: string }) => {
+        // Navigate by replacing the current URL (keeps SPA feel)
+        const base = "/productwiseperformance";
+        const to = `${base}/${encodeURIComponent(product.product_name)}/${countryName ?? ""}/${month ?? ""}/${selectedYear ?? ""}`;
+        window.location.href = to;
+    };
+
+    // -------------------------
+    // Fetch Product Data
+    // -------------------------
+    const fetchProductData = async () => {
+        setLoading(true);
+        setError("");
+        try {
+            const countries = Object.keys(selectedCountries).filter(
+                (k) => selectedCountries[k]
+            );
+
+            const payload = {
+                product_name: productname,
+                time_range: timeRange,
+                year: selectedYear,
+                quarter: timeRange === "Quarterly" ? selectedQuarter : null,
+                countries,
+            };
+
+            const res = await fetch("http://localhost:5000/ProductwisePerformance", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${authToken ?? ""}`,
+                },
+                body: JSON.stringify(payload),
+            });
+
+            if (!res.ok) {
+                const errData = await res.json().catch(() => ({}));
+                throw new Error(errData.error || `HTTP error! status: ${res.status}`);
+            }
+
+            const json: APIResponse = await res.json();
+            if (json.success) {
+                setData(json);
+            } else {
+                throw new Error("API returned unsuccessful response");
+            }
+        } catch (e: any) {
+            console.error("API Error:", e);
+            setError(e?.message || "Failed to fetch data from server");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchProductData();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [productname]);
+
+    // -------------------------
+    // Helpers for Chart Data
+    // -------------------------
+    const monthOrder = [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
+    ];
+
+    const prepareProfitData = () => {
+        if (!data?.data) return [] as any[];
+
+        const allMonths = new Set<string>();
+        Object.values(data.data).forEach((countryData) => {
+            countryData.forEach((m) => allMonths.add(m.month));
+        });
+
+        const sortedMonths = Array.from(allMonths).sort(
+            (a, b) => monthOrder.indexOf(a) - monthOrder.indexOf(b)
+        );
+
+        const profitData: any[] = [];
+        sortedMonths.forEach((m) => {
+            const point: Record<string, any> = { month: m };
+            Object.entries(data.data).forEach(([country, cd]) => {
+                const md = cd.find((d) => d.month === m);
+                point[country] = md ? md.profit : 0;
+            });
+            profitData.push(point);
+        });
+
+        return profitData;
+    };
+
+    const prepareChartData = () => {
+        if (!data?.data) return { netSalesData: [] as any[], quantityData: [] as any[] };
+
+        const allMonths = new Set<string>();
+        Object.values(data.data).forEach((countryData) => {
+            countryData.forEach((m) => allMonths.add(m.month));
+        });
+
+        const sortedMonths = Array.from(allMonths).sort(
+            (a, b) => monthOrder.indexOf(a) - monthOrder.indexOf(b)
+        );
+
+        const netSalesData: any[] = [];
+        const quantityData: any[] = [];
+
+        sortedMonths.forEach((m) => {
+            const netSalesPoint: Record<string, any> = { month: m };
+            const quantityPoint: Record<string, any> = { month: m };
+
+            Object.entries(data.data).forEach(([country, cd]) => {
+                const md = cd.find((d) => d.month === m);
+                netSalesPoint[country] = md ? md.net_sales : 0;
+                quantityPoint[country] = md ? md.quantity : 0;
+            });
+
+            netSalesData.push(netSalesPoint);
+            quantityData.push(quantityPoint);
+        });
+
+        return { netSalesData, quantityData };
+    };
+
+    const getCountryColor = (country: CountryKey) => {
+        const colors: Record<string, string> = {
+            uk: "#AB64B5",
+            us: "#87AD12",
+            global: "#F47A00",
+        };
+        return colors[country] || "#ff7c7c";
+    };
+
+    const formatCurrency = (value: number) =>
+        new Intl.NumberFormat("en-US", {
+            style: "currency",
+            currency: "USD",
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0,
+        }).format(value);
+
+    const buildChartJSData = () => {
+        const { netSalesData, quantityData } = prepareChartData();
+        const profitData = prepareProfitData();
+
+        const buildChart = (rawData: any[], labelSuffix: string) => {
+            if (!rawData || rawData.length === 0) return null;
+            const labels = rawData.map((i) => i.month);
+            const datasets = Object.keys(selectedCountries)
+                .filter((country) => selectedCountries[country])
+                .map((country) => ({
+                    label: `${country.toUpperCase()} ${labelSuffix}`,
+                    data: rawData.map((item) => item[country] || 0),
+                    borderColor: getCountryColor(country),
+                    backgroundColor: getCountryColor(country),
+                    tension: 0.1,
+                    pointRadius: 3,
+                    fill: false,
+                }));
+            return { labels, datasets };
+        };
+
+        const charts = [
+            buildChart(netSalesData, "Net Sales"),
+            buildChart(quantityData, "Quantity"),
+            buildChart(profitData, "Profit"),
+        ];
+
+        return charts;
+    };
+
+    const chartDataList = buildChartJSData();
+
+    const chartOptions = {
+        responsive: true,
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                callbacks: {
+                    label: (context: any) => {
+                        const value = context.parsed.y as number;
+                        const label = (context.dataset.label as string).toLowerCase();
+                        const labelType = label.split(" ").pop();
+                        if (labelType === "quantity" || labelType === "units") {
+                            return `${context.dataset.label}: ${value}`;
+                        }
+                        return `${context.dataset.label}: ${formatCurrency(value)}`;
+                    },
+                },
+            },
+        },
+        scales: {
+            x: { title: { display: true, text: "Month" } },
+            y: {
+                title: { display: true, text: `Amount (${currencySymbol})` },
+                min: 0,
+                ticks: { padding: 0 },
+            },
+        },
+    } as const;
+
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const handlePrev = () => setCurrentIndex((i) => (i === 0 ? chartDataList.length - 1 : i - 1));
+    const handleNext = () =>
+        setCurrentIndex((i) => (i === chartDataList.length - 1 ? 0 : i + 1));
+
+    const yearShort = selectedYear.toString().slice(-2);
+    const getTitle = () => (timeRange === "Yearly" ? `Year'${yearShort}` : `Q${selectedQuarter}'${yearShort}`);
+
+    // -------------------------
+    // Derived values for cards
+    // -------------------------
+    const cards = useMemo(() => {
+        if (!data?.data) return [] as { country: string; stats: any }[];
+
+        return Object.entries(data.data).map(([country, countryData]) => {
+            const totalSales = countryData.reduce((s, m) => s + m.net_sales, 0);
+            const totalProfit = countryData.reduce((s, m) => s + m.profit, 0);
+            const totalUnits = countryData.reduce((s, m) => s + m.quantity, 0);
+
+            const gross_margin_avg = totalSales > 0 ? (totalProfit / totalSales) * 100 : 0;
+            const monthsWithSales = countryData.filter((m) => m.net_sales > 0);
+            const avgSales = monthsWithSales.length > 0 ? totalSales / monthsWithSales.length : 0;
+            const avgSellingPrice = totalUnits > 0 ? totalSales / totalUnits : 0;
+            const avgMonthlyProfit = countryData.length > 0 ? totalProfit / countryData.length : 0;
+
+            const maxSalesMonth = countryData.reduce((max, m) => (m.net_sales > max.net_sales ? m : max));
+            const maxUnitsMonth = countryData.reduce((max, m) => (m.quantity > max.quantity ? m : max));
+
+            return {
+                country,
+                stats: {
+                    totalSales,
+                    totalProfit,
+                    totalUnits,
+                    gross_margin_avg,
+                    avgSales,
+                    avgSellingPrice,
+                    avgMonthlyProfit,
+                    maxSalesMonth,
+                    maxUnitsMonth,
+                },
+            };
+        });
+    }, [data]);
+
+    // ---------- Card renderer (reused) ----------
+    const CountryCard: React.FC<{ country: string; stats: any }> = ({ country, stats }) => (
+        <div className="rounded-lg border border-[#414042] bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
+            <div className="mb-4 flex items-center justify-between">
+                <h4 className="m-0 text-xl font-extrabold text-[#5EA68E]">
+                    <span
+                        className="mr-2 inline-block h-3.5 w-3.5 rounded-full"
+                        style={{ backgroundColor: getCountryColor(country) }}
+                    />
+                    <span className="text-[#414042]">{country.toUpperCase()}</span>
+                </h4>
+                <span className="rounded-full bg-[#5EA68E] px-2 py-0.5 text-sm font-semibold text-[#f8edcf]">
+                    {productname} ({getTitle()})
+                </span>
+            </div>
+
+            <div className="flex flex-col gap-4">
+                {/* Grid rows */}
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                    <div className="rounded-lg border border-gray-300 bg-gray-200/40 p-2">
+                        <p className="mb-1 text-sm font-semibold text-[#414042]">Net Sales</p>
+                        <p className="text-base">{formatCurrency(stats.totalSales)}</p>
+                    </div>
+                    <div className="rounded-lg border border-gray-300 bg-gray-200/40 p-2">
+                        <p className="mb-1 text-sm font-semibold text-[#414042]">Units</p>
+                        <p className="text-base">{stats.totalUnits.toLocaleString()}</p>
+                    </div>
+                    <div className="rounded-lg border border-gray-300 bg-gray-200/40 p-2">
+                        <p className="mb-1 text-sm font-semibold text-[#414042]">CM1 Profit</p>
+                        <p className="text-base">{formatCurrency(stats.totalProfit)}</p>
+                    </div>
+                    <div className="rounded-lg border border-gray-300 bg-gray-200/40 p-2">
+                        <p className="mb-1 text-sm font-semibold text-[#414042]">Avg. Monthly Sales</p>
+                        <p className="text-base">{formatCurrency(stats.avgSales)}</p>
+                    </div>
+                    <div className="rounded-lg border border-gray-300 bg-gray-200/40 p-2">
+                        <p className="mb-1 text-sm font-semibold text-[#414042]">Avg. Selling Price</p>
+                        <p className="text-base">{formatCurrency(stats.avgSellingPrice)}</p>
+                    </div>
+                    <div className="rounded-lg border border-gray-300 bg-gray-200/40 p-2">
+                        <p className="mb-1 text-sm font-semibold text-[#414042]">CM1 Profit (%)</p>
+                        <p className="text-base">{stats.gross_margin_avg.toFixed(2)}%</p>
+                    </div>
+                </div>
+
+                <p className="m-0 font-bold">Best Performance Month</p>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                    <div
+                        className="rounded-lg border border-gray-300 bg-gray-200/40 p-2"
+                        style={{ borderTopWidth: 4, borderTopColor: getCountryColor(country) }}
+                    >
+                        <p className="mb-1 text-sm font-semibold text-[#414042]">Sales</p>
+                        <p className="text-base">{stats.maxSalesMonth.month} {selectedYear}</p>
+                        <p className="text-base">{formatCurrency(stats.maxSalesMonth.net_sales)}</p>
+                    </div>
+                    <div
+                        className="rounded-lg border border-gray-300 bg-gray-200/40 p-2"
+                        style={{ borderTopWidth: 4, borderTopColor: getCountryColor(country) }}
+                    >
+                        <p className="mb-1 text-sm font-semibold text-[#414042]">Units</p>
+                        <p className="text-base">{stats.maxUnitsMonth.month} {selectedYear}</p>
+                        <p className="text-base">{stats.maxUnitsMonth.quantity.toLocaleString()}</p>
+                    </div>
+                    <div
+                        className="rounded-lg border border-gray-300 bg-gray-200/40 p-2"
+                        style={{ borderTopWidth: 4, borderTopColor: getCountryColor(country) }}
+                    >
+                        <p className="mb-1 text-sm font-semibold text-[#414042]">CM1 Profit</p>
+                        <p className="text-base">{stats.maxSalesMonth.month} {selectedYear}</p>
+                        <p className="text-base">{formatCurrency(stats.maxSalesMonth.profit)}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+
+    // Convenient accessors for requested layout
+    const globalCard = cards.find((c) => c.country.toLowerCase() === "global");
+    const ukCard = cards.find((c) => c.country.toLowerCase() === "uk");
+    const usCard = cards.find((c) => c.country.toLowerCase() === "us");
+    const otherCards = cards.filter((c) => !["global", "uk", "us"].includes(c.country.toLowerCase()));
+
+    return (
+        <div className="w-full">
+            {/* Header */}
+            <div className="mb-4 flex flex-wrap items-start justify-between gap-4">
+                {/* <div className="flex gap-2"> */}
+                <PageBreadcrumb pageTitle="Performance Analysis" variant="page" align="left" textSize="2xl" />
+
+          
+                {/* Search */}
+                <div className="relative min-w-[280px] w-full max-w-[320px]">
+                    <div className="relative flex items-center">
+                        <input
+                            type="text"
+                            placeholder="Search products..."
+                            className="w-full rounded-lg border border-[#414042]/90 bg-white px-3 py-2 pl-7 text-base outline-none transition-colors focus:border-[#414042]"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            onFocus={() => {
+                                if (searchResults.length > 0) setShowSearchResults(true);
+                            }}
+                            onBlur={() => setTimeout(() => setShowSearchResults(false), 200)}
+                        />
+                        {/* Magnifier (SVG) */}
+                        <svg
+                            className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-[#414042]/50"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                        >
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                        {searchLoading && (
+                            <span className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin rounded-full border-2 border-gray-200 border-t-blue-500" />
+                        )}
+                    </div>
+
+                    {showSearchResults && searchResults.length > 0 && (
+                        <div className="absolute left-0 right-0 z-50 mt-1 max-h-72 overflow-y-auto rounded-xl border border-gray-200 bg-white">
+                            {searchResults.map((p, i) => (
+                                <button
+                                    key={`${p.product_name}-${i}`}
+                                    className="w-full cursor-pointer px-4 py-3 text-left hover:bg-gray-50"
+                                    onMouseDown={(e) => e.preventDefault()}
+                                    onClick={() => handleProductSelect(p)}
+                                >
+                                    <div className="font-semibold text-gray-800">{p.product_name}</div>
+                                </button>
+                            ))}
+                        </div>
+                    )}
+
+                    {showSearchResults && searchResults.length === 0 && searchQuery.trim() && !searchLoading && (
+                        <div className="absolute left-0 right-0 z-50 mt-1 rounded-xl border border-gray-200 bg-white p-4 text-center text-gray-500">
+                            No products found for "{searchQuery}"
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Filters */}
+
+            <div className="mb-[2vh]">
+                <div className="flex flex-col md:flex-row items-center  justify-between gap-[0.5vw]">                 
+                    <div
+                        className={[
+                            "rounded-md w-[18vw] min-w-[200px]",
+                            timeRange === "Yearly" ? "max-w-[100px]" : "",
+                        ].join(" ")}
+                    >
+                        <table className="w-full border-collapse text-[clamp(12px,0.729vw,16px)] font-[Lato]">
+                            <thead>
+                                <tr className="bg-white text-[#5EA68E] border border-[#414042]">
+                                    <th className="px-[0.9vw] py-[1vh] text-center border border-[#414042]">
+                                        Period
+                                    </th>
+                                    {timeRange === "Quarterly" && (
+                                        <th className="px-[0.9vw] py-[1vh] text-center border border-[#414042]">
+                                            Quarter
+                                        </th>
+                                    )}
+                                    <th className="px-[0.9vw] py-[1vh] text-center border border-[#414042]">
+                                        Year
+                                    </th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                <tr>
+                                    {/* Period */}
+                                    <td className="px-[0.9vw] py-[1vh] text-center border border-[#414042]">
+                                        <select
+                                            className="min-w-[60px] w-auto text-center focus:outline-none"
+                                            value={timeRange}
+                                            onChange={(e) => setTimeRange(e.target.value as TimeRange)}
+                                        >
+                                            <option value="Yearly">Yearly</option>
+                                            <option value="Quarterly">Quarterly</option>
+                                        </select>
+                                    </td>
+
+                                    {/* Quarter (only when Quarterly) */}
+                                    {timeRange === "Quarterly" && (
+                                        <td className="px-[0.9vw] py-[1vh] text-center border border-[#414042]">
+                                            <select
+                                                className="min-w-[60px] w-auto text-center focus:outline-none"
+                                                value={selectedQuarter}
+                                                onChange={(e) => setSelectedQuarter(e.target.value)}
+                                            >
+                                                {quarters.map((q) => (
+                                                    <option key={q.value} value={q.value}>
+                                                        {q.label}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </td>
+                                    )}
+
+                                    {/* Year */}
+                                    <td className="px-[0.9vw] py-[1vh] text-center border border-[#414042]">
+                                        <select
+                                            className="min-w-[60px] w-auto text-center focus:outline-none"
+                                            value={selectedYear}
+                                            onChange={(e) => setSelectedYear(Number(e.target.value))}
+                                        >
+                                            {years.map((y) => (
+                                                <option key={y} value={y}>
+                                                    {y}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div className="w-full flex justify-center md:justify-end">
+                        <Button
+                            size="sm"
+                            variant="primary"
+                            onClick={fetchProductData}
+                            disabled={loading}
+                            className="mx-auto md:mx-0 my-5 md:my-0"
+                            startIcon={
+                                loading ? (
+                                    <span className="h-3 w-3 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                                ) : null
+                            }
+                        >
+                            {loading ? "Loading" : "Fetch Data"}
+                        </Button>
+                    </div>
+
+                </div>
+            </div>
+
+
+            {/* Loading */}
+            {loading && (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <video
+                        src="/infinity2.webm"
+                        autoPlay
+                        loop
+                        muted
+                        playsInline
+                        className="h-auto w-[150px] bg-transparent pointer-events-none"
+                    />
+                </div>
+            )}
+
+            {/* Error */}
+            {!!error && (
+                <div className="mb-8 rounded-2xl border border-red-200 bg-red-50 p-6">
+                    <div className="flex items-center gap-3 text-red-700">
+                        <span className="text-xl">❌</span>
+                        <p className="m-0 font-medium">{error}</p>
+                    </div>
+                </div>
+            )}
+
+            {/* Results */}
+            {data && !loading && (
+                <div className="flex flex-col">
+                    {/* Chart Header */}
+                    <div className="mb-3 w-full">
+                        <div className="flex flex-wrap items-start justify-between gap-4">
+                            <div>
+                                <h3 className="m-0 text-xl font-bold text-[#414042]">
+                                    {currentIndex === 0 ? "Net Sales Trend" : currentIndex === 1 ? "Units Trend" : "CM1 Profit Trend"}
+                                    {" "}-{" "}
+                                    <b className="text-[#5ea68e]">
+                                        {" "}
+                                        {productname} ({getTitle()})
+                                    </b>
+                                </h3>
+                            </div>
+
+                            <div className="flex flex-wrap items-center gap-3">
+                                {Object.entries(selectedCountries).map(([country, isSelected]) => {
+                                    const color = getCountryColor(country);
+                                    return (
+                                        <label
+                                            key={country}
+                                            className="flex cursor-pointer select-none items-center gap-2 rounded-full px-2 py-1 text-sm font-semibold text-gray-900"
+                                            style={{
+                                                // @ts-ignore custom property
+                                                "--country-color": color,
+                                            }}
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                className="peer h-3 w-3 appearance-none rounded-sm"
+                                                checked={isSelected}
+                                                onChange={() => handleCountryChange(country)}
+                                                style={{ backgroundColor: color, borderColor: color }}
+                                            />
+                                            <span
+                                                className="underline decoration-1 underline-offset-[2px]"
+                                                style={{ color: color }}
+                                            >
+                                                {country.toUpperCase()}
+                                            </span>
+                                        </label>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Chart */}
+                    <div className="flex h-[40vw] items-center justify-between">
+                        {chartDataList ? (
+                            <>
+                                <button
+                                    className="ml-1 flex h-7 w-7 items-center justify-center rounded-full bg-[#2c3e50] text-[#f8edcf] shadow transition active:scale-95"
+                                    onClick={handlePrev}
+                                    aria-label="Previous chart"
+                                >
+                                    {/* Left chevron */}
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        viewBox="0 0 24 24"
+                                        fill="currentColor"
+                                        className="h-4 w-4"
+                                    >
+                                        <path fillRule="evenodd" d="M15.78 4.22a.75.75 0 010 1.06L9.06 12l6.72 6.72a.75.75 0 11-1.06 1.06l-7.25-7.25a.75.75 0 010-1.06l7.25-7.25a.75.75 0 011.06 0z" clipRule="evenodd" />
+                                    </svg>
+                                </button>
+
+                                {chartDataList[currentIndex] ? (
+                                    <div className="mx-2 w-full">
+                                        {/* @ts-ignore chartjs options type */}
+                                        <Line data={chartDataList[currentIndex] as any} options={chartOptions as any} />
+                                    </div>
+                                ) : (
+                                    <p className="mx-auto">No chart data available.</p>
+                                )}
+
+                                <button
+                                    className="mr-2 flex h-7 w-7 items-center justify-center rounded-full bg-[#2c3e50] text-[#f8edcf] shadow transition active:scale-95"
+                                    onClick={handleNext}
+                                    aria-label="Next chart"
+                                >
+                                    {/* Right chevron */}
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        viewBox="0 0 24 24"
+                                        fill="currentColor"
+                                        className="h-4 w-4"
+                                    >
+                                        <path fillRule="evenodd" d="M8.22 19.78a.75.75 0 010-1.06L14.94 12 8.22 5.28a.75.75 0 111.06-1.06l7.25 7.25a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0z" clipRule="evenodd" />
+                                    </svg>
+                                </button>
+                            </>
+                        ) : (
+                            <p>No chart data available</p>
+                        )}
+                    </div>
+
+                    {/* Dots */}
+                    <div className="mt-3 flex items-center justify-center gap-2">
+                        {[0, 1, 2].map((idx) => (
+                            <span
+                                key={idx}
+                                className={`h-2 w-2 rounded-full border ${currentIndex === idx ? "border-gray-300 bg-gray-300" : "border-[#414042] bg-white"
+                                    }`}
+                            />
+                        ))}
+                    </div>
+
+                    {/* Summary: Global full width, then UK & US half width */}
+                    <div className="mt-8 space-y-5">
+                        {/* Global full width */}
+                        {globalCard && selectedCountries["global"] && (
+                            <div className="grid grid-cols-1">
+                                <CountryCard country={globalCard.country} stats={globalCard.stats} />
+                            </div>
+                        )}
+
+                        {/* UK & US side-by-side (half width on md+) */}
+                        {(ukCard || usCard) && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                {ukCard && selectedCountries["uk"] && (
+                                    <CountryCard country={ukCard.country} stats={ukCard.stats} />
+                                )}
+                                {usCard && selectedCountries["us"] && (
+                                    <CountryCard country={usCard.country} stats={usCard.stats} />
+                                )}
+                            </div>
+                        )}
+                    </div>
+
+                </div>
+            )}
+        </div>
+    );
+};
+
+export default ProductwisePerformance;

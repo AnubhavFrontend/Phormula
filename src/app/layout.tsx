@@ -9,8 +9,8 @@ import { Toaster } from "sonner";
 // 🆕 Replace Outfit with Lato
 const lato = Lato({
   subsets: ["latin"],
-  weight: ["300", "400", "700", "900"], // adjust to the weights you use
-  variable: "--font-lato",              // expose CSS variable
+  weight: ["300", "400", "700", "900"], 
+  variable: "--font-lato",              
 });
 
 export default function RootLayout({

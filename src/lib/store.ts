@@ -2,14 +2,16 @@ import { configureStore } from "@reduxjs/toolkit";
 import authReducer from "./features/auth/authSlice";
 import { baseApi } from "./api/baseApi";
 import { useDispatch, useSelector, TypedUseSelectorHook } from "react-redux";
+import { dashboardApi } from "./api/dashboardApi";
 
 
 export const store = configureStore({
   reducer: {
     auth: authReducer,
     [baseApi.reducerPath]: baseApi.reducer,
+     [dashboardApi.reducerPath]: dashboardApi.reducer,
   },
-  middleware: (gDM) => gDM().concat(baseApi.middleware),
+  middleware: (gDM) => gDM().concat(baseApi.middleware).concat(dashboardApi.middleware) ,
   devTools: process.env.NODE_ENV !== "production",
 });
 
