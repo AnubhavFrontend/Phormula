@@ -79,10 +79,10 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           {/* Centered content */}
           <div className="flex flex-col text-right">
             {/* Heading */}
-            <h1 className="text-white text-xl sm:text-xl lg:text-5xl font-semibold leading-tight mt-12">
+            <h1 className="text-charcoal-500 text-xl sm:text-xl lg:text-5xl font-semibold leading-tight mt-12">
               Trusted Finance Partner
               <br />
-              for <span className="text-emerald-100">D2C Entrepreneurs</span>
+              for <span className="text-yellow-200">D2C Entrepreneurs</span>
             </h1>
 
             {/* Illustration */}
@@ -103,44 +103,46 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
     }
 
     // ---------- SIGN IN (dashboard with heading + image) ----------
-    return (
-      <div className="relative h-full w-full bg-[#5AA18F] flex flex-col justify-center px-8 sm:px-12 lg:px-16">
-        {/* Logo - top left */}
-        <Link href="/" className="absolute left-6 top-6 z-20">
-          <Image
-            width={150}
-            height={40}
-            src="/images/auth/Phormula.png"
-            alt="Phormula"
-            priority
-          />
-        </Link>
-
-        {/* Heading */}
-        <div className="max-w-[640px]">
-          <h1 className="text-white text-4xl sm:text-5xl lg:text-6xl font-semibold leading-tight tracking-tight">
-            Built for Founders.
-            <br />
-            Powered by <span className="text-emerald-100">Insight</span>
-          </h1>
-        </div>
-
-        {/* Illustration below heading */}
-        <div className="mt-10">
-          <div className="relative w-full max-w-[760px] aspect-[16/10] rounded-3xl shadow-2xl">
+    if (pathname.includes("signin")) {
+      return (
+       <div className="relative h-screen w-full bg-green-500 flex flex-col justify-end px-6">
+          {/* Logo - top left */}
+          <Link href="/" className="fixed left-6 top-6 z-20">
             <Image
-              src="/images/auth/signin-hero.png"
-              alt="Performance Analysis dashboard"
-              fill
-              className="object-contain"
+              width={150}
+              height={40}
+              src="/images/auth/Phormula.png"
+              alt="Phormula"
               priority
             />
+          </Link>
+
+          {/* Heading */}
+          <div className="flex flex-col text-right">
+            {/* Heading */}
+            <h1 className="text-charcoal-500 text-xl sm:text-xl lg:text-5xl font-semibold leading-tight mt-12">
+              Built for Founders,
+              <br />
+              Powered by <span className="text-yellow-200">Insight</span>
+            </h1>
+          </div>
+
+          {/* Illustration below heading */}
+          <div className="mt-10">
+            <div className="relative w-full max-w-[760px] aspect-[16/10] rounded-3xl shadow-2xl">
+              <Image
+                src="/images/auth/signin.png"
+                alt="Performance Analysis dashboard"
+                fill
+                className="object-contain"
+                priority
+              />
+            </div>
           </div>
         </div>
-      </div>
-    );
-  };
-
+      );
+    };
+  }
 
   return (
     <div className="relative p-6 bg-white  sm:p-0">

@@ -11,6 +11,7 @@ import PhoneInput from "react-phone-input-2";
 
 import { useRegisterMutation } from "@/lib/api/authApi";
 import { formatPhoneNumber } from "@/lib/utils/phone";
+import Button from "../ui/button/Button";
 
 export default function SignUpForm() {
   const [registerUser, { isLoading, isSuccess, error: regError }] = useRegisterMutation();
@@ -271,13 +272,13 @@ export default function SignUpForm() {
 
                 {/* Submit */}
                 <div>
-                  <button
+                  <Button
                     type="submit"
                     disabled={isLoading || !canSubmit}
-                    className="flex items-center justify-center w-full px-4 py-3 text-sm font-medium text-white transition rounded-lg bg-brand-500 shadow-theme-xs hover:bg-brand-600 disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="flex items-center justify-center w-full px-4 py-3 text-sm font-medium transition rounded-lg disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     {isLoading ? "Please wait…" : "Sign Up"}
-                  </button>
+                  </Button>
                 </div>
               </div>
             </form>
