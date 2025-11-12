@@ -4,10 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAppSelector } from "@/lib/hooks"; // typed hooks that read from the store
 
-/**
- * Guards protected areas by ensuring a token exists in Redux (hydrated from localStorage).
- * Shows nothing until mounted to avoid flicker.
- */
+
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();

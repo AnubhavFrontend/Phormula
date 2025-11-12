@@ -1,5 +1,6 @@
 "use client";
 
+import Loader from "@/components/loader/Loader";
 import React, { useEffect, useState, useMemo, useCallback } from "react";
 
 /* ===================== ENV & ENDPOINTS ===================== */
@@ -28,9 +29,28 @@ function buildShopifyURL({ year, monthName }: { year: number; monthName: string 
 }
 
 /* ===================== UI HELPERS ===================== */
-const ValueOrSkeleton = ({ loading, children }: { loading: boolean; children: React.ReactNode }) => {
+const ValueOrSkeleton = ({
+  loading,
+  children,
+  compact = false,
+}: {
+  loading: boolean;
+  children: React.ReactNode;
+  compact?: boolean; // optional for small loaders (like inside boxes)
+}) => {
   if (loading) {
-    return <span className="inline-block h-6 w-24 animate-pulse rounded bg-gray-200 align-middle" />;
+    return (
+      <div className="inline-flex items-center justify-center">
+        <Loader
+          size={compact ? 28 : 36}
+          transparent
+          roundedClass="rounded-full"
+          backgroundClass="bg-transparent"
+          className="text-gray-400"
+          forceFallback
+        />
+      </div>
+    );
   }
   return <>{children}</>;
 };
@@ -369,6 +389,21 @@ export default function DashboardPage() {
     return { totalOrders, netSales, totalDiscounts, totalTax, gross, aov };
   }, [shopify]);
 
+  // Shopify — mirror Amazon UK's 5-box structure (placeholders for profit/profit%)
+const shopifyLikeAmazon = useMemo(() => {
+  const units = Number(shopify?.total_orders ?? 0);
+  const netSales = Number(shopify?.net_sales ?? 0);
+  const asp = units > 0 ? netSales / units : null;
+
+  // TODO: map these when your backend provides them
+  const profit = null as number | null;
+  const profitPct =
+    profit !== null && netSales ? (profit / netSales) * 100 : null;
+
+  return { units, netSales, asp, profit, profitPct };
+}, [shopify]);
+
+
   // Combined actuals for gauge (GBP)
   const combinedGBP = useMemo(() => {
     const amazon = Number(uk.netSalesGBP ?? 0);
@@ -386,9 +421,8 @@ export default function DashboardPage() {
         <button
           onClick={refreshAll}
           disabled={anyLoading}
-          className={`rounded-md border px-3 py-1.5 text-sm shadow-sm active:scale-[.99] ${
-            anyLoading ? "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400" : "border-gray-300 bg-white hover:bg-gray-50"
-          }`}
+          className={`rounded-md border px-3 py-1.5 text-sm shadow-sm active:scale-[.99] ${anyLoading ? "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400" : "border-gray-300 bg-white hover:bg-gray-50"
+            }`}
           title="Refresh Amazon & Shopify"
         >
           {anyLoading ? "Refreshing…" : "Refresh"}
@@ -456,7 +490,7 @@ export default function DashboardPage() {
           </div>
 
           {/* SHOPIFY — match 5-box layout */}
-          <div className="rounded-2xl border bg-white p-5 shadow-sm">
+          {/* <div className="rounded-2xl border bg-white p-5 shadow-sm">
             <div className="mb-2 text-sm font-medium text-gray-700">Shopify — Details (IST)</div>
 
             {shopifyError && (
@@ -519,7 +553,98 @@ export default function DashboardPage() {
             {!shopifyLoading && !shopifyError && !shopify && (
               <div className="mt-2 text-sm text-gray-500">No Shopify data for the current month.</div>
             )}
+          </div> */}
+          {/* SHOPIFY — same 5-box layout as Amazon UK */}
+          <div className="rounded-2xl border bg-white p-5 shadow-sm">
+            <div className="mb-2 text-sm font-medium text-gray-700">
+              Shopify — Details (IST)
+            </div>
+
+            {shopifyError && (
+              <div className="mb-4 flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-rose-700">
+                <span>⚠️</span>
+                <span className="text-sm">{shopifyError}</span>
+              </div>
+            )}
+
+            {shopifyLoading && (
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="rounded-2xl border bg-white p-5 shadow-sm">
+                    <div className="h-3 w-24 animate-pulse rounded bg-gray-200" />
+                    <div className="mt-2 h-7 w-28 animate-pulse rounded bg-gray-200" />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {!shopifyLoading && !shopifyError && (
+              <>
+                {shopify ? (
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                    {/* Units */}
+                    <div className="rounded-2xl border bg-white p-5 shadow-sm">
+                      <div className="text-sm text-gray-500">Units</div>
+                      <div className="mt-1 text-2xl font-semibold">
+                        <ValueOrSkeleton loading={shopifyLoading}>
+                          {fmtNum(shopifyLikeAmazon.units)}
+                        </ValueOrSkeleton>
+                      </div>
+                    </div>
+
+                    {/* Total Sales */}
+                    <div className="rounded-2xl border bg-white p-5 shadow-sm">
+                      <div className="text-sm text-gray-500">Total Sales</div>
+                      <div className="mt-1 text-2xl font-semibold">
+                        <ValueOrSkeleton loading={shopifyLoading}>
+                          {fmtShopify(shopifyLikeAmazon.netSales)}
+                        </ValueOrSkeleton>
+                      </div>
+                    </div>
+
+                    {/* ASP */}
+                    <div className="rounded-2xl border bg-white p-5 shadow-sm">
+                      <div className="text-sm text-gray-500">ASP</div>
+                      <div className="mt-1 text-2xl font-semibold">
+                        <ValueOrSkeleton loading={shopifyLoading}>
+                          {shopifyLikeAmazon.asp == null
+                            ? "—"
+                            : fmtShopify(shopifyLikeAmazon.asp)}
+                        </ValueOrSkeleton>
+                      </div>
+                    </div>
+
+                    {/* Profit — placeholder (map later) */}
+                    <div className="rounded-2xl border bg-white p-5 shadow-sm">
+                      <div className="text-sm text-gray-500">Profit</div>
+                      <div className="mt-1 text-2xl font-semibold">
+                        <ValueOrSkeleton loading={shopifyLoading}>
+                          {shopifyLikeAmazon.profit == null
+                            ? "—"
+                            : fmtShopify(shopifyLikeAmazon.profit)}
+                        </ValueOrSkeleton>
+                      </div>
+                    </div>
+
+                    {/* Profit % — placeholder (map later) */}
+                    <div className="rounded-2xl border bg-white p-5 shadow-sm">
+                      <div className="text-sm text-gray-500">Profit %</div>
+                      <div className="mt-1 text-2xl font-semibold">
+                        <ValueOrSkeleton loading={shopifyLoading}>
+                          {fmtPct(shopifyLikeAmazon.profitPct)}
+                        </ValueOrSkeleton>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-2 text-sm text-gray-500">
+                    No Shopify data for the current month.
+                  </div>
+                )}
+              </>
+            )}
           </div>
+
         </div>
 
         {/* RIGHT 4: Monthly Target Gauge */}
