@@ -268,6 +268,7 @@ import { ChevronLeftIcon } from "@/icons";
 // RTK Query hooks
 import { useLazyGetUserDataQuery } from "@/lib/api/profileApi";
 import { useSubmitSelectFormMutation } from "@/lib/api/onboardingApi";
+import Button from "../ui/button/Button";
 
 export default function BrandForm() {
   const router = useRouter();
@@ -388,22 +389,22 @@ export default function BrandForm() {
       <div className="flex flex-col justify-center flex-1 w-full max-w-md mx-auto">
         <div>
           <div className="mb-5 sm:mb-8">
-            <h1 className="mb-2 font-semibold text-gray-800 text-title-sm dark:text-white/90 sm:text-title-md">
-              Company & Brand
+            <h1 className="mb-2 font-semibold text-charcoal-500 text-title-sm dark:text-white/90 sm:text-title-md">
+              What is your <span className="text-green-500">Company</span> and <span className="text-green-500">Brand</span> name?
             </h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="text-sm text-charcoal-500 dark:text-gray-400">
               Tell us your company and brand names.
             </p>
           </div>
 
           <form onSubmit={onSubmit} className="space-y-5">
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label className="text-sm font-medium text-charcoal-500 dark:text-gray-300">
                 Company Name<span className="text-error-500">*</span>
               </label>
               <input
                 type="text"
-                className="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+                className="h-11 w-full rounded-lg border border-charcoal-500 bg-white px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
                 placeholder="Acme Corp"
                 value={companyName}
                 onChange={(e) => setCompanyName(e.target.value)}
@@ -413,12 +414,12 @@ export default function BrandForm() {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label className="text-sm font-medium text-charcoal-500 dark:text-gray-300">
                 Brand Name<span className="text-error-500">*</span>
               </label>
               <input
                 type="text"
-                className="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+                className="h-11 w-full rounded-lg border border-charcoal-500 bg-white px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
                 placeholder="Acme"
                 value={brandName}
                 onChange={(e) => setBrandName(e.target.value)}
@@ -433,20 +434,20 @@ export default function BrandForm() {
             )}
 
             <div className="mt-6 flex items-center justify-end gap-3">
-              <button
+              <Button
                 type="button"
                 onClick={onBack}
-                className="inline-flex justify-center rounded-lg bg-gray-200 px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-300 dark:bg-white/10 dark:text-gray-200 dark:hover:bg-white/15"
+                variant="outline"
               >
                 Back
-              </button>
-              <button
+              </Button>
+              <Button
                 type="submit"
                 disabled={loading}
-                className="inline-flex justify-center rounded-lg bg-[#2c3854] px-4 py-2 text-sm font-semibold text-[#f8edcf] hover:opacity-95 disabled:opacity-60"
+                variant="primary"
               >
                 {loading ? "Please wait…" : "Next"}
-              </button>
+              </Button>
             </div>
           </form>
 

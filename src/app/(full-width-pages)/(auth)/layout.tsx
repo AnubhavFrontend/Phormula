@@ -142,6 +142,126 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         </div>
       );
     };
+
+    // ---------- Choose Country ----------
+    if (pathname.includes("choose-country")) {
+      return (
+       <div className="relative h-screen w-full bg-green-500 flex flex-col justify-end px-6">
+          {/* Logo - top left */}
+          <Link href="/" className="fixed left-6 top-6 z-20">
+            <Image
+              width={150}
+              height={40}
+              src="/images/auth/Phormula.png"
+              alt="Phormula"
+              priority
+            />
+          </Link>
+
+          {/* Heading */}
+          <div className="flex flex-col text-right">
+            {/* Heading */}
+            <h1 className="text-charcoal-500 text-xl sm:text-xl lg:text-5xl font-semibold leading-tight mt-12">
+             Control Expenses with
+              <br />
+              <span className="text-yellow-200">Auto Marketplace Recons</span>
+            </h1>
+          </div>
+
+          {/* Illustration below heading */}
+          <div className="mt-10">
+            <div className="relative w-full max-w-[760px] aspect-[16/10] rounded-3xl shadow-2xl">
+              <Image
+                src="/images/auth/choosecountry.png"
+                alt="Performance Analysis dashboard"
+                fill
+                className="object-contain"
+                priority
+              />
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // ---------- Brand ----------
+    if (pathname.includes("brand")) {
+      return (
+       <div className="relative h-screen w-full bg-green-500 flex flex-col justify-end px-6">
+          {/* Logo - top left */}
+          <Link href="/" className="fixed left-6 top-6 z-20">
+            <Image
+              width={150}
+              height={40}
+              src="/images/auth/Phormula.png"
+              alt="Phormula"
+              priority
+            />
+          </Link>
+
+          {/* Heading */}
+          <div className="flex flex-col text-right">
+            {/* Heading */}
+            <h1 className="text-charcoal-500 text-xl sm:text-xl lg:text-5xl font-semibold leading-tight mt-12">
+             CXO’s tool for&nbsp; 
+              <span className="text-yellow-200">Faster Decisions</span>
+            </h1>
+          </div>
+
+          {/* Illustration below heading */}
+          <div className="mt-10">
+            <div className="relative w-full max-w-[760px] aspect-[16/10] rounded-3xl shadow-2xl">
+              <Image
+                src="/images/auth/brand.png"
+                alt="Performance Analysis dashboard"
+                fill
+                className="object-contain"
+                priority
+              />
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // ---------- Revenue ----------
+    if (pathname.includes("chooserevenue")) {
+      return (
+       <div className="relative h-screen w-full bg-green-500 flex flex-col justify-end px-6">
+          {/* Logo - top left */}
+          <Link href="/" className="fixed left-6 top-6 z-20">
+            <Image
+              width={150}
+              height={40}
+              src="/images/auth/Phormula.png"
+              alt="Phormula"
+              priority
+            />
+          </Link>
+
+          {/* Heading */}
+          <div className="flex flex-col text-right">
+            {/* Heading */}
+            <h1 className="text-charcoal-500 text-xl sm:text-xl lg:text-5xl font-semibold leading-tight mt-12">
+             See. <span className="text-yellow-200">Forecast. </span>Win.
+            </h1>
+          </div>
+
+          {/* Illustration below heading */}
+          <div className="mt-10">
+            <div className="relative w-full max-w-[760px] aspect-[16/10] rounded-3xl shadow-2xl">
+              <Image
+                src="/images/auth/revenue.png"
+                alt="Performance Analysis dashboard"
+                fill
+                className="object-contain"
+                priority
+              />
+            </div>
+          </div>
+        </div>
+      );
+    };
   }
 
   return (

@@ -296,6 +296,7 @@ import { ChevronLeftIcon } from "@/icons";
 import { useLazyGetUserDataQuery } from "@/lib/api/profileApi";
 import { useLazyGetUploadHistoryQuery } from "@/lib/api/uploadsApi";
 import { useSubmitSelectFormMutation } from "@/lib/api/onboardingApi";
+import Button from "../ui/button/Button";
 
 
 
@@ -469,12 +470,9 @@ export default function ChooseCountryForm() {
       <div className="flex flex-col justify-center flex-1 w-full max-w-md mx-auto">
         <div>
           <div className="mb-5 sm:mb-8">
-            <h1 className="mb-2 font-semibold text-gray-800 text-title-sm dark:text-white/90 sm:text-title-md">
-              Choose Country
+            <h1 className="mb-2 font-semibold text-charcoal-500 text-title-sm dark:text-white/90 sm:text-title-md">
+              Which <span className="text-green-500">country</span> do <br />you want to start with?
             </h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Select one or more countries you operate in.
-            </p>
           </div>
 
           <form onSubmit={onNext}>
@@ -515,20 +513,20 @@ export default function ChooseCountryForm() {
             </p>
 
             <div className="mt-6 flex items-center justify-end gap-3">
-              <button
+              <Button
                 type="button"
                 onClick={onBack}
-                className="inline-flex justify-center rounded-lg bg-gray-200 px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-300 dark:bg-white/10 dark:text-gray-200 dark:hover:bg-white/15"
+                variant="outline"
               >
                 Back
-              </button>
-              <button
+              </Button>
+              <Button
                 type="submit"
                 disabled={loading}
-                className="inline-flex justify-center rounded-lg bg-[#2c3854] px-4 py-2 text-sm font-semibold text-[#f8edcf] hover:opacity-95 disabled:opacity-60"
+                variant="primary"
               >
                 {loading ? "Please wait…" : "Next"}
-              </button>
+              </Button>
             </div>
           </form>
 
