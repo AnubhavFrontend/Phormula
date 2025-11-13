@@ -16,8 +16,8 @@ const ICONS = {
 function sanitizeShopName(raw: string) {
   let s = (raw || "").trim().toLowerCase();
   s = s.replace(/^https?:\/\//, "") // remove protocol
-       .replace(/\/.*$/, "")        // strip path
-       .replace(/\.myshopify\.com$/, ""); // drop domain if pasted
+    .replace(/\/.*$/, "")        // strip path
+    .replace(/\.myshopify\.com$/, ""); // drop domain if pasted
   s = s.replace(/[^a-z0-9-]/g, ""); // keep only valid characters
   return s;
 }
@@ -25,6 +25,8 @@ function sanitizeShopName(raw: string) {
 type Props = {
   onClose?: () => void;
 };
+
+
 
 export default function ConnectShopifyModal({ onClose }: Props) {
   const [shopName, setShopName] = useState("");
@@ -40,12 +42,22 @@ export default function ConnectShopifyModal({ onClose }: Props) {
     setError("");
     setIsConnecting(true);
 
+    const frontendBase = window.location.origin;
+    const redirectUri = `${frontendBase}/(admin)/shopify?shop=${encodeURIComponent(`${cleaned}.myshopify.com`)}`;
+
+
     const user_token =
       (typeof window !== "undefined" && localStorage.getItem("jwtToken")) || "";
 
+    // const installUrl = `${API_BASE}/shopify/install?shop=${encodeURIComponent(
+    //   `${cleaned}.myshopify.com`
+    // )}&user_token=${encodeURIComponent(user_token)}`;
+
+    // window.location.href = installUrl;
+
     const installUrl = `${API_BASE}/shopify/install?shop=${encodeURIComponent(
       `${cleaned}.myshopify.com`
-    )}&user_token=${encodeURIComponent(user_token)}`;
+    )}&user_token=${encodeURIComponent(user_token)}&redirect_uri=${encodeURIComponent(redirectUri)}`;
 
     window.location.href = installUrl;
   }, [shopName]);
@@ -163,10 +175,9 @@ export default function ConnectShopifyModal({ onClose }: Props) {
               className={`group mx-auto inline-flex w-full sm:w-2/3 md:w-1/2 lg:w-[45%] items-center justify-center gap-2 rounded-md
                 px-4 py-2.5 sm:py-2 text-sm sm:text-base font-bold text-white
                 shadow-[0_4px_4px_-1px_#00000040] transition
-                ${
-                  isConnecting
-                    ? "bg-[#5EA68E] cursor-not-allowed"
-                    : "bg-[#5EA68E] hover:bg-[#5EA68E] active:bg-[#5EA68E]"
+                ${isConnecting
+                  ? "bg-[#5EA68E] cursor-not-allowed"
+                  : "bg-[#5EA68E] hover:bg-[#5EA68E] active:bg-[#5EA68E]"
                 }`}
             >
               <img

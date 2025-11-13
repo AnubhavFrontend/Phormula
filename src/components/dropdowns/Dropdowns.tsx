@@ -266,18 +266,7 @@ const Dropdowns: React.FC<DropdownsProps> = ({
     return (
         <div className="space-y-4">
             {/* Back button */}
-            <div className="flex justify-start mb-3">
-                <button
-                    onClick={goBack}
-                    aria-label="Go back"
-                    title="Go back"
-                    className="inline-flex items-center gap-2 rounded-md bg-slate-800 px-4 py-2 font-semibold text-amber-100 hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-400"
-                >
-                    <i className="fa-solid fa-arrow-left" />
-                    Back
-                </button>
-            </div>
-
+            
             <div className="flex gap-2">
                 <PageBreadcrumb pageTitle="Financial Metrics -" variant="page" align="left" textSize="2xl" />
                 <span className="text-[#5EA68E] text-2xl">
