@@ -75,9 +75,9 @@ import React from "react";
 export default function Page({
   params,
 }: {
-  params: { ranged: string; countryName: string; month: string; year: string };
+  params: Promise <{ ranged: string; countryName: string; month: string; year: string }>;
 }) {
-  const { ranged, countryName, month, year } = params;
+  const { ranged, countryName, month, year } = React.use(params) ;
 
   return (
     <Dropdowns
