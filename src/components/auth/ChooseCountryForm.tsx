@@ -412,40 +412,81 @@ export default function ChooseCountryForm() {
     };
   }, [forceOnboard, router, triggerUploads, triggerUser]);
 
-  const onNext = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (selected.length === 0) {
-      setError("Please select at least one country.");
-      return;
-    }
-    setError(null);
-    setLoading(true);
+  // const onNext = async (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   if (selected.length === 0) {
+  //     setError("Please select at least one country.");
+  //     return;
+  //   }
+  //   setError(null);
+  //   setLoading(true);
 
-    const mapped = selected.map((name) => countryMap[name as keyof typeof countryMap]);
-    localStorage.setItem("selectedCountries", JSON.stringify(mapped));
+  //   const mapped = selected.map((name) => countryMap[name as keyof typeof countryMap]);
+  //   localStorage.setItem("selectedCountries", JSON.stringify(mapped));
 
-    // Grab optional profile bits from localStorage
-    const companyName = localStorage.getItem("companyName") || "";
-    const brandName = localStorage.getItem("brandName") || "";
-    const homeCurrency = localStorage.getItem("homeCurrency") || "";
+  //   // Grab optional profile bits from localStorage
+  //   const companyName = localStorage.getItem("companyName") || "";
+  //   const brandName = localStorage.getItem("brandName") || "";
+  //   const homeCurrency = localStorage.getItem("homeCurrency") || "";
 
-    // Save selection to backend via RTKQ
-    try {
-      await submitSelectForm({
-        country: mapped.join(", "),
-        company_name: companyName,
-        brand_name: brandName,
-        homeCurrency,
-      }).unwrap();
-    } catch (err) {
+  //   // Save selection to backend via RTKQ
+  //   try {
+  //     await submitSelectForm({
+  //       country: mapped.join(", "),
+  //       company_name: companyName,
+  //       brand_name: brandName,
+  //       homeCurrency,
+  //     }).unwrap();
+  //   } catch (err) {
+  //     console.error("selectform error:", err);
+  //     // continue anyway to keep user moving through onboarding
+  //   }
+
+  //   // ✅ Always go to Brand in onboarding (no fee preview here)
+  //   router.push("/brand?onboard=1");
+  //   setLoading(false);
+  // };
+
+const onNext = async (e: React.FormEvent) => {
+  e.preventDefault();
+
+  if (selected.length === 0) {
+    setError("Please select at least one country.");
+    return;
+  }
+
+  setError(null);
+  setLoading(true);
+
+  const mapped = selected.map(
+    (name) => countryMap[name as keyof typeof countryMap]
+  );
+  localStorage.setItem("selectedCountries", JSON.stringify(mapped));
+
+  const companyName = localStorage.getItem("companyName") || "";
+  const brandName = localStorage.getItem("brandName") || "";
+  const homeCurrency = localStorage.getItem("homeCurrency") || "";
+
+  // 🔥 Fire-and-forget: don't block navigation
+  submitSelectForm({
+    country: mapped.join(", "),
+    company_name: companyName,
+    brand_name: brandName,
+    homeCurrency,
+  })
+    .unwrap()
+    .catch((err) => {
       console.error("selectform error:", err);
-      // continue anyway to keep user moving through onboarding
-    }
+      // optional: send to monitoring, but don't block user
+    });
 
-    // ✅ Always go to Brand in onboarding (no fee preview here)
-    router.push("/brand?onboard=1");
-    setLoading(false);
-  };
+  // 🚀 Navigate immediately
+  router.push("/brand?onboard=1");
+
+  // ❌ Don't bother resetting loading — this component is about to unmount
+  // setLoading(false);
+};
+
 
   const onBack = () => {
     if (typeof window !== "undefined" && window.history.length > 1) {

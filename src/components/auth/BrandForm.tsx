@@ -257,7 +257,6 @@
 
 
 
-
 "use client";
 
 import Link from "next/link";
@@ -332,7 +331,7 @@ export default function BrandForm() {
     };
   }, [forceOnboard, router, triggerUser]);
 
-  const onSubmit = async (e: React.FormEvent) => {
+  const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!companyName.trim() || !brandName.trim()) {
       setError("Please enter both Company name and Brand name.");
@@ -341,29 +340,32 @@ export default function BrandForm() {
     setError(null);
     setLoading(true);
 
+    const company = companyName.trim();
+    const brand = brandName.trim();
+
     // Persist locally (for later steps / reuse)
-    localStorage.setItem("companyName", companyName.trim());
-    localStorage.setItem("brandName", brandName.trim());
+    localStorage.setItem("companyName", company);
+    localStorage.setItem("brandName", brand);
 
     // Prepare payload (reuse local storage values for countries/currency)
     const selected = JSON.parse(localStorage.getItem("selectedCountries") || "[]") as string[];
     const homeCurrency = localStorage.getItem("homeCurrency") || "";
 
-    // Update backend via RTK Query (non-blocking for UX; errors logged)
-    try {
-      await submitSelectForm({
-        country: selected.join(", "),
-        company_name: companyName.trim(),
-        brand_name: brandName.trim(),
-        homeCurrency,
-      }).unwrap();
-    } catch (e) {
-      console.warn("Profile update failed (non-blocking):", e);
-    }
+    // 🔥 Fire-and-forget update to backend
+    submitSelectForm({
+      country: selected.join(", "),
+      company_name: company,
+      brand_name: brand,
+      homeCurrency,
+    })
+      .unwrap()
+      .catch((e) => {
+        console.warn("Profile update failed (non-blocking):", e);
+      });
 
-    // Continue onboarding
+    // 🚀 Continue onboarding immediately
     router.push("/chooserevenue?onboard=1");
-    setLoading(false);
+    // no setLoading(false); component will unmount after navigation
   };
 
   const onBack = () => {
@@ -384,13 +386,12 @@ export default function BrandForm() {
 
   return (
     <div className="flex flex-col flex-1 lg:w-1/2 w-full">
-      
-
       <div className="flex flex-col justify-center flex-1 w-full max-w-md mx-auto">
         <div>
           <div className="mb-5 sm:mb-8">
             <h1 className="mb-2 font-semibold text-charcoal-500 text-title-sm dark:text-white/90 sm:text-title-md">
-              What is your <span className="text-green-500">Company</span> and <span className="text-green-500">Brand</span> name?
+              What is your <span className="text-green-500">Company</span> and{" "}
+              <span className="text-green-500">Brand</span> name?
             </h1>
             <p className="text-sm text-charcoal-500 dark:text-gray-400">
               Tell us your company and brand names.
@@ -434,18 +435,10 @@ export default function BrandForm() {
             )}
 
             <div className="mt-6 flex items-center justify-end gap-3">
-              <Button
-                type="button"
-                onClick={onBack}
-                variant="outline"
-              >
+              <Button type="button" onClick={onBack} variant="outline">
                 Back
               </Button>
-              <Button
-                type="submit"
-                disabled={loading}
-                variant="primary"
-              >
+              <Button type="submit" disabled={loading} variant="primary">
                 {loading ? "Please wait…" : "Next"}
               </Button>
             </div>

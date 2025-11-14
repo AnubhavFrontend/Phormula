@@ -60,46 +60,91 @@ export default function RevenueForm() {
     };
   }, [router, forceOnboard]);
 
-  const onSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedRevenue) {
-      setError("Please select a revenue range.");
-      return;
-    }
+  // const onSubmit = async (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   if (!selectedRevenue) {
+  //     setError("Please select a revenue range.");
+  //     return;
+  //   }
 
-    setError(null);
-    setLoading(true);
+  //   setError(null);
+  //   setLoading(true);
 
-    // Pull values already collected in earlier steps
-    const countries = JSON.parse(localStorage.getItem("selectedCountries") || "[]") as string[];
-    const companyName = localStorage.getItem("companyName") || "";
-    const brandName = localStorage.getItem("brandName") || "";
-    const homeCurrency = localStorage.getItem("homeCurrency") || "";
+  //   // Pull values already collected in earlier steps
+  //   const countries = JSON.parse(localStorage.getItem("selectedCountries") || "[]") as string[];
+  //   const companyName = localStorage.getItem("companyName") || "";
+  //   const brandName = localStorage.getItem("brandName") || "";
+  //   const homeCurrency = localStorage.getItem("homeCurrency") || "";
 
-    try {
-      // Submit selection to backend
-      await submitSelectForm({
-        annual_sales_range: selectedRevenue,
-        country: countries.join(", "),
-        company_name: companyName,
-        brand_name: brandName,
-        homeCurrency,
-      }).unwrap();
+  //   try {
+  //     // Submit selection to backend
+  //     await submitSelectForm({
+  //       annual_sales_range: selectedRevenue,
+  //       country: countries.join(", "),
+  //       company_name: companyName,
+  //       brand_name: brandName,
+  //       homeCurrency,
+  //     }).unwrap();
 
-      // Mark onboarding as done on client + server
-      localStorage.setItem("onboardDone", "true");
-      try {
-        await markOnboardingComplete({ onboarding_complete: true }).unwrap();
-      } catch {
-        // non-blocking
-      }
-    } finally {
-      setLoading(false);
-    }
+  //     // Mark onboarding as done on client + server
+  //     localStorage.setItem("onboardDone", "true");
+  //     try {
+  //       await markOnboardingComplete({ onboarding_complete: true }).unwrap();
+  //     } catch {
+  //       // non-blocking
+  //     }
+  //   } finally {
+  //     setLoading(false);
+  //   }
 
-    // Safe default: go to dashboard
-    router.push("/");
-  };
+  //   // Safe default: go to dashboard
+  //   router.push("/");
+  // };
+
+  const onSubmit = (e: React.FormEvent) => {
+  e.preventDefault();
+
+  if (!selectedRevenue) {
+    setError("Please select a revenue range.");
+    return;
+  }
+
+  setError(null);
+  setLoading(true);
+
+  // Pull values already collected in earlier steps
+  const countries = JSON.parse(
+    localStorage.getItem("selectedCountries") || "[]"
+  ) as string[];
+  const companyName = localStorage.getItem("companyName") || "";
+  const brandName = localStorage.getItem("brandName") || "";
+  const homeCurrency = localStorage.getItem("homeCurrency") || "";
+
+  // Mark onboarding done on client immediately
+  localStorage.setItem("onboardDone", "true");
+
+  // 🔥 Fire-and-forget submit + mark complete
+  submitSelectForm({
+    annual_sales_range: selectedRevenue,
+    country: countries.join(", "),
+    company_name: companyName,
+    brand_name: brandName,
+    homeCurrency,
+  })
+    .unwrap()
+    .then(() =>
+      markOnboardingComplete({ onboarding_complete: true }).unwrap()
+    )
+    .catch((e) => {
+      console.warn("Onboarding completion failed (non-blocking):", e);
+    });
+
+  // 🚀 Go to dashboard right away
+  router.push("/");
+
+  // ❌ No setLoading(false) – component is about to unmount
+};
+
 
   const onBack = () => {
     if (typeof window !== "undefined" && window.history.length > 1) {

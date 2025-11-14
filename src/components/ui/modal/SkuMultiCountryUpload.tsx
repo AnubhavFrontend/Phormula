@@ -119,22 +119,44 @@ export default function SkuMultiCountryUpload({ onClose, onComplete }: Props) {
     a.remove();
   };
 
-  const onConfirmUpload = async () => {
-    if (!file) return setError("Please select a file first.");
-    try {
-      await uploadSku({ file }).unwrap();
-      // reset + close after success
-      setShowConfirm(false);
-      setRows([]);
-      setColumns([]);
-      setFile(null);
-      setFileName("No File Chosen");
-      onClose();
-    } catch (e: unknown) {
-      const err = e as { data?: { error?: string; message?: string } };
-      setError(err?.data?.error || err?.data?.message || "Upload failed.");
-    }
-  };
+  // const onConfirmUpload = async () => {
+  //   if (!file) return setError("Please select a file first.");
+  //   try {
+  //     await uploadSku({ file }).unwrap();
+  //     // reset + close after success
+  //     setShowConfirm(false);
+  //     setRows([]);
+  //     setColumns([]);
+  //     setFile(null);
+  //     setFileName("No File Chosen");
+  //     onClose();
+  //   } catch (e: unknown) {
+  //     const err = e as { data?: { error?: string; message?: string } };
+  //     setError(err?.data?.error || err?.data?.message || "Upload failed.");
+  //   }
+  // };
+
+
+const onConfirmUpload = async () => {
+  if (!file) return setError("Please select a file first.");
+  try {
+    await uploadSku({ file }).unwrap();
+
+    // reset internal UI state
+    setShowConfirm(false);
+    setRows([]);
+    setColumns([]);
+    setFile(null);
+    setFileName("No File Chosen");
+
+    // ✅ notify parent that upload completed successfully
+    onComplete();
+  } catch (e: unknown) {
+    const err = e as { data?: { error?: string; message?: string } };
+    setError(err?.data?.error || err?.data?.message || "Upload failed.");
+  }
+};
+
 
   // ---------- UI ----------
   return (

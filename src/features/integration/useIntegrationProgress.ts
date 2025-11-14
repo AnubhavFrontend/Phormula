@@ -73,9 +73,6 @@
 
 
 
-
-
-
 import { useEffect, useState } from "react";
 import {
   useFileUploadStatusQuery,
@@ -94,7 +91,11 @@ export function useIntegrationProgress(countryName?: string) {
   const country = (countryName || "").toLowerCase();
 
   // ---- API-driven state ----
-  const { data: fileStatus } = useFileUploadStatusQuery();
+  const {
+    data: fileStatus,
+    refetch: refetchFileStatus,        // ⬅️ NEW
+  } = useFileUploadStatusQuery();
+
   const fileUploaded = !!fileStatus?.file_uploaded;
 
   const { data: profile } = useGetCountryProfileQuery(country, {
@@ -104,7 +105,6 @@ export function useIntegrationProgress(countryName?: string) {
 
   // ---- LocalStorage + React state ----
 
-  // integration method (manual / amazon / shopify)
   const [integrationMethod, setIntegrationMethodState] = useState<string | null>(
     () => {
       if (typeof window === "undefined") return null;
@@ -112,19 +112,16 @@ export function useIntegrationProgress(countryName?: string) {
     }
   );
 
-  // MTD uploaded flag
   const [mtdUploaded, setMtdUploadedState] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
     return localStorage.getItem(LS_KEYS.mtdDone(country)) === "true";
   });
 
-  // Amazon connected flag (derived from refresh token on first load)
   const [amazonConnected, setAmazonConnectedState] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
     return !!localStorage.getItem(LS_KEYS.amazonRefreshToken(country));
   });
 
-  // If country changes while component is mounted, resync per-country flags
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -134,7 +131,6 @@ export function useIntegrationProgress(countryName?: string) {
     );
   }, [country]);
 
-  // Keep a local "feePreviewDone" flag in LS in sync with profileExists
   useEffect(() => {
     if (typeof window === "undefined") return;
     localStorage.setItem(
@@ -142,8 +138,6 @@ export function useIntegrationProgress(countryName?: string) {
       String(profileExists)
     );
   }, [country, profileExists]);
-
-  // ---- Public setters that update BOTH state + localStorage ----
 
   const setIntegrationMethod = (method: string | null) => {
     setIntegrationMethodState(method);
@@ -159,17 +153,8 @@ export function useIntegrationProgress(countryName?: string) {
     }
   };
 
-  /**
-   * We treat "connected" as pure state here.
-   * The actual refresh token is still written by your AmazonConnect components.
-   * On first load we read from LS (above), so it persists cross-refresh.
-   */
   const setAmazonConnected = (value: boolean) => {
     setAmazonConnectedState(value);
-    // You *can* also clear token when disconnecting if needed:
-    // if (typeof window !== "undefined" && !value) {
-    //   localStorage.removeItem(LS_KEYS.amazonRefreshToken(country));
-    // }
   };
 
   return {
@@ -185,5 +170,7 @@ export function useIntegrationProgress(countryName?: string) {
 
     mtdUploaded,
     setMtdUploaded,
+
+    refetchFileStatus,          // ⬅️ EXPORTED
   };
 }
