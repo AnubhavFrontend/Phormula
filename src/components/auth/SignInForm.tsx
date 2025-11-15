@@ -13,6 +13,7 @@ import { useAppDispatch, useAppSelector } from "@/lib/store";
 import { setAuthError, setAuthLoading, setCredentials, setUser } from "@/lib/features/auth/authSlice";
 import { useLoginMutation } from "@/lib/api/authApi";
 import { API_BASE } from "@/config/env";
+import ForgotPasswordModal from "./ForgotPasswordModal";
 
 export default function SignInForm() {
   const router = useRouter();
@@ -26,6 +27,8 @@ export default function SignInForm() {
   const [isChecked, setIsChecked] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
+  const [showForgotModal, setShowForgotModal] = useState(false);
 
   const [login, { isLoading: isLoggingIn }] = useLoginMutation();
 
@@ -163,13 +166,15 @@ export default function SignInForm() {
                     Keep me logged in
                   </span>
                 </label>
-                <Link
-                  href="/forgot"
-                  className="text-sm text-blue-700 "
+                <button
+                  type="button"
+                  onClick={() => setShowForgotModal(true)}
+                  className="text-sm text-blue-700"
                 >
                   Forgot password?
-                </Link>
+                </button>
               </div>
+
 
               {(error) && (
                 <p className="text-sm text-red-500 -mt-2" aria-live="polite">
@@ -236,6 +241,11 @@ export default function SignInForm() {
               </Link>
             </p>
           </div>
+
+          {showForgotModal && (
+            <ForgotPasswordModal onClose={() => setShowForgotModal(false)} />
+          )}
+
         </div>
       </div>
     </div>

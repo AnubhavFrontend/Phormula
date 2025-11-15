@@ -187,7 +187,7 @@ const AppSidebar: React.FC = () => {
   return (
     <>
       {/* Mobile Hamburger Button */}
-      {showHamburger && (
+      {/* {showHamburger && (
         <button
           onClick={() => setIsMobileOpen(true)}
           className="fixed top-4 left-4 z-[1100] p-2 bg-[#5EA68E] text-white rounded-md md:hidden"
@@ -195,7 +195,7 @@ const AppSidebar: React.FC = () => {
         >
           <FaBars className="h-5 w-5" />
         </button>
-      )}
+      )} */}
 
       {/* Overlay for mobile */}
       {isMobileOpen && (

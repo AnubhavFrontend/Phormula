@@ -13,6 +13,11 @@ import Button from "../ui/button/Button";
 import { AiOutlinePlus } from "react-icons/ai";
 import { Modal } from "@/components/ui/modal";
 import FileUploadForm from "@/app/(admin)/(ui-elements)/modals/FileUploadForm";
+import PeriodFiltersTable from "../filters/PeriodFiltersTable";
+import { FaBoxArchive, FaMoneyBillTrendUp } from "react-icons/fa6";
+import { MdEditDocument } from "react-icons/md";
+import { TbMoneybag } from "react-icons/tb";
+import { FcSalesPerformance } from "react-icons/fc";
 
 /* ---------------------- Types ---------------------- */
 type Summary = {
@@ -44,6 +49,9 @@ type DropdownsProps = {
     initialMonth: string;
     initialYear: string;
 };
+
+
+
 
 /* ---------------------- Utils ---------------------- */
 const getCurrencySymbol = (country: string) => {
@@ -127,14 +135,15 @@ const Dropdowns: React.FC<DropdownsProps> = ({
             ? uploadsData.summary
             : zeroData;
 
-    const handleRangeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const val = e.target.value as RangeType;
-        setRange(val);
+    // range: "monthly" | "quarterly" | "yearly"
+    const handleRangeChange = (v: "monthly" | "quarterly" | "yearly") => {
+        setRange(v);
         setSelectedMonth("");
         setSelectedQuarter("");
         setSelectedYear("");
         setUploadsData(null);
     };
+
 
     const fetchUploadHistory = async (
         rangeType: RangeType,
@@ -177,9 +186,10 @@ const Dropdowns: React.FC<DropdownsProps> = ({
         }
     };
 
-    const handleMonthChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const v = e.target.value;
+    // month comes in as lowercase from PeriodFiltersTable ("january", etc.)
+    const handleMonthChange = (v: string) => {
         setSelectedMonth(v);
+
         if (selectedYear) {
             fetchUploadHistory(range, v, selectedQuarter || "", selectedYear, countryName);
         } else {
@@ -187,21 +197,21 @@ const Dropdowns: React.FC<DropdownsProps> = ({
         }
     };
 
-    const handleQuarterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const raw = e.target.value;
-        const v = isQuarter(raw) ? raw : "";
-        setSelectedQuarter(v);
+    // quarter is "Q1" | "Q2" | "Q3" | "Q4"
+    const handleQuarterChange = (v: string) => {
+        const q = isQuarter(v) ? v : "";
+        setSelectedQuarter(q);
 
-        if (selectedYear && v) {
-            fetchUploadHistory(range, selectedMonth, v, selectedYear, countryName);
+        if (selectedYear && q) {
+            fetchUploadHistory(range, selectedMonth, q, selectedYear, countryName);
         } else {
             setUploadsData(null);
         }
     };
 
-    const handleYearChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const v = e.target.value;
+    const handleYearChange = (v: string) => {
         setSelectedYear(v);
+
         if (
             (range === "monthly" && selectedMonth) ||
             (range === "quarterly" && selectedQuarter) ||
@@ -266,7 +276,7 @@ const Dropdowns: React.FC<DropdownsProps> = ({
     return (
         <div className="space-y-4">
             {/* Back button */}
-            
+
             <div className="flex gap-2">
                 <PageBreadcrumb pageTitle="Financial Metrics -" variant="page" align="left" textSize="2xl" />
                 <span className="text-[#5EA68E] text-2xl">
@@ -277,128 +287,29 @@ const Dropdowns: React.FC<DropdownsProps> = ({
             </div>
 
 
-            <div className="flex flex-col md:flex-row md:items-center md:gap-10 gap-4 w-full md:justify-start justify-center">
+            {/* WRAPPER: stacked layout */}
+            <div className="flex flex-col gap-4 w-full">
 
-                {/* Period / Range / Year Table */}
-                <div
-                    className={[
-                        "rounded-md w-full md:w-[18vw] min-w-[200px]",
-                        range === "yearly" ? "md:max-w-[100px]" : "",
-                    ].join(" ")}
-                >
-                    <table className="w-full border-collapse text-[clamp(12px,0.729vw,16px)] font-[Lato]">
-                        <thead>
-                            <tr className="bg-white text-[#5EA68E] border border-[#414042]">
-                                <th className="px-[0.9vw] py-[1vh] text-center border border-[#414042]">Period</th>
-                                {(range === "quarterly" || range === "monthly") && (
-                                    <th className="px-[0.9vw] py-[1vh] text-center border border-[#414042]">Range</th>
-                                )}
-                                <th className="px-[0.9vw] py-[1vh] text-center border border-[#414042]">Year</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td className="px-[0.9vw] py-[1vh] text-center border border-[#414042]">
-                                    <select
-                                        value={range}
-                                        onChange={handleRangeChange}
-                                        className="min-w-[60px] w-auto text-center focus:outline-none"
-                                    >
-                                        <option value="monthly">Monthly</option>
-                                        <option value="quarterly">Quarterly</option>
-                                        <option value="yearly">Yearly</option>
-                                    </select>
-                                </td>
-
-                                {range === "monthly" && (
-                                    <>
-                                        <td className="px-[0.9vw] py-[1vh] text-center border border-[#414042]">
-                                            <select
-                                                value={selectedMonth}
-                                                onChange={handleMonthChange}
-                                                className="min-w-[60px] w-auto text-center focus:outline-none"
-                                            >
-                                                <option value="">Select</option>
-                                                {[
-                                                    "january", "february", "march", "april", "may", "june",
-                                                    "july", "august", "september", "october", "november", "december",
-                                                ].map((m) => (
-                                                    <option key={m} value={m}>
-                                                        {m[0].toUpperCase() + m.slice(1)}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </td>
-                                        <td className="px-[0.9vw] py-[1vh] text-center border border-[#414042]">
-                                            <select
-                                                value={selectedYear}
-                                                onChange={handleYearChange}
-                                                className="min-w-[60px] w-auto text-center focus:outline-none"
-                                            >
-                                                <option value="">Select</option>
-                                                {yearOptions.map((y) => (
-                                                    <option key={y} value={y}>
-                                                        {y}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </td>
-                                    </>
-                                )}
-
-                                {range === "quarterly" && (
-                                    <>
-                                        <td className="px-[0.9vw] py-[1vh] text-center border border-[#414042]">
-                                            <select
-                                                value={selectedQuarter}
-                                                onChange={handleQuarterChange}
-                                                className="min-w-[60px] w-auto text-center focus:outline-none"
-                                            >
-                                                <option value="">Select</option>
-                                                {["Q1", "Q2", "Q3", "Q4"].map((q) => (
-                                                    <option key={q} value={q}>{q}</option>
-                                                ))}
-                                            </select>
-                                        </td>
-                                        <td className="px-[0.9vw] py-[1vh] text-center border border-[#414042]">
-                                            <select
-                                                value={selectedYear}
-                                                onChange={handleYearChange}
-                                                className="min-w-[60px] w-auto text-center focus:outline-none"
-                                            >
-                                                <option value="">Select</option>
-                                                {yearOptions.map((y) => (
-                                                    <option key={y} value={y}>
-                                                        {y}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </td>
-                                    </>
-                                )}
-
-                                {range === "yearly" && (
-                                    <td className="px-[0.9vw] py-[1vh] text-center border border-[#414042]">
-                                        <select
-                                            value={selectedYear}
-                                            onChange={handleYearChange}
-                                            className="min-w-[60px] w-auto text-center focus:outline-none"
-                                        >
-                                            <option value="">Select</option>
-                                            {yearOptions.map((y) => (
-                                                <option key={y} value={y}>
-                                                    {y}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </td>
-                                )}
-                            </tr>
-                        </tbody>
-                    </table>
+                {/* Period / Range / Year – centered */}
+                <div className="w-full flex justify-start">
+                    <PeriodFiltersTable
+                        range={
+                            range === ""
+                                ? "monthly" // sensible default if range not yet set
+                                : (range as "monthly" | "quarterly" | "yearly")
+                        }
+                        selectedMonth={selectedMonth}        // currently lowercase like "january"
+                        selectedQuarter={selectedQuarter || ""}
+                        selectedYear={selectedYear}
+                        yearOptions={yearOptions}
+                        onRangeChange={handleRangeChange}
+                        onMonthChange={handleMonthChange}
+                        onQuarterChange={handleQuarterChange}
+                        onYearChange={handleYearChange}
+                    />
                 </div>
 
-                {/* Summary Table */}
+                {/* Summary Cards (unchanged content) */}
                 {uploadsData?.summary &&
                     (() => {
                         const summary = displayData;
@@ -408,79 +319,97 @@ const Dropdowns: React.FC<DropdownsProps> = ({
                             summary.total_expense === 0 &&
                             summary.cm2_profit === 0;
 
+                        const cm2Percent =
+                            summary.total_sales > 0
+                                ? (summary.cm2_profit / summary.total_sales) * 100
+                                : 0;
+
+                        // simple formatter for money values
+                        const formatMoney = (val: number) =>
+                            `${currencySymbol} ${val.toLocaleString(undefined, {
+                                minimumFractionDigits: 1,
+                                maximumFractionDigits: 1,
+                            })}`;
+
                         return (
-                            <table
+                            <div
                                 className={[
-                                    "border-collapse rounded-md text-[clamp(12px,0.729vw,16px)] font-[Lato] w-full md:w-[18vw]",
+                                    "w-full flex flex-wrap gap-4",
                                     isSummaryZero ? "opacity-30" : "opacity-100",
                                 ].join(" ")}
                             >
-                                <thead>
-                                    <tr className="bg-white text-[#5EA68E] border border-[#414042]">
-                                        <th className="px-[0.9vw] py-[1vh] text-center border border-[#414042]">Units</th>
-                                        <th className="px-[0.9vw] py-[1vh] text-center border border-[#414042]">Sales</th>
-                                        <th className="px-[0.9vw] py-[1vh] text-center border border-[#414042]">Expense</th>
-                                        <th className="px-[0.9vw] py-[1vh] text-center border border-[#414042] whitespace-nowrap">CM2 Profit</th>
-                                        <th className="px-[0.9vw] py-[1vh] text-center border border-[#414042] whitespace-nowrap">CM2 Profit (%)</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td className="px-[0.9vw] py-[1vh] text-center border border-[#414042]">{summary.unit_sold}</td>
-                                        <td className="px-[0.9vw] py-[1vh] text-center border border-[#414042] whitespace-nowrap">
-                                            {currencySymbol}{" "}
-                                            {summary.total_sales.toLocaleString(undefined, {
-                                                minimumFractionDigits: 2,
-                                                maximumFractionDigits: 2,
-                                            })}
-                                        </td>
-                                        <td className="px-[0.9vw] py-[1vh] text-center border border-[#414042] whitespace-nowrap">
-                                            {currencySymbol}{" "}
-                                            {summary.total_expense.toLocaleString(undefined, {
-                                                minimumFractionDigits: 2,
-                                                maximumFractionDigits: 2,
-                                            })}
-                                        </td>
-                                        <td className="px-[0.9vw] py-[1vh] text-center border border-[#414042] whitespace-nowrap">
-                                            {currencySymbol}{" "}
-                                            {summary.cm2_profit.toLocaleString(undefined, {
-                                                minimumFractionDigits: 2,
-                                                maximumFractionDigits: 2,
-                                            })}
-                                        </td>
-                                        <td className="px-[0.9vw] py-[1vh] text-center border border-[#414042]">
-                                            {summary.total_sales > 0
-                                                ? `${((summary.cm2_profit / summary.total_sales) * 100).toFixed(2)}%`
-                                                : "0%"}
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                                {/* Units */}
+                                <div className="flex-1 min-w-[180px] max-w-xs rounded-2xl border border-[#87AD12] bg-[#87AD1226] shadow-sm px-4 py-3 flex flex-col justify-between">
+                                    <div className="flex justify-between items-center mb-2">
+                                        <span className="text-xs text-charcoal-500">Units</span>
+                                        <FaBoxArchive color="#87AD12" size={16} />
+                                    </div>
+                                    <div className="text-xl font-extrabold text-charcoal-500">
+                                        {summary.unit_sold}
+                                    </div>
+                                </div>
+
+                                {/* Sales */}
+                                <div className="flex-1 min-w-[180px] max-w-xs rounded-2xl border border-[#FFBE25] bg-[#FFBE2526] shadow-sm px-4 py-3 flex flex-col justify-between">
+                                    <div className="flex justify-between items-center mb-2">
+                                        <span className="text-xs text-charcoal-500">Sales</span>
+                                        <FcSalesPerformance fill="000" color="#000" size={16} />
+                                    </div>
+                                    <div className="text-xl font-extrabold text-charcoal-500">
+                                        {formatMoney(summary.total_sales)}
+                                    </div>
+                                </div>
+
+                                {/* Expense */}
+                                <div className="flex-1 min-w-[180px] max-w-xs rounded-2xl border border-[#FF5C5C] bg-[#FF5C5C26] shadow-sm px-4 py-3 flex flex-col justify-between">
+                                    <div className="flex justify-between items-center mb-2">
+                                        <span className="text-xs text-charcoal-500">Expenses</span>
+                                        <MdEditDocument color="#FF5C5C" size={16} />
+                                    </div>
+                                    <div className="text-xl font-extrabold text-charcoal-500">
+                                        {formatMoney(summary.total_expense)}
+                                    </div>
+                                </div>
+
+                                {/* CM2 Profit */}
+                                <div className="flex-1 min-w-[180px] max-w-xs rounded-2xl border border-[#AB64B5] bg-[#AB64B526] shadow-sm px-4 py-3 flex flex-col justify-between">
+                                    <div className="flex justify-between items-center mb-2">
+                                        <span className="text-xs text-charcoal-500">CM2 Profit</span>
+                                        <TbMoneybag fill="#AB64B5" color="#AB64B5" size={16} />
+                                    </div>
+                                    <div className="text-xl font-extrabold text-charcoal-500">
+                                        {formatMoney(summary.cm2_profit)}
+                                    </div>
+                                </div>
+
+                                {/* CM2 Profit % */}
+                                <div className="flex-1 min-w-[180px] max-w-xs rounded-2xl border border-[#00627B] bg-[#00627B26] shadow-sm px-4 py-3 flex flex-col justify-between">
+                                    <div className="flex justify-between items-center mb-2">
+                                        <span className="text-xs text-charcoal-500">CM2 Profit %</span>
+                                        <FaMoneyBillTrendUp color="#00627B" size={16} />
+                                    </div>
+                                    <div className="text-xl font-extrabold text-charcoal-500">
+                                        {cm2Percent.toFixed(1)}%
+                                    </div>
+                                </div>
+                            </div>
                         );
                     })()}
 
-                {/* Upload Button */}
-                {countryName !== "global" && (
-                    // <div className="w-full md:w-auto flex justify-center md:justify-end">
-                    //     <Button
-                    //         variant="primary"
-                    //         size="sm"
-                    //         onClick={() => router.push(`/Upload/${countryName}?country=${countryName}`)}
-                    //     // className="rounded-md bg-slate-800 px-4 py-2 font-semibold text-amber-100 hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-400 whitespace-nowrap"
-                    //     >
-                    //         Upload MTD &nbsp; <AiOutlinePlus className="text-yellow-200" />
-                    //     </Button>
-                    // </div>
-                    <Button
-                        variant="primary"
-                        size="sm"
-                        onClick={() => setShowUploadModal(true)}
-                    >
-                        Upload MTD &nbsp; <AiOutlinePlus className="text-yellow-200" />
-                    </Button>
-
-                )}
+                {/* Upload Button (still optional / commented if you want) */}
+                {/* {countryName !== "global" && (
+    <div className="flex justify-center md:justify-start">
+      <Button
+        variant="primary"
+        size="sm"
+        onClick={() => setShowUploadModal(true)}
+      >
+        Upload MTD &nbsp; <AiOutlinePlus className="text-yellow-200" />
+      </Button>
+    </div>
+  )} */}
             </div>
+
 
 
             {/* Charts & Tables */}
@@ -570,31 +499,31 @@ const Dropdowns: React.FC<DropdownsProps> = ({
             )}
 
             <Modal
-  isOpen={showUploadModal}
-  onClose={() => setShowUploadModal(false)}
-  className="max-w-3xl w-[90vw] mx-auto p-0" // nice roomy modal
-  showCloseButton
->
-  <div className="max-h-[85vh] overflow-y-auto">
-    <FileUploadForm
-      initialCountry={initialCountryName}
-      onClose={() => setShowUploadModal(false)}
-      onComplete={() => {
-        // Close the modal
-        setShowUploadModal(false);
+                isOpen={showUploadModal}
+                onClose={() => setShowUploadModal(false)}
+                className="max-w-3xl w-[90vw] mx-auto p-0" // nice roomy modal
+                showCloseButton
+            >
+                <div className="max-h-[85vh] overflow-y-auto">
+                    <FileUploadForm
+                        initialCountry={initialCountryName}
+                        onClose={() => setShowUploadModal(false)}
+                        onComplete={() => {
+                            // Close the modal
+                            setShowUploadModal(false);
 
-        // Optional: refresh the summary after a successful upload using current selections
-        fetchUploadHistory(
-          range,
-          selectedMonth,
-          selectedQuarter || "",
-          selectedYear,
-          initialCountryName
-        );
-      }}
-    />
-  </div>
-</Modal>
+                            // Optional: refresh the summary after a successful upload using current selections
+                            fetchUploadHistory(
+                                range,
+                                selectedMonth,
+                                selectedQuarter || "",
+                                selectedYear,
+                                initialCountryName
+                            );
+                        }}
+                    />
+                </div>
+            </Modal>
 
         </div>
     );

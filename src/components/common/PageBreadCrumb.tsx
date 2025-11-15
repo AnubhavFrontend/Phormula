@@ -63,7 +63,7 @@ const PageBreadcrumb: React.FC<BreadcrumbProps> = ({
   variant = "page",
   align = "center",
   className = "",
-  textSize = "3xl",
+  textSize = "2xl",
 }) => {
   const colorByVariant: Record<NonNullable<BreadcrumbProps["variant"]>, string> = {
     page: "text-charcoal-500 dark:text-white/90",

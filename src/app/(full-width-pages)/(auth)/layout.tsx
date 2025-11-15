@@ -103,45 +103,89 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
     }
 
     // ---------- SIGN IN (dashboard with heading + image) ----------
-    if (pathname.includes("signin")) {
-      return (
-       <div className="relative h-screen w-full bg-green-500 flex flex-col justify-end px-6">
-          {/* Logo - top left */}
-          <Link href="/" className="fixed left-6 top-6 z-20">
-            <Image
-              width={150}
-              height={40}
-              src="/images/auth/Phormula.png"
-              alt="Phormula"
-              priority
-            />
-          </Link>
+    // if (pathname.includes("signin") || pathname.includes("reset-password"))  {
+    //   return (
+    //    <div className="relative h-screen w-full bg-green-500 flex flex-col justify-end px-6">
+    //       {/* Logo - top left */}
+    //       <Link href="/" className="fixed left-6 top-6 z-20">
+    //         <Image
+    //           width={150}
+    //           height={40}
+    //           src="/images/auth/Phormula.png"
+    //           alt="Phormula"
+    //           priority
+    //         />
+    //       </Link>
 
-          {/* Heading */}
-          <div className="flex flex-col text-right">
-            {/* Heading */}
-            <h1 className="text-charcoal-500 text-xl sm:text-xl lg:text-5xl font-semibold leading-tight mt-12">
-              Built for Founders,
-              <br />
-              Powered by <span className="text-yellow-200">Insight</span>
-            </h1>
-          </div>
+    //       {/* Heading */}
+    //       <div className="flex flex-col text-right">
+    //         {/* Heading */}
+    //         <h1 className="text-charcoal-500 text-xl sm:text-xl lg:text-5xl font-semibold leading-tight mt-12">
+    //           Built for Founders,
+    //           <br />
+    //           Powered by <span className="text-yellow-200">Insight</span>
+    //         </h1>
+    //       </div>
 
-          {/* Illustration below heading */}
-          <div className="mt-10">
-            <div className="relative w-full max-w-[760px] aspect-[16/10] rounded-3xl shadow-2xl">
-              <Image
-                src="/images/auth/signin.png"
-                alt="Performance Analysis dashboard"
-                fill
-                className="object-contain"
-                priority
-              />
-            </div>
-          </div>
+    //       {/* Illustration below heading */}
+    //       <div className="mt-10">
+    //         <div className="relative w-full max-w-[760px] aspect-[16/10] rounded-3xl shadow-2xl">
+    //           <Image
+    //             src="/images/auth/signin.png"
+    //             alt="Performance Analysis dashboard"
+    //             fill
+    //             className="object-contain"
+    //             priority
+    //           />
+    //         </div>
+    //       </div>
+    //     </div>
+    //   );
+    // };
+
+    // ---------- SIGN IN + RESET PASSWORD (same left side) ----------
+if (
+  pathname.startsWith("/signin") ||
+  pathname.startsWith("/reset_password")
+) {
+  return (
+    <div className="relative h-screen w-full bg-green-500 flex flex-col justify-end px-6">
+      {/* Logo - top left */}
+      <Link href="/" className="fixed left-6 top-6 z-20">
+        <Image
+          width={150}
+          height={40}
+          src="/images/auth/Phormula.png"
+          alt="Phormula"
+          priority
+        />
+      </Link>
+
+      {/* Heading */}
+      <div className="flex flex-col text-right">
+        <h1 className="text-charcoal-500 text-xl sm:text-xl lg:text-5xl font-semibold leading-tight mt-12">
+          Built for Founders,
+          <br />
+          Powered by <span className="text-yellow-200">Insight</span>
+        </h1>
+      </div>
+
+      {/* Illustration below heading */}
+      <div className="mt-10">
+        <div className="relative w-full max-w-[760px] aspect-[16/10] rounded-3xl shadow-2xl">
+          <Image
+            src="/images/auth/signin.png"
+            alt="Performance Analysis dashboard"
+            fill
+            className="object-contain"
+            priority
+          />
         </div>
-      );
-    };
+      </div>
+    </div>
+  );
+}
+
 
     // ---------- Choose Country ----------
     if (pathname.includes("choose-country")) {
