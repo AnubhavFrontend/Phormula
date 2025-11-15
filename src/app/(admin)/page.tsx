@@ -80,8 +80,8 @@ import React, { useEffect, useState, useMemo, useCallback } from "react";
 const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:5000";
 const SHOPIFY_CCY = process.env.NEXT_PUBLIC_SHOPIFY_CURRENCY || "GBP";
 const SHOPIFY_TO_GBP = Number(process.env.NEXT_PUBLIC_SHOPIFY_TO_GBP || "1");
-// const API_URL = `${baseURL}/amazon_api/orders?include=finances`;
-const API_URL = `${baseURL}/amazon_api/orders`;
+const API_URL = `${baseURL}/amazon_api/orders?include=finances`;
+// const API_URL = `${baseURL}/amazon_api/orders`;
 const SHOPIFY_ENDPOINT = `${baseURL}/shopify/get_monthly_data`;
 
 /** 💵 FX rates */
@@ -89,7 +89,7 @@ const GBP_TO_USD = Number(process.env.NEXT_PUBLIC_GBP_TO_USD || "1.31");
 const INR_TO_USD = Number(process.env.NEXT_PUBLIC_INR_TO_USD || "0.01128");
 // Future: const CAD_TO_USD = Number(process.env.NEXT_PUBLIC_CAD_TO_USD || "0.73");
 
-/** 🔧 Manual override (while API for last month is pending) */
+
 const USE_MANUAL_LAST_MONTH =
   (process.env.NEXT_PUBLIC_USE_MANUAL_LAST_MONTH || "false").toLowerCase() === "true";
 
@@ -154,15 +154,63 @@ function getISTDayInfo() {
 }
 
 /* ===================== UI HELPERS ===================== */
+// const ValueOrSkeleton = ({
+//   loading,
+//   children,
+//   compact = false,
+// }: {
+//   loading: boolean;
+//   children: React.ReactNode;
+//   compact?: boolean;
+// }) => {
+//   if (loading) {
+//     return (
+//       <div className="inline-flex items-center justify-center">
+//         <Loader
+//           size={compact ? 28 : 36}
+//           transparent
+//           roundedClass="rounded-full"
+//           backgroundClass="bg-transparent"
+//           className="text-gray-400"
+//           forceFallback
+//         />
+//       </div>
+//     );
+//   }
+//   return <>{children}</>;
+// };
+
 const ValueOrSkeleton = ({
   loading,
   children,
   compact = false,
+  mode = "replace",
 }: {
   loading: boolean;
   children: React.ReactNode;
   compact?: boolean;
+  mode?: "replace" | "inline";
 }) => {
+  // NEW: inline mode → always show children, just add a small spinner when loading
+  if (mode === "inline") {
+    return (
+      <span className="inline-flex items-center gap-1">
+        {children}
+        {loading && (
+          <Loader
+            size={compact ? 16 : 20}
+            transparent
+            roundedClass="rounded-full"
+            backgroundClass="bg-transparent"
+            className="text-gray-400"
+            forceFallback
+          />
+        )}
+      </span>
+    );
+  }
+
+  // OLD behaviour (for places where you still want full skeleton)
   if (loading) {
     return (
       <div className="inline-flex items-center justify-center">
@@ -179,6 +227,7 @@ const ValueOrSkeleton = ({
   }
   return <>{children}</>;
 };
+
 
 /* ---------- Formatters & Safe Number ---------- */
 const fmtCurrency = (val: any, ccy = "GBP") => {
@@ -217,8 +266,8 @@ const fmtNum = (val: any) =>
   val === null || val === undefined || val === "" || isNaN(Number(val))
     ? "—"
     : new Intl.NumberFormat("en-GB", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(
-        Number(val)
-      );
+      Number(val)
+    );
 
 const fmtPct = (val: any) =>
   val === null || val === undefined || isNaN(Number(val)) ? "—" : `${Number(val).toFixed(2)}%`;
@@ -321,9 +370,8 @@ function SalesTargetCard({
             <button
               key={key}
               onClick={() => setTab(key)}
-              className={`px-3 py-1 text-sm rounded-full transition ${
-                tab === key ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-800"
-              }`}
+              className={`px-3 py-1 text-sm rounded-full transition ${tab === key ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-800"
+                }`}
             >
               {key}
             </button>
@@ -387,9 +435,8 @@ function SalesTargetCard({
       <div className="mt-2 text-center">
         <div className="text-3xl font-bold">{(pct * 100).toFixed(1)}%</div>
         <div
-          className={`mx-auto mt-1 inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ${
-            badgeIsUp ? "bg-green-50 text-green-700" : "bg-rose-50 text-rose-700"
-          }`}
+          className={`mx-auto mt-1 inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ${badgeIsUp ? "bg-green-50 text-green-700" : "bg-rose-50 text-rose-700"
+            }`}
         >
           {badgeStr}
         </div>
@@ -646,20 +693,54 @@ export default function DashboardPage() {
   const cmp = data?.current_month_profit || null;
 
   // ---- derive UK (GBP) safely ----
+  // const uk = useMemo(() => {
+  //   const netSalesGBP = cms?.net_sales?.GBP != null ? toNumberSafe(cms.net_sales.GBP) : null;
+  //   const aspGBP = cms?.asp?.GBP != null ? toNumberSafe(cms.asp.GBP) : null;
+
+  //   let profitGBP: number | null = null;
+  //   if (cmp?.profit && typeof cmp.profit === "object" && cmp.profit.GBP !== undefined) {
+  //     profitGBP = toNumberSafe(cmp.profit.GBP);
+  //   } else if ((typeof cmp?.profit === "number" || typeof cmp?.profit === "string") && netSalesGBP !== null) {
+  //     profitGBP = toNumberSafe(cmp.profit);
+  //   }
+
+  //   let unitsGBP: number | null = null;
+  //   if (cmp?.breakdown?.GBP?.quantity !== undefined) {
+  //     unitsGBP = toNumberSafe(cmp.breakdown.GBP.quantity);
+  //   }
+
+  //   let profitPctGBP: number | null = null;
+  //   if (profitGBP !== null && netSalesGBP && !isNaN(netSalesGBP) && netSalesGBP !== 0) {
+  //     profitPctGBP = (profitGBP / netSalesGBP) * 100;
+  //   }
+
+  //   return { unitsGBP, netSalesGBP, aspGBP, profitGBP, profitPctGBP };
+  // }, [cms, cmp]);
+
   const uk = useMemo(() => {
     const netSalesGBP = cms?.net_sales?.GBP != null ? toNumberSafe(cms.net_sales.GBP) : null;
     const aspGBP = cms?.asp?.GBP != null ? toNumberSafe(cms.asp.GBP) : null;
 
+    // ---- breakdown from current_month_profit.breakdown.GBP ----
+    const breakdownGBP = cmp?.breakdown?.GBP || {};
+
+    const cogsGBP = breakdownGBP.cogs !== undefined ? toNumberSafe(breakdownGBP.cogs) : 0;
+    const fbaFeesGBP =
+      breakdownGBP.fba_fees !== undefined ? toNumberSafe(breakdownGBP.fba_fees) : 0;
+    const sellingFeesGBP =
+      breakdownGBP.selling_fees !== undefined ? toNumberSafe(breakdownGBP.selling_fees) : 0;
+    const amazonFeesGBP = fbaFeesGBP + sellingFeesGBP;
+
     let profitGBP: number | null = null;
     if (cmp?.profit && typeof cmp.profit === "object" && cmp.profit.GBP !== undefined) {
-      profitGBP = toNumberSafe(cmp.profit.GBP);
+      profitGBP = toNumberSafe(cmp.profit.GBP); // Profit = profit.GBP
     } else if ((typeof cmp?.profit === "number" || typeof cmp?.profit === "string") && netSalesGBP !== null) {
       profitGBP = toNumberSafe(cmp.profit);
     }
 
     let unitsGBP: number | null = null;
-    if (cmp?.breakdown?.GBP?.quantity !== undefined) {
-      unitsGBP = toNumberSafe(cmp.breakdown.GBP.quantity);
+    if (breakdownGBP.quantity !== undefined) {
+      unitsGBP = toNumberSafe(breakdownGBP.quantity);
     }
 
     let profitPctGBP: number | null = null;
@@ -667,8 +748,17 @@ export default function DashboardPage() {
       profitPctGBP = (profitGBP / netSalesGBP) * 100;
     }
 
-    return { unitsGBP, netSalesGBP, aspGBP, profitGBP, profitPctGBP };
+    return {
+      unitsGBP,
+      netSalesGBP,   // Sales = net_sales
+      aspGBP,
+      profitGBP,     // Profit
+      profitPctGBP,
+      cogsGBP,       // COGS
+      amazonFeesGBP, // Amazon Fees = fba_fees + selling_fees
+    };
   }, [cms, cmp]);
+
 
   // Amazon chart items
   const barsAmazon = useMemo(() => {
@@ -810,11 +900,10 @@ export default function DashboardPage() {
         <button
           onClick={refreshAll}
           disabled={anyLoading}
-          className={`rounded-md border px-3 py-1.5 text-sm shadow-sm active:scale-[.99] ${
-            anyLoading
-              ? "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400"
-              : "border-gray-300 bg-white hover:bg-gray-50"
-          }`}
+          className={`rounded-md border px-3 py-1.5 text-sm shadow-sm active:scale-[.99] ${anyLoading
+            ? "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400"
+            : "border-gray-300 bg-white hover:bg-gray-50"
+            }`}
           title="Refresh Amazon & Shopify"
         >
           {anyLoading ? "Refreshing…" : "Refresh"}
@@ -854,31 +943,42 @@ export default function DashboardPage() {
               <div className="rounded-2xl border bg-white p-5 shadow-sm">
                 <div className="text-sm text-gray-500">Units</div>
                 <div className="mt-1 text-2xl font-semibold">
-                  <ValueOrSkeleton loading={loading}>{fmtNum(cms?.total_quantity ?? 0)}</ValueOrSkeleton>
+                  <ValueOrSkeleton loading={loading} mode="inline" compact>
+                    {fmtNum(cms?.total_quantity ?? 0)}
+                  </ValueOrSkeleton>
                 </div>
               </div>
+
               <div className="rounded-2xl border bg-white p-5 shadow-sm">
                 <div className="text-sm text-gray-500">Total Sales</div>
                 <div className="mt-1 text-3xl font-bold tracking-tight text-gray-900">
-                  <ValueOrSkeleton loading={loading}>{fmtGBP(uk.netSalesGBP)}</ValueOrSkeleton>
+                  <ValueOrSkeleton loading={loading} mode="inline">
+                    {fmtGBP(uk.netSalesGBP)}
+                  </ValueOrSkeleton>
                 </div>
               </div>
               <div className="rounded-2xl border bg-white p-5 shadow-sm">
                 <div className="text-sm text-gray-500">ASP</div>
                 <div className="mt-1 text-2xl font-semibold">
-                  <ValueOrSkeleton loading={loading}>{fmtGBP(uk.aspGBP)}</ValueOrSkeleton>
+                  <ValueOrSkeleton loading={loading} mode="inline" compact>
+                    {fmtGBP(uk.aspGBP)}
+                  </ValueOrSkeleton>
                 </div>
               </div>
               <div className="rounded-2xl border bg-white p-5 shadow-sm">
                 <div className="text-sm text-gray-500">Profit</div>
                 <div className="mt-1 text-2xl font-semibold">
-                  <ValueOrSkeleton loading={loading}>{fmtGBP(uk.profitGBP)}</ValueOrSkeleton>
+                  <ValueOrSkeleton loading={loading} mode="inline" compact>
+                    {fmtGBP(uk.profitGBP)}
+                  </ValueOrSkeleton>
                 </div>
               </div>
               <div className="rounded-2xl border bg-white p-5 shadow-sm">
                 <div className="text-sm text-gray-500">Profit %</div>
                 <div className="mt-1 text-2xl font-semibold">
-                  <ValueOrSkeleton loading={loading}>{fmtPct(uk.profitPctGBP)}</ValueOrSkeleton>
+                  <ValueOrSkeleton loading={loading} mode="inline" compact>
+                    {fmtPct(uk.profitPctGBP)}
+                  </ValueOrSkeleton>
                 </div>
               </div>
             </div>
@@ -914,7 +1014,7 @@ export default function DashboardPage() {
                     <div className="rounded-2xl border bg-white p-5 shadow-sm">
                       <div className="text-sm text-gray-500">Units</div>
                       <div className="mt-1 text-2xl font-semibold text-gray-900">
-                        <ValueOrSkeleton loading={shopifyLoading}>
+                        <ValueOrSkeleton loading={shopifyLoading} mode="inline" compact>
                           {shopify?.total_orders}
                         </ValueOrSkeleton>
                       </div>
@@ -924,7 +1024,7 @@ export default function DashboardPage() {
                     <div className="rounded-2xl border bg-white p-5 shadow-sm">
                       <div className="text-sm text-gray-500">Total Sales</div>
                       <div className="mt-1 text-3xl font-bold tracking-tight text-gray-900">
-                        <ValueOrSkeleton loading={shopifyLoading}>
+                        <ValueOrSkeleton loading={shopifyLoading} mode="inline">
                           {fmtShopify(toNumberSafe(shopify?.net_sales ?? 0))}
                         </ValueOrSkeleton>
                       </div>
@@ -934,7 +1034,7 @@ export default function DashboardPage() {
                     <div className="rounded-2xl border bg-white p-5 shadow-sm">
                       <div className="text-sm text-gray-500">ASP</div>
                       <div className="mt-1 text-2xl font-semibold text-gray-900">
-                        <ValueOrSkeleton loading={shopifyLoading}>
+                        <ValueOrSkeleton loading={shopifyLoading} mode="inline" compact>
                           {(() => {
                             const units = toNumberSafe(shopify?.total_orders ?? 0);
                             const net = toNumberSafe(shopify?.net_sales ?? 0);
@@ -974,7 +1074,7 @@ export default function DashboardPage() {
       {/* ======================= FULL-WIDTH GRAPH BELOW EVERYTHING ======================= */}
       <div className="mt-8 rounded-2xl border bg-white p-5 shadow-sm">
         <div className="mb-3 text-sm text-gray-500">Amazon — Units, Sales, ASP, Profit, Profit %</div>
-        <SimpleBarChart
+        {/* <SimpleBarChart
           items={[
             {
               label: "Units",
@@ -990,7 +1090,55 @@ export default function DashboardPage() {
               display: fmtPct(Number(uk.profitPctGBP ?? 0)),
             },
           ]}
-        />
+        /> */}
+
+        <div className="mt-8 rounded-2xl border bg-white p-5 shadow-sm">
+          <div className="mb-3 text-sm text-gray-500">
+            Amazon — P&amp;L Breakdown (Sales, Fees, COGS, Ads, Other, Profit)
+          </div>
+          <SimpleBarChart
+            items={[
+              // Sales = net_sales
+              {
+                label: "Sales",
+                raw: Number(uk.netSalesGBP ?? 0),
+                display: fmtGBP(uk.netSalesGBP ?? 0),
+              },
+              // Amazon Fees = fba_fees + selling_fees
+              {
+                label: "Amazon Fees",
+                raw: Number(uk.amazonFeesGBP ?? 0),
+                display: fmtGBP(uk.amazonFeesGBP ?? 0),
+              },
+              // COGS
+              {
+                label: "COGS",
+                raw: Number(uk.cogsGBP ?? 0),
+                display: fmtGBP(uk.cogsGBP ?? 0),
+              },
+              // Advertisements (currently hard-coded to 0)
+              {
+                label: "Advertisements",
+                raw: 0,
+                display: fmtGBP(0),
+              },
+              // Other Charges (currently hard-coded to 0)
+              {
+                label: "Other Charges",
+                raw: 0,
+                display: fmtGBP(0),
+              },
+              // Profit = profit.GBP
+              {
+                label: "Profit",
+                raw: Number(uk.profitGBP ?? 0),
+                display: fmtGBP(uk.profitGBP ?? 0),
+              },
+            ]}
+          />
+        </div>
+
+
       </div>
     </div>
   );

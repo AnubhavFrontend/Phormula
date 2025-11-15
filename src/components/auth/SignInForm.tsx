@@ -164,7 +164,7 @@ export default function SignInForm() {
                   </span>
                 </label>
                 <Link
-                  href="/reset-password"
+                  href="/forgot"
                   className="text-sm text-blue-700 "
                 >
                   Forgot password?
