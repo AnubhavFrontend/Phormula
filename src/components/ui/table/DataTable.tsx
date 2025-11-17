@@ -28,8 +28,13 @@ type DataTableProps<T extends Row> = {
   showCellTitle?: boolean;
 
   /** Pagination (client-side) */
-  pageSize?: number;                 // default 10
-  initialPage?: number;              // 1-based index
+  pageSize?: number; // default 10
+  initialPage?: number; // 1-based index
+  paginate?: boolean;
+  scrollY?: boolean;
+
+  /** Row styling */
+  rowClassName?: (row: T, rowIndex: number) => string;
 
   /** Optional callback when page changes (1-based) */
   onPageChange?: (page: number) => void;
@@ -47,10 +52,18 @@ export default function DataTable<T extends Row>({
   showCellTitle = true,
   pageSize = 10,
   initialPage = 1,
+  paginate = true, // default on
+  scrollY = true, // default on
+  rowClassName,
   onPageChange,
 }: DataTableProps<T>) {
   const containerStyle: React.CSSProperties = {
-    maxHeight: typeof maxHeight === "number" ? `${maxHeight}px` : maxHeight,
+    // only limit height (and allow vertical scroll) when scrollY is true
+    maxHeight: scrollY
+      ? typeof maxHeight === "number"
+        ? `${maxHeight}px`
+        : maxHeight
+      : undefined,
   };
 
   const hasData = Array.isArray(data) && data.length > 0;
@@ -68,15 +81,29 @@ export default function DataTable<T extends Row>({
   }, [data, pageSize]);
 
   const total = data?.length ?? 0;
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
-  const startIdx = total === 0 ? 0 : (page - 1) * pageSize + 1;
-  const endIdx = total === 0 ? 0 : Math.min(page * pageSize, total);
+
+  const totalPages = paginate
+    ? Math.max(1, Math.ceil(total / pageSize))
+    : 1;
+
+  const startIdx =
+    !paginate || total === 0
+      ? total === 0
+        ? 0
+        : 1
+      : (page - 1) * pageSize + 1;
+
+  const endIdx =
+    !paginate || total === 0
+      ? total
+      : Math.min(page * pageSize, total);
 
   const pageRows = React.useMemo(() => {
     if (!hasData) return [];
+    if (!paginate) return data; // no slicing when pagination disabled
     const start = (page - 1) * pageSize;
     return data.slice(start, start + pageSize);
-  }, [data, page, pageSize, hasData]);
+  }, [data, page, pageSize, hasData, paginate]);
 
   const goToPage = (p: number) => {
     const next = Math.min(Math.max(1, p), totalPages);
@@ -90,17 +117,30 @@ export default function DataTable<T extends Row>({
   const onLast = () => goToPage(totalPages);
 
   return (
-    <div className={clsx("overflow-hidden rounded border border-gray-200", className)}>
+    <div
+      className={clsx(
+        "overflow-hidden rounded border border-gray-200",
+        className
+      )}
+    >
       <div
-        className={clsx("w-full overflow-auto", stickyHeader && "scroll-pt-12")}
+        className={clsx(
+          "w-full",
+          scrollY ? "overflow-auto" : "overflow-x-auto", // only horizontal scroll when scrollY=false
+          stickyHeader && "scroll-pt-12"
+        )}
         style={containerStyle}
       >
         <table
-          className={clsx("min-w-[720px] w-max border-collapse text-sm", tableClassName)}
+          className={clsx(
+            // responsive font + nowrap + min width so it scrolls nicely on small screens
+            "min-w-[720px] w-full border-collapse text-xs md:text-sm whitespace-nowrap",
+            tableClassName
+          )}
         >
           <thead
             className={clsx(
-              "bg-emerald-600 text-amber-100",
+              "bg-green-500 text-amber-100",
               stickyHeader && "sticky top-0 z-10"
             )}
           >
@@ -108,7 +148,10 @@ export default function DataTable<T extends Row>({
               {columns.map((col, i) => (
                 <th
                   key={String(col.key) + i}
-                  className={clsx("border border-slate-300 px-3 py-2 text-left", col.headerClassName)}
+                  className={clsx(
+                    "border border-slate-300 px-3 py-2 md:py-3 text-left",
+                    col.headerClassName
+                  )}
                   style={col.width ? { width: col.width } : undefined}
                 >
                   {col.header}
@@ -120,7 +163,10 @@ export default function DataTable<T extends Row>({
           <tbody>
             {!hasData && (
               <tr>
-                <td className="px-3 py-4 text-sm text-gray-500" colSpan={columns.length}>
+                <td
+                  className="px-3 py-4 text-xs md:text-sm text-gray-500"
+                  colSpan={columns.length}
+                >
                   {emptyMessage}
                 </td>
               </tr>
@@ -132,11 +178,14 @@ export default function DataTable<T extends Row>({
                   key={ri}
                   className={clsx(
                     zebra && ri % 2 === 1 ? "bg-gray-50" : "bg-white",
-                    "hover:bg-emerald-50/70"
+                    "hover:bg-emerald-50/70",
+                    rowClassName?.(row, (page - 1) * pageSize + ri)
                   )}
                 >
                   {columns.map((col, ci) => {
-                    const value = (row as Record<string, React.ReactNode>)[String(col.key)];
+                    const value = (row as Record<string, React.ReactNode>)[
+                      String(col.key)
+                    ];
                     return (
                       <td
                         key={String(col.key) + ci}
@@ -144,9 +193,17 @@ export default function DataTable<T extends Row>({
                           "max-w-[240px] truncate border border-slate-200 px-3 py-2",
                           col.cellClassName
                         )}
-                        title={showCellTitle ? String(value ?? "\u00A0") : undefined}
+                        title={
+                          showCellTitle ? String(value ?? "\u00A0") : undefined
+                        }
                       >
-                        {col.render ? col.render(row, value, (page - 1) * pageSize + ri) : value ?? "\u00A0"}
+                        {col.render
+                          ? col.render(
+                              row,
+                              value,
+                              (page - 1) * pageSize + ri
+                            )
+                          : value ?? "\u00A0"}
                       </td>
                     );
                   })}
@@ -157,56 +214,62 @@ export default function DataTable<T extends Row>({
       </div>
 
       {/* Pagination footer */}
-      <div className="flex flex-col items-center gap-2 border-t border-gray-200 p-3 sm:flex-row sm:justify-between">
-        <div className="text-xs text-gray-600">
-          {total > 0 ? (
-            <>Showing <span className="font-medium">{startIdx}</span>–<span className="font-medium">{endIdx}</span> of <span className="font-medium">{total}</span></>
-          ) : (
-            <>No records</>
-          )}
+      {paginate && (
+        <div className="flex flex-col items-center gap-2 border-t border-gray-200 p-3 sm:flex-row sm:justify-between">
+          <div className="text-xs text-gray-600">
+            {total > 0 ? (
+              <>
+                Showing <span className="font-medium">{startIdx}</span>–
+                <span className="font-medium">{endIdx}</span> of{" "}
+                <span className="font-medium">{total}</span>
+              </>
+            ) : (
+              <>No records</>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onFirst}
+              disabled={page <= 1}
+              className="rounded border px-2 py-1 text-xs disabled:opacity-50"
+              aria-label="First page"
+            >
+              « First
+            </button>
+            <button
+              onClick={onPrev}
+              disabled={page <= 1}
+              className="rounded border px-2 py-1 text-xs disabled:opacity-50"
+              aria-label="Previous page"
+            >
+              ‹ Prev
+            </button>
+
+            <span className="text-xs text-gray-700">
+              Page <span className="font-medium">{page}</span> of{" "}
+              <span className="font-medium">{totalPages}</span>
+            </span>
+
+            <button
+              onClick={onNext}
+              disabled={page >= totalPages}
+              className="rounded border px-2 py-1 text-xs disabled:opacity-50"
+              aria-label="Next page"
+            >
+              Next ›
+            </button>
+            <button
+              onClick={onLast}
+              disabled={page >= totalPages}
+              className="rounded border px-2 py-1 text-xs disabled:opacity-50"
+              aria-label="Last page"
+            >
+              Last »
+            </button>
+          </div>
         </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            onClick={onFirst}
-            disabled={page <= 1}
-            className="rounded border px-2 py-1 text-xs disabled:opacity-50"
-            aria-label="First page"
-          >
-            « First
-          </button>
-          <button
-            onClick={onPrev}
-            disabled={page <= 1}
-            className="rounded border px-2 py-1 text-xs disabled:opacity-50"
-            aria-label="Previous page"
-          >
-            ‹ Prev
-          </button>
-
-          <span className="text-xs text-gray-700">
-            Page <span className="font-medium">{page}</span> of{" "}
-            <span className="font-medium">{totalPages}</span>
-          </span>
-
-          <button
-            onClick={onNext}
-            disabled={page >= totalPages}
-            className="rounded border px-2 py-1 text-xs disabled:opacity-50"
-            aria-label="Next page"
-          >
-            Next ›
-          </button>
-          <button
-            onClick={onLast}
-            disabled={page >= totalPages}
-            className="rounded border px-2 py-1 text-xs disabled:opacity-50"
-            aria-label="Last page"
-          >
-            Last »
-          </button>
-        </div>
-      </div>
+      )}
     </div>
   );
 }

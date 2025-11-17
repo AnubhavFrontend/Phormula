@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import IntegrationsModal from "./IntegrationsModal";
+import { GrIntegration } from "react-icons/gr";
 
 const IntegrationToggleButton: React.FC = () => {
   const [open, setOpen] = useState(false);
@@ -15,14 +16,15 @@ const IntegrationToggleButton: React.FC = () => {
                    dark:bg-[#5EA68E] dark:hover:bg-[#4F937D]"
       >
         {/* Integration Icon (two interlocking nodes) */}
-        <svg
+        {/* <svg
           xmlns="http://www.w3.org/2000/svg"
           className="h-5 w-5 text-white"
           fill="currentColor"
           viewBox="0 0 24 24"
         >
           <path d="M17 3a4 4 0 0 0-3.465 6H10a4 4 0 0 0 0 8h3.535A4 4 0 1 0 17 3Zm-3.465 8A4 4 0 0 1 17 17a4 4 0 0 1-3.465-6H10a2 2 0 1 1 0-4h3.535Z" />
-        </svg>
+        </svg> */}
+        <GrIntegration className="text-yellow-200"/>
       </button>
 
       <IntegrationsModal open={open} onClose={() => setOpen(false)} />

@@ -1302,26 +1302,7 @@ const GraphPage: React.FC<GraphPageProps> = ({
         ))}
       </div>
 
-      {/* Export button ABOVE chart */}
-      <div
-        className={[
-          "mt-2 sm:mt-3",
-          "w-full sm:w-11/12 md:w-4/5 mx-auto",
-          "text-right",
-          allValuesZero ? "opacity-30" : "opacity-100",
-          "transition-opacity duration-300",
-        ].join(" ")}
-      >
-        <Button
-          onClick={exportToExcel}
-          size="sm"
-          disabled={allValuesZero}
-          className={allValuesZero ? "cursor-not-allowed" : "cursor-pointer"}
-        >
-          Download {periodInfo} Metrics (.xlsx)&nbsp;
-          <i className="fa-solid fa-download fa-beat" />
-        </Button>
-      </div>
+
 
       {/* Chart */}
       <div className="relative mt-2 sm:mt-3">
@@ -1446,6 +1427,28 @@ const GraphPage: React.FC<GraphPageProps> = ({
           </div>
         )}
       </div>
+
+      {/* Export button ABOVE chart */}
+      <div
+        className={[
+          "mt-2 sm:mt-3",
+          "w-full mx-auto",
+          "flex justify-end",     
+          allValuesZero ? "opacity-30" : "opacity-100",
+          "transition-opacity duration-300",
+        ].join(" ")}
+      >
+        <Button
+          onClick={exportToExcel}
+          size="sm"
+          disabled={allValuesZero}
+          className={allValuesZero ? "cursor-not-allowed" : "cursor-pointer"}
+        >
+          Download {periodInfo} Metrics (.xlsx)&nbsp;
+          <i className="fa-solid fa-download fa-beat" />
+        </Button>
+      </div>
+
     </div>
   );
 };
