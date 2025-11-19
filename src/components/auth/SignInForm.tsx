@@ -75,20 +75,25 @@ export default function SignInForm() {
         headers: { Authorization: `Bearer ${result.token}` },
       }).then((r) => r.json()).catch(() => null);
 
-      if (me) dispatch(setUser(me));
+            if (me) dispatch(setUser(me));
 
-      // Onboarding decision
-      const serverDone =
-        me?.onboarding_complete === true ||
-        (typeof me?.brand_name === "string" && me.brand_name.trim().length > 0);
+      // ✅ Onboarding logic
+      // 1. Trust the server flag if it exists
+      const onboardingComplete = me?.onboarding_complete === true;
 
-      const localDone = localStorage.getItem("onboardDone") === "true";
+      // 2. Fallback: if there's a brand_name, assume onboarding was already done
+      const hasBrand =
+        typeof me?.brand_name === "string" &&
+        me.brand_name.trim().length > 0;
 
-      if (serverDone || localDone) {
+      if (onboardingComplete || hasBrand) {
+        // Existing / already-onboarded user → go to dashboard (or intended page)
         router.push(redirect);
       } else {
+        // Truly new user → start full onboarding flow from step 1
         router.push("/choose-country?onboard=1");
       }
+
     } catch (err: any) {
       const msg =
         err?.status === 403

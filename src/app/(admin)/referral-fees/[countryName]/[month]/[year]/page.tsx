@@ -398,70 +398,32 @@ export default function ReferralFeesDashboard(): JSX.Element {
     }));
   }, [rows]);
 
+  // FULL table (all rows from skuwise_table_data)
+  const skuTableAll: Row[] = useMemo(() => {
+    return skuwiseRows.map((r, idx) => {
+      const quantity = Math.round(toNumberSafe(r.quantity));
+      const sales = toNumberSafe(r.product_sales ?? r.sales);
+      const applicable = toNumberSafe(r.answer);
+      const charged = toNumberSafe(r.selling_fees);
+      const overcharged = toNumberSafe(r.overcharged ?? r.difference);
 
-  /* ===================== Excel Download ===================== */
+      // Detect TOTAL row (by SKU or by being last row)
+      const isTotal =
+        String(r.sku ?? "").toUpperCase() === "TOTAL" ||
+        idx === skuwiseRows.length - 1;
 
-  const handleDownloadExcel = useCallback(() => {
-    if (!rows.length && !overchargedRows.length) return;
-
-    const wb = XLSX.utils.book_new();
-
-    // Sheet 1: Overcharged Ref Fees
-    const overDataBody = overchargedRows.map((r) => ({
-      SKU: r.sku,
-      "Product Name": r.productName,
-      Units: Math.round(r.quantity),
-      Sales: Number(r.sales.toFixed(2)),
-      "Ref %": Number(r.refRate.toFixed(2)),
-      "Ref Fees Applicable": Number(r.refFeesApplicable.toFixed(2)),
-      "Ref Fees Charged": Number(r.refFeesCharged.toFixed(2)),
-      Overcharged: Number(r.overcharged.toFixed(2)),
-    }));
-
-    const totals = overchargedRows.reduce(
-      (acc, r) => {
-        acc.units += Math.round(r.quantity);
-        acc.sales += r.sales;
-        acc.refFeesApplicable += r.refFeesApplicable;
-        acc.refFeesCharged += r.refFeesCharged;
-        acc.overcharged += r.overcharged;
-        return acc;
-      },
-      {
-        units: 0,
-        sales: 0,
-        refFeesApplicable: 0,
-        refFeesCharged: 0,
-        overcharged: 0,
-      }
-    );
-
-    const totalRow = {
-      SKU: "TOTAL",
-      "Product Name": "",
-      Units: totals.units,
-      Sales: Number(totals.sales.toFixed(2)),
-      "Ref %": "",
-      "Ref Fees Applicable": Number(totals.refFeesApplicable.toFixed(2)),
-      "Ref Fees Charged": Number(totals.refFeesCharged.toFixed(2)),
-      Overcharged: Number(totals.overcharged.toFixed(2)),
-    };
-
-    const overData = [...overDataBody, totalRow];
-
-    const wsOver = XLSX.utils.json_to_sheet(overData);
-    XLSX.utils.book_append_sheet(wb, wsOver, "Overcharged Ref Fees");
-
-    // Sheet 2: All Data (raw table_data)
-    const allData = rows.map((r) => ({ ...r }));
-    const wsAll = XLSX.utils.json_to_sheet(allData);
-    XLSX.utils.book_append_sheet(wb, wsAll, "All Data");
-
-    XLSX.writeFile(
-      wb,
-      `Referral-Fees-${country}-${month}-${year}.xlsx`
-    );
-  }, [rows, overchargedRows, country, month, year]);
+      return {
+        sku: isTotal ? "TOTAL" : (r.sku ?? ""),
+        productName: isTotal ? "" : (r.product_name ?? ""),
+        units: quantity,
+        sales,
+        applicable,
+        charged,
+        overcharged,
+        _isTotal: isTotal,
+      };
+    });
+  }, [skuwiseRows]);
 
 
   // Columns for DataTable (SKU-wise overcharged)
@@ -470,7 +432,7 @@ export default function ReferralFeesDashboard(): JSX.Element {
     { key: "productName", header: "Product Name" },
     { key: "units", header: "Units" },
     { key: "sales", header: "Sales", render: (_, v) => fmtCurrency(Number(v)) },
-    { key: "refPct", header: "Ref %", render: (_, v) => `${Number(v).toFixed(2)}%` },
+    // { key: "refPct", header: "Ref %", render: (_, v) => `${Number(v).toFixed(2)}%` },
     { key: "applicable", header: "Ref Fees Applicable", render: (_, v) => fmtCurrency(Number(v)) },
     { key: "charged", header: "Ref Fees Charged", render: (_, v) => fmtCurrency(Number(v)) },
     {
@@ -480,32 +442,156 @@ export default function ReferralFeesDashboard(): JSX.Element {
     },
   ];
 
-  const skuTableData: Row[] = skuwiseRows.map((r, idx) => {
-    const quantity = Math.round(toNumberSafe(r.quantity));
-    const sales = toNumberSafe(r.product_sales ?? r.sales);
-    const applicable = toNumberSafe(r.answer);
-    const charged = toNumberSafe(r.selling_fees);
-    const overcharged = toNumberSafe(r.overcharged ?? r.difference);
+  // TOP 5 by Sales for display in browser table
+const skuTableTop5: Row[] = useMemo(() => {
+  if (!skuTableAll.length) return [];
 
-    const refPct = sales ? (applicable / sales) * 100 : 0;
+  // ❌ exclude TOTAL row
+  const nonTotal = skuTableAll.filter((row) => !(row as any)._isTotal);
 
-    // Detect TOTAL row (either by value or by position)
-    const isTotal =
-      String(r.sku ?? "").toUpperCase() === "TOTAL" ||
-      idx === skuwiseRows.length - 1;
+  // sort by Sales
+  const sorted = [...nonTotal].sort(
+    (a, b) =>
+      toNumberSafe((b as any).sales) - toNumberSafe((a as any).sales)
+  );
+
+  // return only TOP 5 rows (no TOTAL)
+  return sorted.slice(0, 5);
+}, [skuTableAll]);
+
+
+
+  /* ===================== Excel Download ===================== */
+
+  // const handleDownloadExcel = useCallback(() => {
+  //   if (!rows.length && !overchargedRows.length) return;
+
+  //   const wb = XLSX.utils.book_new();
+
+  //   // Sheet 1: Overcharged Ref Fees
+  //   const overDataBody = overchargedRows.map((r) => ({
+  //     SKU: r.sku,
+  //     "Product Name": r.productName,
+  //     Units: Math.round(r.quantity),
+  //     Sales: Number(r.sales.toFixed(2)),
+  //     // "Ref %": Number(r.refRate.toFixed(2)),
+  //     "Ref Fees Applicable": Number(r.refFeesApplicable.toFixed(2)),
+  //     "Ref Fees Charged": Number(r.refFeesCharged.toFixed(2)),
+  //     Overcharged: Number(r.overcharged.toFixed(2)),
+  //   }));
+
+  //   const totals = overchargedRows.reduce(
+  //     (acc, r) => {
+  //       acc.units += Math.round(r.quantity);
+  //       acc.sales += r.sales;
+  //       acc.refFeesApplicable += r.refFeesApplicable;
+  //       acc.refFeesCharged += r.refFeesCharged;
+  //       acc.overcharged += r.overcharged;
+  //       return acc;
+  //     },
+  //     {
+  //       units: 0,
+  //       sales: 0,
+  //       refFeesApplicable: 0,
+  //       refFeesCharged: 0,
+  //       overcharged: 0,
+  //     }
+  //   );
+
+  //   const totalRow = {
+  //     SKU: "TOTAL",
+  //     "Product Name": "",
+  //     Units: totals.units,
+  //     Sales: Number(totals.sales.toFixed(2)),
+  //     // "Ref %": "",
+  //     "Ref Fees Applicable": Number(totals.refFeesApplicable.toFixed(2)),
+  //     "Ref Fees Charged": Number(totals.refFeesCharged.toFixed(2)),
+  //     Overcharged: Number(totals.overcharged.toFixed(2)),
+  //   };
+
+  //   const overData = [...overDataBody, totalRow];
+
+  //   const wsOver = XLSX.utils.json_to_sheet(overData);
+  //   XLSX.utils.book_append_sheet(wb, wsOver, "Overcharged Ref Fees");
+
+  //   // Sheet 2: All Data (raw table_data)
+  //   const allData = rows.map((r) => ({ ...r }));
+  //   const wsAll = XLSX.utils.json_to_sheet(allData);
+  //   XLSX.utils.book_append_sheet(wb, wsAll, "All Data");
+
+  //   XLSX.writeFile(
+  //     wb,
+  //     `Referral-Fees-${country}-${month}-${year}.xlsx`
+  //   );
+  // }, [rows, overchargedRows, country, month, year]);
+
+  const handleDownloadExcel = useCallback(() => {
+  if (!skuTableAll.length) return;
+
+  const wb = XLSX.utils.book_new();
+
+  // Sheet 1: Overcharged Ref Fees (FULL TABLE)
+  const overData = skuTableAll.map((r) => {
+    const units = Math.round(toNumberSafe((r as any).units));
+    const sales = toNumberSafe((r as any).sales);
+    const applicable = toNumberSafe((r as any).applicable);
+    const charged = toNumberSafe((r as any).charged);
+    const overcharged = toNumberSafe((r as any).overcharged);
 
     return {
-      sku: isTotal ? "TOTAL" : (r.sku ?? ""),
-      productName: isTotal ? "" : (r.product_name ?? ""),   // 👈 BLANK second column
-      units: quantity,
-      sales,
-      refPct,
-      applicable,
-      charged,
-      overcharged,
-      _isTotal: isTotal,   // 👈 helper flag for styling
+      SKU: String(r.sku ?? ""),
+      "Product Name": String(r.productName ?? ""),
+      Units: units,
+      Sales: Number(sales.toFixed(2)),
+      "Ref Fees Applicable": Number(applicable.toFixed(2)),
+      "Ref Fees Charged": Number(charged.toFixed(2)),
+      Overcharged: Number(overcharged.toFixed(2)),
     };
   });
+
+  const wsOver = XLSX.utils.json_to_sheet(overData);
+  XLSX.utils.book_append_sheet(wb, wsOver, "Overcharged Ref Fees");
+
+  // Sheet 2: All raw data (unchanged)
+  const allData = rows.map((r) => ({ ...r }));
+  const wsAll = XLSX.utils.json_to_sheet(allData);
+  XLSX.utils.book_append_sheet(wb, wsAll, "All Data");
+
+  XLSX.writeFile(
+    wb,
+    `Referral-Fees-${country}-${month}-${year}.xlsx`
+  );
+}, [skuTableAll, rows, country, month, year]);
+
+
+
+
+  // const skuTableData: Row[] = skuwiseRows.map((r, idx) => {
+  //   const quantity = Math.round(toNumberSafe(r.quantity));
+  //   const sales = toNumberSafe(r.product_sales ?? r.sales);
+  //   const applicable = toNumberSafe(r.answer);
+  //   const charged = toNumberSafe(r.selling_fees);
+  //   const overcharged = toNumberSafe(r.overcharged ?? r.difference);
+
+  //   const refPct = sales ? (applicable / sales) * 100 : 0;
+
+  //   // Detect TOTAL row (either by value or by position)
+  //   const isTotal =
+  //     String(r.sku ?? "").toUpperCase() === "TOTAL" ||
+  //     idx === skuwiseRows.length - 1;
+
+  //   return {
+  //     sku: isTotal ? "TOTAL" : (r.sku ?? ""),
+  //     productName: isTotal ? "" : (r.product_name ?? ""), 
+  //     units: quantity,
+  //     sales,
+  //     // refPct,
+  //     applicable,
+  //     charged,
+  //     overcharged,
+  //     _isTotal: isTotal,   // 👈 helper flag for styling
+  //   };
+  // });
 
 
 
@@ -536,7 +622,8 @@ export default function ReferralFeesDashboard(): JSX.Element {
 
 
       {/* Filter row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-3"> */}
+      <div className="flex flex-col md:flex-row items-center justify-between gap-[0.5vw]">
         <MonthYearPickerTable
           month={month}
           year={year}
@@ -670,8 +757,8 @@ export default function ReferralFeesDashboard(): JSX.Element {
                 <tr
                   key={r.label}
                   className={`${isLast || isSecondLast
-                      ? "border-b-[2.5px] border-charcoal-500"
-                      : "border-b-[1px] border-charcoal-500"
+                    ? "border-b-[2.5px] border-charcoal-500"
+                    : "border-b-[1px] border-charcoal-500"
                     }`}
                 >
                   <td className={`py-2 px-3 ${isLast ? "font-black" : ""}`}>
@@ -734,7 +821,7 @@ export default function ReferralFeesDashboard(): JSX.Element {
             onClick={handleDownloadExcel}
             variant="primary"
             size="sm"
-            // className="inline-flex items-center gap-2 bg-gray-800 text-white px-3 py-2 rounded-xl text-xs md:text-sm whitespace-nowrap"
+          // className="inline-flex items-center gap-2 bg-gray-800 text-white px-3 py-2 rounded-xl text-xs md:text-sm whitespace-nowrap"
           >
             <FiDownload className="h-4 w-4" />
             Download Excel
@@ -818,18 +905,17 @@ export default function ReferralFeesDashboard(): JSX.Element {
 
         <DataTable
           columns={skuColumns}
-          data={skuTableData}
-          paginate={false}     // 👈 no pagination
-          scrollY={false}      // 👈 no vertical scrollbar
-          maxHeight="none"     // optional; won't matter if scrollY=false per style above
+          data={skuTableTop5}
+          paginate={false}
+          scrollY={false}
+          maxHeight="none"
           zebra={true}
-          stickyHeader={false} // you can set true/false as you like
+          stickyHeader={false}
           rowClassName={(row) =>
-            (row as any)._isTotal
-              ? "bg-[#DDDDDD] font-bold"   // 👈 different bg + font for TOTAL row
-              : ""
+            (row as any)._isTotal ? "bg-[#DDDDDD] font-bold" : ""
           }
         />
+
 
       </div>
     </div>

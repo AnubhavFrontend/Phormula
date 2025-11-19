@@ -42,11 +42,27 @@ export default function UserDropdown() {
   }
 
   // 🔴 Logout handler
-  const handleLogout = async () => {
-    await dispatch(logout());
-    closeDropdown();
-    router.push("/signin");
-  };
+  // const handleLogout = async () => {
+  //   await dispatch(logout());
+  //   closeDropdown();
+  //   router.push("/signin");
+  // };
+
+// UserDropdown.tsx
+
+const handleLogout = async () => {
+  await dispatch(logout());
+
+// 💣 Clear all client-side cached auth/onboarding state
+  if (typeof window !== "undefined") {
+    localStorage.clear();
+    sessionStorage.clear();
+  }
+
+  closeDropdown();
+  router.push("/signin");
+};
+
 
   return (
     <div className="relative z-99999">

@@ -146,7 +146,8 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
     // ---------- SIGN IN + RESET PASSWORD (same left side) ----------
 if (
   pathname.startsWith("/signin") ||
-  pathname.startsWith("/reset_password")
+  pathname.startsWith("/reset_password") ||   
+  pathname.startsWith("/verify-email")
 ) {
   return (
     <div className="relative h-screen w-full bg-green-500 flex flex-col justify-end px-6">

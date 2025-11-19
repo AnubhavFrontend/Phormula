@@ -192,19 +192,21 @@ const MonthYearPickerTable: React.FC<MonthYearPickerTableProps> = ({
   };
 
   return (
-    <div
-      className={[
-        "inline-flex rounded-md border border-[#414042] bg-white",
-        "text-[clamp(12px,0.729vw,16px)] font-[Lato] overflow-hidden",
-        className,
-      ].join(" ")}
-    >
+    // <div
+    //   className={[
+    //     "inline-flex rounded-md border border-[#414042] bg-white",
+    //     "text-[clamp(12px,0.729vw,16px)] font-[Lato] overflow-hidden",
+    //     className,
+    //   ].join(" ")}
+    // >
+    <div className="inline-flex rounded-md border border-[#414042] bg-white text-[clamp(12px,0.729vw,16px)] font-[Lato] overflow-hidden">
       {/* MONTH SELECT */}
       <div className="relative flex items-center">
         <select
           value={selectMonthValue || ""}
           onChange={(e) => emitMonth(e.target.value)}
-          className="appearance-none pl-3 pr-4 py-1.5 text-center bg-white focus:outline-none leading-tight"
+          // className="appearance-none pl-3 pr-4 py-1.5 text-center bg-white focus:outline-none leading-tight"
+          className="appearance-none px-3 pr-8 py-2 text-center bg-white focus:outline-none"
         >
           <option value="" disabled>
             Month
@@ -215,7 +217,7 @@ const MonthYearPickerTable: React.FC<MonthYearPickerTableProps> = ({
             </option>
           ))}
         </select>
-        <span className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-[10px] text-[#414042]">
+       <span className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-xs text-[#414042]">
           ▾
         </span>
       </div>
@@ -225,7 +227,8 @@ const MonthYearPickerTable: React.FC<MonthYearPickerTableProps> = ({
         <select
           value={year ? String(year) : ""}
           onChange={(e) => onYearChange(e.target.value)}
-          className="appearance-none pl-3 pr-4 py-1.5 text-center bg-white focus:outline-none leading-tight"
+          // className="appearance-none pl-3 pr-4 py-1.5 text-center bg-white focus:outline-none leading-tight"
+           className="appearance-none px-3 pr-8 py-2 text-center bg-white focus:outline-none"
         >
           <option value="">Year</option>
           {yearOptions.map((y) => (
@@ -234,7 +237,7 @@ const MonthYearPickerTable: React.FC<MonthYearPickerTableProps> = ({
             </option>
           ))}
         </select>
-        <span className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-[10px] text-[#414042]">
+        <span className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-xs text-[#414042]">
           ▾
         </span>
       </div>

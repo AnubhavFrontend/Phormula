@@ -1295,10 +1295,10 @@ const CashFlowPage: React.FC = () => {
         periodType === "monthly"
             ? `${month} ${year}`
             : periodType === "quarterly"
-            ? `${selectedQuarter} (${(quarterMapping[selectedQuarter] || []).join(
-                  ", "
-              )}) ${year}`
-            : `${year}`;
+                ? `${selectedQuarter} (${(quarterMapping[selectedQuarter] || []).join(
+                    ", "
+                )}) ${year}`
+                : `${year}`;
 
     const barChartOptions = {
         responsive: true,
@@ -1420,9 +1420,8 @@ const CashFlowPage: React.FC = () => {
             chartType === "line" ? "Line Chart Metrics" : "Bar Chart Metrics"
         );
 
-        const fileName = `${
-            chartType === "line" ? "LineChart" : "BarChart"
-        }_${periodType}_${year}.xlsx`;
+        const fileName = `${chartType === "line" ? "LineChart" : "BarChart"
+            }_${periodType}_${year}.xlsx`;
         XLSX.writeFile(wb, fileName);
     };
 
@@ -1518,7 +1517,7 @@ const CashFlowPage: React.FC = () => {
                 <div className="flex flex-col md:flex-row items-center gap-[0.5vw]">
                     <PeriodFiltersTable
                         range={periodType}
-                        selectedMonth={month.toLowerCase()} 
+                        selectedMonth={month.toLowerCase()}
                         selectedQuarter={selectedQuarter}
                         selectedYear={year}
                         yearOptions={years}
@@ -1557,16 +1556,28 @@ const CashFlowPage: React.FC = () => {
             {/* Results – show whenever we have data */}
             {data && (
                 <div className="flex flex-col">
-                    {/* Title */}
-                    <div className="mt-4 mb-3">
-                        <h3 className="m-0 text-xl font-bold text-charcoal-500">
-                            Cash Generated –{" "}
-                            <b className="text-green-500">{xAxisTitle}</b>{" "}
-                            <b className="text-green-500">
-                                ({currencySymbol})
-                            </b>
-                        </h3>
+
+                    {/* <div className="mt-4 mb-3">
+                        <PageBreadcrumb
+                            pageTitle={`Cash Generated – ${xAxisTitle} (${currencySymbol})`}
+                            variant="page"
+                            align="left"
+                            textSize="xl"
+                        />
+                    </div> */}
+
+                    <div className="flex items-baseline gap-2 mt-4 mb-2">
+                        <PageBreadcrumb
+                            pageTitle="Cash Generated –"
+                            variant="page"
+                            align="left"
+                            className="mb-0"
+                        />
+                        <span className="text-[#5EA68E] text-xl sm:text-2xl">
+                           {xAxisTitle} ({currencySymbol})
+                        </span>
                     </div>
+
 
                     {/* Summary Table */}
                     <div className="overflow-x-auto">
@@ -1614,12 +1625,11 @@ const CashFlowPage: React.FC = () => {
                                                 <td className="px-3 py-2 text-center border border-[#414042]">
                                                     {!isLastRow && (
                                                         <span
-                                                            className={`${
-                                                                index === 0 ||
+                                                            className={`${index === 0 ||
                                                                 index === 3
-                                                                    ? "text-green-600"
-                                                                    : "text-red-600"
-                                                            } font-semibold`}
+                                                                ? "text-green-600"
+                                                                : "text-red-600"
+                                                                } font-semibold`}
                                                         >
                                                             {sign}
                                                         </span>

@@ -73,6 +73,7 @@
 
 "use client";
 
+import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import Loader from "@/components/loader/Loader";
 import React, { useEffect, useState, useMemo, useCallback } from "react";
 
@@ -80,8 +81,8 @@ import React, { useEffect, useState, useMemo, useCallback } from "react";
 const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:5000";
 const SHOPIFY_CCY = process.env.NEXT_PUBLIC_SHOPIFY_CURRENCY || "GBP";
 const SHOPIFY_TO_GBP = Number(process.env.NEXT_PUBLIC_SHOPIFY_TO_GBP || "1");
-const API_URL = `${baseURL}/amazon_api/orders?include=finances`;
-// const API_URL = `${baseURL}/amazon_api/orders`;
+// const API_URL = `${baseURL}/amazon_api/orders?include=finances`;
+const API_URL = `${baseURL}/amazon_api/orders`;
 const SHOPIFY_ENDPOINT = `${baseURL}/shopify/get_monthly_data`;
 
 /** 💵 FX rates */
@@ -362,25 +363,31 @@ function SalesTargetCard({
   return (
     <div className="rounded-2xl border bg-white p-5 shadow-sm">
       {/* Header with tabs */}
-      <div className="mb-3 flex items-center justify-between">
-        <div className="text-xl font-semibold text-gray-800">Sales Target</div>
+      <div className="mb-3 flex flex-col items-center justify-between gap-2">
+        <PageBreadcrumb pageTitle="Sales Target" textSize="2xl" variant="page" align="center" />
 
-        <div className="inline-flex rounded-full border p-1 bg-gray-50">
+        {/* Region pills */}
+        <div className="inline-flex rounded-lg border bg-gray-50 p-1 text-xs">
           {(["Global", "UK", "US", "CA"] as RegionKey[]).map((key) => (
             <button
               key={key}
+              type="button"
               onClick={() => setTab(key)}
-              className={`px-3 py-1 text-sm rounded-full transition ${tab === key ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-800"
+              className={`px-3 py-1 rounded-lg ${key === tab
+                ? "bg-[#C7E6D7] text-gray-900 shadow-sm"
+                : "text-gray-600 hover:text-gray-900"
                 }`}
             >
               {key}
             </button>
           ))}
         </div>
+
+
       </div>
 
       {/* Legend */}
-      <div className="mb-2 flex items-center gap-5 text-xs">
+      <div className="mt-3 mb-2 flex items-center gap-5 text-xs">
         <div className="flex items-center gap-2">
           <span className="inline-block h-3 w-3 rounded-sm" style={{ background: "#16a34a" }} />
           <span className="text-gray-600">MTD Sales</span>
@@ -432,7 +439,7 @@ function SalesTargetCard({
       </div>
 
       {/* Center metrics */}
-      <div className="mt-2 text-center">
+      <div className="text-center">
         <div className="text-3xl font-bold">{(pct * 100).toFixed(1)}%</div>
         <div
           className={`mx-auto mt-1 inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ${badgeIsUp ? "bg-green-50 text-green-700" : "bg-rose-50 text-rose-700"
@@ -444,19 +451,19 @@ function SalesTargetCard({
 
       {/* Bottom KPIs */}
       <div className="mt-4 grid grid-cols-4 gap-4 text-sm">
-        <div className="flex flex-col items-center rounded-xl border bg-gray-50 p-3">
+        <div className="flex flex-col items-center rounded-xl justify-between bg-gray-50 p-3">
           <div className="text-gray-500">Today</div>
           <div className="mt-0.5 font-semibold">{fmtUSD(todayApprox)}</div>
         </div>
-        <div className="flex flex-col items-center rounded-xl border bg-gray-50 p-3">
+        <div className="flex flex-col items-center rounded-xl justify-between bg-gray-50 p-3">
           <div className="text-gray-500">MTD Sales</div>
           <div className="mt-0.5 font-semibold">{fmtUSD(mtdUSD)}</div>
         </div>
-        <div className="flex flex-col items-center rounded-xl border bg-gray-50 p-3">
+        <div className="flex flex-col items-center rounded-xl justify-between bg-gray-50 p-3">
           <div className="text-gray-500">Target</div>
           <div className="mt-0.5 font-semibold">{fmtUSD(targetUSD)}</div>
         </div>
-        <div className="flex flex-col items-center rounded-xl border bg-gray-50 p-3">
+        <div className="flex flex-col items-center rounded-xl justify-between bg-gray-50 p-3">
           <div className="text-gray-500">{prevLabel}</div>
           <div className="mt-0.5 font-semibold">{fmtUSD(lastMonthTotalUSD)}</div>
         </div>
@@ -603,6 +610,10 @@ export default function DashboardPage() {
   // Shopify (previous month)
   const [shopifyPrevRows, setShopifyPrevRows] = useState<any[]>([]);
 
+  // which region tab is selected in the Amazon card
+  const [amazonRegion, setAmazonRegion] = useState<RegionKey>("Global");
+
+
   const fetchAmazon = useCallback(async () => {
     setLoading(true);
     setUnauthorized(false);
@@ -691,31 +702,6 @@ export default function DashboardPage() {
   // ---------- Amazon aliases ----------
   const cms = data?.current_month_summary || null;
   const cmp = data?.current_month_profit || null;
-
-  // ---- derive UK (GBP) safely ----
-  // const uk = useMemo(() => {
-  //   const netSalesGBP = cms?.net_sales?.GBP != null ? toNumberSafe(cms.net_sales.GBP) : null;
-  //   const aspGBP = cms?.asp?.GBP != null ? toNumberSafe(cms.asp.GBP) : null;
-
-  //   let profitGBP: number | null = null;
-  //   if (cmp?.profit && typeof cmp.profit === "object" && cmp.profit.GBP !== undefined) {
-  //     profitGBP = toNumberSafe(cmp.profit.GBP);
-  //   } else if ((typeof cmp?.profit === "number" || typeof cmp?.profit === "string") && netSalesGBP !== null) {
-  //     profitGBP = toNumberSafe(cmp.profit);
-  //   }
-
-  //   let unitsGBP: number | null = null;
-  //   if (cmp?.breakdown?.GBP?.quantity !== undefined) {
-  //     unitsGBP = toNumberSafe(cmp.breakdown.GBP.quantity);
-  //   }
-
-  //   let profitPctGBP: number | null = null;
-  //   if (profitGBP !== null && netSalesGBP && !isNaN(netSalesGBP) && netSalesGBP !== 0) {
-  //     profitPctGBP = (profitGBP / netSalesGBP) * 100;
-  //   }
-
-  //   return { unitsGBP, netSalesGBP, aspGBP, profitGBP, profitPctGBP };
-  // }, [cms, cmp]);
 
   const uk = useMemo(() => {
     const netSalesGBP = cms?.net_sales?.GBP != null ? toNumberSafe(cms.net_sales.GBP) : null;
@@ -892,17 +878,38 @@ export default function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-6">
-      {/* SALES TARGET CARD (top) */}
-      <SalesTargetCard regions={regions} defaultRegion="Global" />
+      <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
 
-      <div className="mt-6 mb-4 flex items-center justify-between">
-        <h1 className="text-xl font-semibold tracking-tight">Amazon &amp; Shopify Overview</h1>
+        {/* LEFT: Title + Month */}
+        <div className="flex items-start justify-center gap-2 whitespace-nowrap">
+          <PageBreadcrumb
+            pageTitle="Sales Dashboard -"
+            variant="page"
+            textSize="2xl"
+            className="text-2xl"
+          />
+
+          {/* MONTH & YEAR */}
+          <span className="text-[#5EA68E] text-lg sm:text-2xl md:text-2xl font-semibold">
+            {(() => {
+              const { monthName, year } = getISTYearMonth();
+              const shortMon = new Date(`${monthName} 1, ${year}`).toLocaleString(
+                "en-US",
+                { month: "short", timeZone: "Asia/Kolkata" }
+              );
+              return `${shortMon} '${String(year).slice(-2)}`;
+            })()}
+          </span>
+        </div>
+
+
+        {/* RIGHT: Refresh button */}
         <button
           onClick={refreshAll}
           disabled={anyLoading}
-          className={`rounded-md border px-3 py-1.5 text-sm shadow-sm active:scale-[.99] ${anyLoading
-            ? "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400"
-            : "border-gray-300 bg-white hover:bg-gray-50"
+          className={`w-full sm:w-auto rounded-md border px-3 py-1.5 text-sm shadow-sm active:scale-[.99] ${anyLoading
+              ? "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400"
+              : "border-gray-300 bg-white hover:bg-gray-50"
             }`}
           title="Refresh Amazon & Shopify"
         >
@@ -910,16 +917,18 @@ export default function DashboardPage() {
         </button>
       </div>
 
+
+
       {/* ======================= GRID: 12 cols ======================= */}
       <div className="grid grid-cols-12 gap-6">
-        {/* LEFT 8: Amazon cards then Shopify cards */}
+        {/* LEFT 8: Amazon (top) + Shopify (bottom) */}
         <div className="col-span-12 lg:col-span-8 space-y-6">
           {/* Notices */}
           {unauthorized && (
             <div className="flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50 p-3 text-amber-800">
               <div className="text-sm">
-                You’re not signed in or your session expired. Please authenticate to load Amazon
-                orders.
+                You’re not signed in or your session expired. Please authenticate
+                to load Amazon orders.
               </div>
               <a
                 href={`${baseURL || ""}/auth/login`}
@@ -936,46 +945,105 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {/* AMAZON — 5 boxes */}
+          {/* AMAZON — Details (UK) */}
           <div className="rounded-2xl border bg-white p-5 shadow-sm">
-            <div className="mb-2 text-sm font-medium text-gray-700">Amazon — Details (UK)</div>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-              <div className="rounded-2xl border bg-white p-5 shadow-sm">
-                <div className="text-sm text-gray-500">Units</div>
-                <div className="mt-1 text-2xl font-semibold">
+            {/* Header row: title + month + subtitle + region pills */}
+            <div className="mb-4 flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+
+              {/* LEFT — title + subtitle */}
+              <div className="flex flex-col">
+                <div className="flex flex-wrap items-baseline gap-2">
+                  <PageBreadcrumb
+                    pageTitle="Amazon -"
+                    variant="page"
+                    align="left"
+                  />
+
+                  {/* MONTH & YEAR (short) */}
+                  <span className="text-[#5EA68E] text-lg sm:text-2xl md:text-2xl font-semibold">
+                    {(() => {
+                      const { monthName, year } = getISTYearMonth();
+                      const shortMon = new Date(
+                        `${monthName} 1, ${year}`
+                      ).toLocaleString("en-US", {
+                        month: "short",
+                        timeZone: "Asia/Kolkata",
+                      });
+                      return `${shortMon} '${String(year).slice(-2)}`;
+                    })()}
+                  </span>
+                </div>
+
+                <p className="text-sm text-charcoal-500 mt-1">
+                  Real-time data from Amazon
+                </p>
+              </div>
+
+              {/* RIGHT — Region pills */}
+              <div className="inline-flex rounded-lg border bg-gray-50 p-1 text-xs w-full sm:w-auto justify-between sm:justify-start">
+                {(["Global", "UK", "US", "CA"] as RegionKey[]).map((key) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setAmazonRegion(key)}
+                    className={`px-3 py-1 rounded-lg min-w-[60px] text-center ${key === amazonRegion
+                      ? "bg-[#C7E6D7] text-gray-900 shadow-sm"
+                      : "text-gray-600 hover:text-gray-900"
+                      }`}
+                  >
+                    {key}
+                  </button>
+                ))}
+              </div>
+
+            </div>
+
+            {/* Metric cards row */}
+            <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-5">
+              {/* Sales */}
+              <div className="rounded-2xl border border-[#87AD12] bg-[#87AD1226] p-5 shadow-sm">
+                <div className="text-sm text-charcoal-500">Sales</div>
+                <div className="mt-2 text-lg font-semibold">
+                  <ValueOrSkeleton loading={loading} mode="inline">
+                    {fmtGBP(uk.netSalesGBP)}
+                  </ValueOrSkeleton>
+                </div>
+              </div>
+
+              {/* Units */}
+              <div className="rounded-2xl border border-[#F47A00] bg-[#F47A0026] py-5 px-3 shadow-sm">
+                <div className="text-sm text-charcoal-500">Units</div>
+                <div className="mt-2 text-lg font-semibold">
                   <ValueOrSkeleton loading={loading} mode="inline" compact>
                     {fmtNum(cms?.total_quantity ?? 0)}
                   </ValueOrSkeleton>
                 </div>
               </div>
 
-              <div className="rounded-2xl border bg-white p-5 shadow-sm">
-                <div className="text-sm text-gray-500">Total Sales</div>
-                <div className="mt-1 text-3xl font-bold tracking-tight text-gray-900">
-                  <ValueOrSkeleton loading={loading} mode="inline">
-                    {fmtGBP(uk.netSalesGBP)}
-                  </ValueOrSkeleton>
-                </div>
-              </div>
-              <div className="rounded-2xl border bg-white p-5 shadow-sm">
-                <div className="text-sm text-gray-500">ASP</div>
-                <div className="mt-1 text-2xl font-semibold">
+              {/* ASP */}
+              <div className="rounded-2xl border border-[#2CA9E0] bg-[#2CA9E026] py-5 px-3 shadow-sm">
+                <div className="text-sm text-charcoal-500">ASP</div>
+                <div className="mt-2 text-lg font-semibold">
                   <ValueOrSkeleton loading={loading} mode="inline" compact>
                     {fmtGBP(uk.aspGBP)}
                   </ValueOrSkeleton>
                 </div>
               </div>
-              <div className="rounded-2xl border bg-white p-5 shadow-sm">
-                <div className="text-sm text-gray-500">Profit</div>
-                <div className="mt-1 text-2xl font-semibold">
+
+              {/* Profit */}
+              <div className="rounded-2xl border border-[#AB64B5] bg-[#AB64B526] py-5 px-3 shadow-sm">
+                <div className="text-sm text-charcoal-500">Profit</div>
+                <div className="mt-2 text-lg font-semibold">
                   <ValueOrSkeleton loading={loading} mode="inline" compact>
                     {fmtGBP(uk.profitGBP)}
                   </ValueOrSkeleton>
                 </div>
               </div>
-              <div className="rounded-2xl border bg-white p-5 shadow-sm">
-                <div className="text-sm text-gray-500">Profit %</div>
-                <div className="mt-1 text-2xl font-semibold">
+
+              {/* Profit % */}
+              <div className="rounded-2xl border border-[#00627B] bg-[#00627B26] py-5 px-3 shadow-sm">
+                <div className="text-sm text-charcoal-500">Profit %</div>
+                <div className="mt-2 text-lg font-semibold">
                   <ValueOrSkeleton loading={loading} mode="inline" compact>
                     {fmtPct(uk.profitPctGBP)}
                   </ValueOrSkeleton>
@@ -984,9 +1052,41 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* SHOPIFY — 5 boxes (₹) */}
+
+
+          {/* SHOPIFY — Details (₹ Rupees) */}
           <div className="rounded-2xl border bg-white p-5 shadow-sm">
-            <div className="mb-2 text-sm font-medium text-gray-700">Shopify — Details (₹ Rupees)</div>
+            <div className="">
+              {/* Title + month like “Amazon - Jan’25” */}
+              <div className="flex items-baseline gap-2">
+                <PageBreadcrumb
+                  pageTitle="Shopify -"
+                  variant="page"
+                  align="left"
+                  textSize="2xl"
+                />
+
+                {/* MONTH & YEAR (short) */}
+                <span className="text-[#5EA68E] text-2xl font-semibold">
+                  {(() => {
+                    const { monthName, year } = getISTYearMonth();
+                    const shortMon = new Date(
+                      `${monthName} 1, ${year}`
+                    ).toLocaleString("en-US", {
+                      month: "short",
+                      timeZone: "Asia/Kolkata",
+                    });
+                    return `${shortMon} '${String(year).slice(-2)}`;
+                  })()}
+                </span>
+              </div>
+
+              {/* Subtitle */}
+              <p className="text-sm  text-charcoal-500">
+                Real-time data from Shopify
+              </p>
+
+            </div>
 
             {shopifyError && (
               <div className="mb-4 flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-rose-700">
@@ -998,7 +1098,10 @@ export default function DashboardPage() {
             {shopifyLoading && (
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
                 {[...Array(5)].map((_, i) => (
-                  <div key={i} className="rounded-2xl border bg-white p-5 shadow-sm">
+                  <div
+                    key={i}
+                    className="rounded-2xl border bg-white p-5 shadow-sm"
+                  >
                     <div className="h-3 w-24 animate-pulse rounded bg-gray-200" />
                     <div className="mt-2 h-7 w-28 animate-pulse rounded bg-gray-200" />
                   </div>
@@ -1009,21 +1112,25 @@ export default function DashboardPage() {
             {!shopifyLoading && !shopifyError && (
               <>
                 {shopify ? (
-                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5 mt-3">
                     {/* Units */}
-                    <div className="rounded-2xl border bg-white p-5 shadow-sm">
-                      <div className="text-sm text-gray-500">Units</div>
-                      <div className="mt-1 text-2xl font-semibold text-gray-900">
-                        <ValueOrSkeleton loading={shopifyLoading} mode="inline" compact>
+                    <div className="rounded-2xl border border-[#87AD12] bg-[#87AD1226] py-5 px-3 shadow-sm">
+                      <div className="text-sm text-charcoal-500">Units</div>
+                      <div className="mt-1 text-lg font-semibold text-gray-900">
+                        <ValueOrSkeleton
+                          loading={shopifyLoading}
+                          mode="inline"
+                          compact
+                        >
                           {shopify?.total_orders}
                         </ValueOrSkeleton>
                       </div>
                     </div>
 
                     {/* Total Sales (₹) */}
-                    <div className="rounded-2xl border bg-white p-5 shadow-sm">
-                      <div className="text-sm text-gray-500">Total Sales</div>
-                      <div className="mt-1 text-3xl font-bold tracking-tight text-gray-900">
+                    <div className="rounded-2xl border border-[#F47A00] bg-[#F47A0026] py-5 px-3 shadow-sm">
+                      <div className="text-sm text-charcoal-500">Total Sales</div>
+                      <div className="mt-1 text-lg  font-bold tracking-tight text-gray-900">
                         <ValueOrSkeleton loading={shopifyLoading} mode="inline">
                           {fmtShopify(toNumberSafe(shopify?.net_sales ?? 0))}
                         </ValueOrSkeleton>
@@ -1031,12 +1138,18 @@ export default function DashboardPage() {
                     </div>
 
                     {/* ASP */}
-                    <div className="rounded-2xl border bg-white p-5 shadow-sm">
+                    <div className="rounded-2xl border border-[#2CA9E0] bg-[#2CA9E026] py-5 px-3 shadow-sm">
                       <div className="text-sm text-gray-500">ASP</div>
-                      <div className="mt-1 text-2xl font-semibold text-gray-900">
-                        <ValueOrSkeleton loading={shopifyLoading} mode="inline" compact>
+                      <div className="mt-1 text-lg  font-semibold text-gray-900">
+                        <ValueOrSkeleton
+                          loading={shopifyLoading}
+                          mode="inline"
+                          compact
+                        >
                           {(() => {
-                            const units = toNumberSafe(shopify?.total_orders ?? 0);
+                            const units = toNumberSafe(
+                              shopify?.total_orders ?? 0
+                            );
                             const net = toNumberSafe(shopify?.net_sales ?? 0);
                             if (units <= 0) return "—";
                             return fmtShopify(net / units);
@@ -1046,51 +1159,45 @@ export default function DashboardPage() {
                     </div>
 
                     {/* Profit — placeholder (₹) */}
-                    <div className="rounded-2xl border bg-white p-5 shadow-sm">
-                      <div className="text-sm text-gray-500">Profit</div>
-                      <div className="mt-1 text-2xl font-semibold text-gray-900">—</div>
+                    <div className="rounded-2xl border border-[#AB64B5] bg-[#AB64B526] py-5 px-3 shadow-sm">
+                      <div className="text-sm text-charcoal-500">Sessions</div>
+                      <div className="mt-1 text-lg  font-semibold text-gray-900">
+                        —
+                      </div>
                     </div>
 
                     {/* Profit % */}
-                    <div className="rounded-2xl border bg-white p-5 shadow-sm">
-                      <div className="text-sm text-gray-500">Profit %</div>
-                      <div className="mt-1 text-2xl font-semibold text-gray-900">—</div>
+                    <div className="rounded-2xl border border-[#00627B] bg-[#00627B26] py-5 px-3 shadow-sm">
+                      <div className="text-sm text-gray-500">Conversion %</div>
+                      <div className="mt-1 text-lg  font-semibold text-gray-900">
+                        —
+                      </div>
                     </div>
                   </div>
                 ) : (
-                  <div className="mt-2 text-sm text-gray-500">No Shopify data for the current month.</div>
+                  <div className="mt-2 text-sm text-gray-500">
+                    No Shopify data for the current month.
+                  </div>
                 )}
               </>
             )}
           </div>
         </div>
 
-        {/* RIGHT 4: spare column for future widgets */}
+        {/* RIGHT 4: Sales Target card (like screenshot) */}
         <aside className="col-span-12 lg:col-span-4">
-          <div className="lg:sticky lg:top-6"></div>
+          <div className="lg:sticky lg:top-6">
+            <SalesTargetCard regions={regions} defaultRegion="Global" />
+            {/* or defaultRegion="UK" if you want UK as default */}
+          </div>
         </aside>
       </div>
 
       {/* ======================= FULL-WIDTH GRAPH BELOW EVERYTHING ======================= */}
       <div className="mt-8 rounded-2xl border bg-white p-5 shadow-sm">
-        <div className="mb-3 text-sm text-gray-500">Amazon — Units, Sales, ASP, Profit, Profit %</div>
-        {/* <SimpleBarChart
-          items={[
-            {
-              label: "Units",
-              raw: Number(cms?.total_quantity ?? 0),
-              display: fmtNum(cms?.total_quantity ?? 0),
-            },
-            { label: "Sales", raw: Number(uk.netSalesGBP ?? 0), display: fmtGBP(uk.netSalesGBP ?? 0) },
-            { label: "ASP", raw: Number(uk.aspGBP ?? 0), display: fmtGBP(uk.aspGBP ?? 0) },
-            { label: "Profit", raw: Number(uk.profitGBP ?? 0), display: fmtGBP(uk.profitGBP ?? 0) },
-            {
-              label: "Profit %",
-              raw: Number(Number(uk.profitPctGBP ?? 0)),
-              display: fmtPct(Number(uk.profitPctGBP ?? 0)),
-            },
-          ]}
-        /> */}
+        <div className="mb-3 text-sm text-gray-500">
+          Amazon — Units, Sales, ASP, Profit, Profit %
+        </div>
 
         <div className="mt-8 rounded-2xl border bg-white p-5 shadow-sm">
           <div className="mb-3 text-sm text-gray-500">
@@ -1098,37 +1205,31 @@ export default function DashboardPage() {
           </div>
           <SimpleBarChart
             items={[
-              // Sales = net_sales
               {
                 label: "Sales",
                 raw: Number(uk.netSalesGBP ?? 0),
                 display: fmtGBP(uk.netSalesGBP ?? 0),
               },
-              // Amazon Fees = fba_fees + selling_fees
               {
                 label: "Amazon Fees",
                 raw: Number(uk.amazonFeesGBP ?? 0),
                 display: fmtGBP(uk.amazonFeesGBP ?? 0),
               },
-              // COGS
               {
                 label: "COGS",
                 raw: Number(uk.cogsGBP ?? 0),
                 display: fmtGBP(uk.cogsGBP ?? 0),
               },
-              // Advertisements (currently hard-coded to 0)
               {
                 label: "Advertisements",
                 raw: 0,
                 display: fmtGBP(0),
               },
-              // Other Charges (currently hard-coded to 0)
               {
                 label: "Other Charges",
                 raw: 0,
                 display: fmtGBP(0),
               },
-              // Profit = profit.GBP
               {
                 label: "Profit",
                 raw: Number(uk.profitGBP ?? 0),
@@ -1137,9 +1238,9 @@ export default function DashboardPage() {
             ]}
           />
         </div>
-
-
       </div>
     </div>
   );
+
+
 }
