@@ -281,6 +281,15 @@ const toNumberSafe = (v: any) => {
   return isNaN(n) ? 0 : n;
 };
 
+const fmtInt = (val: any) =>
+  val === null || val === undefined || val === "" || isNaN(Number(val))
+    ? "—"
+    : new Intl.NumberFormat("en-GB", {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(Number(val));
+
+
 /* ===================== SALES TARGET CARD ===================== */
 type RegionKey = "Global" | "UK" | "US" | "CA";
 
@@ -460,11 +469,11 @@ function SalesTargetCard({
           <div className="mt-0.5 font-semibold">{fmtUSD(mtdUSD)}</div>
         </div>
         <div className="flex flex-col items-center rounded-xl justify-between bg-gray-50 p-3">
-          <div className="text-gray-500">Target</div>
+          <div className="text-gray-500">Sales Target</div>
           <div className="mt-0.5 font-semibold">{fmtUSD(targetUSD)}</div>
         </div>
         <div className="flex flex-col items-center rounded-xl justify-between bg-gray-50 p-3">
-          <div className="text-gray-500">{prevLabel}</div>
+          <div className="text-gray-500">{prevLabel} Sales</div>
           <div className="mt-0.5 font-semibold">{fmtUSD(lastMonthTotalUSD)}</div>
         </div>
       </div>
@@ -477,7 +486,7 @@ function SimpleBarChart({
   items,
   height = 300,
   padding = { top: 28, right: 24, bottom: 56, left: 24 },
-  colors = ["#2563eb", "#16a34a", "#f59e0b", "#ec4899", "#8b5cf6"],
+  colors = ["#2563eb", "#16a34a", "#f59e0b", "#ec4899", "#8b5cf6","#06b6d4",],
 }: {
   items: Array<{ label: string; raw: number; display: string }>;
   height?: number;
@@ -702,6 +711,51 @@ export default function DashboardPage() {
   // ---------- Amazon aliases ----------
   const cms = data?.current_month_summary || null;
   const cmp = data?.current_month_profit || null;
+  const skuTotals = data?.current_month_skuwise_totals || null;
+
+
+  // const uk = useMemo(() => {
+  //   const netSalesGBP = cms?.net_sales?.GBP != null ? toNumberSafe(cms.net_sales.GBP) : null;
+  //   const aspGBP = cms?.asp?.GBP != null ? toNumberSafe(cms.asp.GBP) : null;
+
+  //   // ---- breakdown from current_month_profit.breakdown.GBP ----
+  //   const breakdownGBP = cmp?.breakdown?.GBP || {};
+
+  //   const cogsGBP = breakdownGBP.cogs !== undefined ? toNumberSafe(breakdownGBP.cogs) : 0;
+  //   const fbaFeesGBP =
+  //     breakdownGBP.fba_fees !== undefined ? toNumberSafe(breakdownGBP.fba_fees) : 0;
+  //   const sellingFeesGBP =
+  //     breakdownGBP.selling_fees !== undefined ? toNumberSafe(breakdownGBP.selling_fees) : 0;
+  //   const amazonFeesGBP = fbaFeesGBP + sellingFeesGBP;
+
+  //   let profitGBP: number | null = null;
+  //   if (cmp?.profit && typeof cmp.profit === "object" && cmp.profit.GBP !== undefined) {
+  //     profitGBP = toNumberSafe(cmp.profit.GBP); // Profit = profit.GBP
+  //   } else if ((typeof cmp?.profit === "number" || typeof cmp?.profit === "string") && netSalesGBP !== null) {
+  //     profitGBP = toNumberSafe(cmp.profit);
+  //   }
+
+  //   let unitsGBP: number | null = null;
+  //   if (breakdownGBP.quantity !== undefined) {
+  //     unitsGBP = toNumberSafe(breakdownGBP.quantity);
+  //   }
+
+  //   let profitPctGBP: number | null = null;
+  //   if (profitGBP !== null && netSalesGBP && !isNaN(netSalesGBP) && netSalesGBP !== 0) {
+  //     profitPctGBP = (profitGBP / netSalesGBP) * 100;
+  //   }
+
+  //   return {
+  //     unitsGBP,
+  //     netSalesGBP,   // Sales = net_sales
+  //     aspGBP,
+  //     profitGBP,     // Profit
+  //     profitPctGBP,
+  //     cogsGBP,       // COGS
+  //     amazonFeesGBP, // Amazon Fees = fba_fees + selling_fees
+  //   };
+  // }, [cms, cmp]);
+
 
   const uk = useMemo(() => {
     const netSalesGBP = cms?.net_sales?.GBP != null ? toNumberSafe(cms.net_sales.GBP) : null;
@@ -717,10 +771,24 @@ export default function DashboardPage() {
       breakdownGBP.selling_fees !== undefined ? toNumberSafe(breakdownGBP.selling_fees) : 0;
     const amazonFeesGBP = fbaFeesGBP + sellingFeesGBP;
 
+    // ---- NEW: from current_month_skuwise_totals (GBP) ----
+    const advertisingGBP =
+      skuTotals?.advertising_total !== undefined
+        ? toNumberSafe(skuTotals.advertising_total)
+        : 0;
+
+    const platformFeeGBP =
+      skuTotals?.platform_fee_total !== undefined
+        ? toNumberSafe(skuTotals.platform_fee_total)
+        : 0;
+
     let profitGBP: number | null = null;
     if (cmp?.profit && typeof cmp.profit === "object" && cmp.profit.GBP !== undefined) {
       profitGBP = toNumberSafe(cmp.profit.GBP); // Profit = profit.GBP
-    } else if ((typeof cmp?.profit === "number" || typeof cmp?.profit === "string") && netSalesGBP !== null) {
+    } else if (
+      (typeof cmp?.profit === "number" || typeof cmp?.profit === "string") &&
+      netSalesGBP !== null
+    ) {
       profitGBP = toNumberSafe(cmp.profit);
     }
 
@@ -736,32 +804,37 @@ export default function DashboardPage() {
 
     return {
       unitsGBP,
-      netSalesGBP,   // Sales = net_sales
+      netSalesGBP,    // Sales
       aspGBP,
-      profitGBP,     // Profit
+      profitGBP,      // Profit
       profitPctGBP,
-      cogsGBP,       // COGS
-      amazonFeesGBP, // Amazon Fees = fba_fees + selling_fees
+      cogsGBP,        // COGS
+      amazonFeesGBP,  // Amazon Fees = fba_fees + selling_fees
+      advertisingGBP, // NEW
+      platformFeeGBP, // NEW
     };
-  }, [cms, cmp]);
+  }, [cms, cmp, skuTotals]);
+
+
 
 
   // Amazon chart items
-  const barsAmazon = useMemo(() => {
-    const units = cms?.total_quantity ?? 0;
-    const sales = uk.netSalesGBP ?? 0;
-    const asp = uk.aspGBP ?? 0;
-    const profit = uk.profitGBP ?? 0;
-    const pcent = Number.isFinite(uk.profitPctGBP) ? (uk.profitPctGBP as number) : 0;
+const barsAmazon = useMemo(() => {
+  const units = cms?.total_quantity ?? 0;
+  const sales = uk.netSalesGBP ?? 0;
+  const asp = uk.aspGBP ?? 0;
+  const profit = uk.profitGBP ?? 0;
+  const pcent = Number.isFinite(uk.profitPctGBP) ? (uk.profitPctGBP as number) : 0;
 
-    return [
-      { label: "Units", raw: Number(units) || 0, display: fmtNum(units) },
-      { label: "Sales", raw: Number(sales) || 0, display: fmtGBP(sales) },
-      { label: "ASP", raw: Number(asp) || 0, display: fmtGBP(asp) },
-      { label: "Profit", raw: Number(profit) || 0, display: fmtGBP(profit) },
-      { label: "Profit %", raw: Number(pcent) || 0, display: fmtPct(pcent) },
-    ];
-  }, [uk, cms]);
+  return [
+    { label: "Units", raw: Number(units) || 0, display: fmtInt(units) },
+    { label: "Sales", raw: Number(sales) || 0, display: fmtGBP(sales) },
+    { label: "ASP", raw: Number(asp) || 0, display: fmtGBP(asp) },
+    { label: "Profit", raw: Number(profit) || 0, display: fmtGBP(profit) },
+    { label: "Profit %", raw: Number(pcent) || 0, display: fmtPct(pcent) },
+  ];
+}, [uk, cms]);
+
 
   // Shopify (current)
   const shopifyDeriv = useMemo(() => {
@@ -908,8 +981,8 @@ export default function DashboardPage() {
           onClick={refreshAll}
           disabled={anyLoading}
           className={`w-full sm:w-auto rounded-md border px-3 py-1.5 text-sm shadow-sm active:scale-[.99] ${anyLoading
-              ? "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400"
-              : "border-gray-300 bg-white hover:bg-gray-50"
+            ? "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400"
+            : "border-gray-300 bg-white hover:bg-gray-50"
             }`}
           title="Refresh Amazon & Shopify"
         >
@@ -1015,10 +1088,11 @@ export default function DashboardPage() {
                 <div className="text-sm text-charcoal-500">Units</div>
                 <div className="mt-2 text-lg font-semibold">
                   <ValueOrSkeleton loading={loading} mode="inline" compact>
-                    {fmtNum(cms?.total_quantity ?? 0)}
+                    {fmtInt(cms?.total_quantity ?? 0)}
                   </ValueOrSkeleton>
                 </div>
               </div>
+
 
               {/* ASP */}
               <div className="rounded-2xl border border-[#2CA9E0] bg-[#2CA9E026] py-5 px-3 shadow-sm">
@@ -1186,7 +1260,7 @@ export default function DashboardPage() {
 
         {/* RIGHT 4: Sales Target card (like screenshot) */}
         <aside className="col-span-12 lg:col-span-4">
-          <div className="lg:sticky lg:top-6">
+          <div className="lg:z-10 lg:sticky lg:top-6">
             <SalesTargetCard regions={regions} defaultRegion="Global" />
             {/* or defaultRegion="UK" if you want UK as default */}
           </div>
@@ -1203,7 +1277,7 @@ export default function DashboardPage() {
           <div className="mb-3 text-sm text-gray-500">
             Amazon — P&amp;L Breakdown (Sales, Fees, COGS, Ads, Other, Profit)
           </div>
-          <SimpleBarChart
+          {/* <SimpleBarChart
             items={[
               {
                 label: "Sales",
@@ -1236,7 +1310,43 @@ export default function DashboardPage() {
                 display: fmtGBP(uk.profitGBP ?? 0),
               },
             ]}
+          /> */}
+
+          <SimpleBarChart
+            items={[
+              {
+                label: "Sales",
+                raw: Number(uk.netSalesGBP ?? 0),
+                display: fmtGBP(uk.netSalesGBP ?? 0),
+              },
+              {
+                label: "Amazon Fees",
+                raw: Number(uk.amazonFeesGBP ?? 0),
+                display: fmtGBP(uk.amazonFeesGBP ?? 0),
+              },
+              {
+                label: "COGS",
+                raw: Number(uk.cogsGBP ?? 0),
+                display: fmtGBP(uk.cogsGBP ?? 0),
+              },
+              {
+                label: "Advertisements",
+                raw: Number(uk.advertisingGBP ?? 0),
+                display: fmtGBP(uk.advertisingGBP ?? 0),
+              },
+              {
+                label: "Platform Fees",
+                raw: Number(uk.platformFeeGBP ?? 0),
+                display: fmtGBP(uk.platformFeeGBP ?? 0),
+              },
+              {
+                label: "Profit",
+                raw: Number(uk.profitGBP ?? 0),
+                display: fmtGBP(uk.profitGBP ?? 0),
+              },
+            ]}
           />
+
         </div>
       </div>
     </div>
