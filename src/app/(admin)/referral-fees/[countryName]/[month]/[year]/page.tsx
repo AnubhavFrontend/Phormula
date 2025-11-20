@@ -47,7 +47,13 @@ type ReferralRow = Partial<{
   errorstatus: string;
   selling_fees: number | string;
   answer: number | string;
+
+  // NEW from backend:
+  net_sales_total_value: number | string;
+  status: string;
+  total_value: number | string;
 }>;
+
 
 type Summary = {
   ordersUnits: number;
@@ -206,6 +212,86 @@ export default function ReferralFeesDashboard(): JSX.Element {
     setLoading(true);
     setError(null);
 
+    // try {
+    //   const token =
+    //     typeof window !== "undefined"
+    //       ? localStorage.getItem("jwtToken")
+    //       : null;
+
+    //   const params = new URLSearchParams({
+    //     country: country,
+    //     month: month,
+    //     year: year,
+    //   });
+
+    //   const url = `${baseURL}/get_table_data/${fileName}?${params.toString()}`;
+
+    //   const res = await fetch(url, {
+    //     method: "GET",
+    //     headers: token ? { Authorization: `Bearer ${token}` } : {},
+    //   });
+
+    //   if (!res.ok) {
+    //     throw new Error(`Failed to fetch referral data (${res.status})`);
+    //   }
+
+    //   const json: any = await res.json();
+    //   console.log("REFERRAL JSON:", json);
+
+    //   // full table for calculations / overcharged logic
+    //   const tableData = json?.table_data ?? json;
+    //   const arr: ReferralRow[] = Array.isArray(tableData) ? tableData : [];
+    //   setRows(arr);
+
+    //   // 👇 NEW: sku-wise subset (14 rows)
+    //   const skuwise = json?.skuwise_table_data ?? [];
+    //   const skuArr: ReferralRow[] = Array.isArray(skuwise) ? skuwise : [];
+    //   setSkuwiseRows(skuArr);
+
+    //   // summary_table mapping
+    //   const summary_table = json?.summary_table ?? [];
+    //   const mappedSummary: FeeSummaryRow[] = Array.isArray(summary_table)
+    //     ? summary_table.map(
+    //       (r: any): FeeSummaryRow => ({
+    //         label: r["Ref Fees"],
+    //         // units: toNumberSafe(r["Units"]),
+    //         units: Math.round(toNumberSafe(r["Units"])),
+    //         sales: toNumberSafe(r["Sales"]),
+    //         refFeesApplicable: toNumberSafe(r["Ref Fees Applicable"]),
+    //         refFeesCharged: toNumberSafe(r["Ref Fees Charged"]),
+    //         overcharged: toNumberSafe(r["Overcharged"]),
+    //       })
+    //     )
+    //     : [];
+
+    //   setFeeSummaryRows(mappedSummary);
+
+    //   // aggregate summary from detailed rows (still using full table_data)
+    //   let totalUnits = 0;
+    //   let totalSales = 0;
+    //   let feeImpact = 0;
+
+    //   for (const r of arr) {
+    //     totalUnits += Math.round(toNumberSafe(r.quantity));
+    //     totalSales += toNumberSafe(r.product_sales ?? r.sales);
+    //     feeImpact += toNumberSafe(r.overcharged ?? r.difference);
+    //   }
+
+    //   setSummary({
+    //     ordersUnits: totalUnits,
+    //     totalSales,
+    //     feeImpact,
+    //   });
+    // } catch (e: any) {
+    //   setError(e?.message || "Failed to load data");
+    //   setRows([]);
+    //   setSkuwiseRows([]);
+    //   setFeeSummaryRows([]);
+    //   setSummary({ ordersUnits: 0, totalSales: 0, feeImpact: 0 });
+    // } finally {
+    //   setLoading(false);
+    // }
+
     try {
       const token =
         typeof window !== "undefined"
@@ -232,35 +318,71 @@ export default function ReferralFeesDashboard(): JSX.Element {
       const json: any = await res.json();
       console.log("REFERRAL JSON:", json);
 
-      // full table for calculations / overcharged logic
-      const tableData = json?.table_data ?? json;
-      const arr: ReferralRow[] = Array.isArray(tableData) ? tableData : [];
+      // 🔹 The backend now returns everything in `table`
+      const table = json?.table ?? [];
+      const arr: ReferralRow[] = Array.isArray(table) ? table : [];
+
+      // Full raw rows (used for aggregations / excel)
       setRows(arr);
 
-      // 👇 NEW: sku-wise subset (14 rows)
-      const skuwise = json?.skuwise_table_data ?? [];
-      const skuArr: ReferralRow[] = Array.isArray(skuwise) ? skuwise : [];
-      setSkuwiseRows(skuArr);
+      // For product-wise table, we start from the same `arr`
+      setSkuwiseRows(arr);
 
-      // summary_table mapping
-      const summary_table = json?.summary_table ?? [];
-      const mappedSummary: FeeSummaryRow[] = Array.isArray(summary_table)
-        ? summary_table.map(
-          (r: any): FeeSummaryRow => ({
-            label: r["Ref Fees"],
-            // units: toNumberSafe(r["Units"]),
-            units: Math.round(toNumberSafe(r["Units"])),
-            sales: toNumberSafe(r["Sales"]),
-            refFeesApplicable: toNumberSafe(r["Ref Fees Applicable"]),
-            refFeesCharged: toNumberSafe(r["Ref Fees Charged"]),
-            overcharged: toNumberSafe(r["Overcharged"]),
-          })
-        )
-        : [];
+      // 🔹 Build summary rows from SKUs that start with "Charge -"
+      //    plus the "Grand Total" row
+      const summarySource = arr.filter((r) => {
+        const sku = String(r.sku ?? "");
+        return sku.startsWith("Charge -") || sku === "Grand Total";
+      });
+
+      // Enforce a nice fixed order if present
+      const order = [
+        "Charge - Accurate",
+        "Charge - Undercharged",
+        "Charge - Overcharged",
+        "Charge - noreferallfee",
+        "Grand Total",
+      ];
+
+      summarySource.sort((a, b) => {
+        const aSku = String(a.sku ?? "");
+        const bSku = String(b.sku ?? "");
+        const ai = order.indexOf(aSku);
+        const bi = order.indexOf(bSku);
+        if (ai === -1 && bi === -1) return 0;
+        if (ai === -1) return 1;
+        if (bi === -1) return -1;
+        return ai - bi;
+      });
+
+      const mappedSummary: FeeSummaryRow[] = summarySource.map(
+        (r: ReferralRow): FeeSummaryRow => ({
+          // use SKU as the label in the Summary Overview table
+          label: String(r.sku ?? ""),
+
+          // units = quantity
+          units: Math.round(toNumberSafe(r.quantity)),
+
+          // sales: prefer product_sales, fallback to net_sales_total_value
+          sales: toNumberSafe(
+            r.product_sales ?? (r as any).net_sales_total_value
+          ),
+
+          // Ref Fees Applicable = answer
+          refFeesApplicable: toNumberSafe(r.answer),
+
+          // Ref Fees Charged = selling_fees
+          refFeesCharged: toNumberSafe(r.selling_fees),
+
+          // Overcharged = difference (can be 0 or negative for undercharged)
+          overcharged: toNumberSafe(r.difference),
+        })
+      );
 
       setFeeSummaryRows(mappedSummary);
 
-      // aggregate summary from detailed rows (still using full table_data)
+      // 🔹 Aggregate summary from detailed rows (you don't
+      // actually use `summary` in JSX but leaving logic as-is)
       let totalUnits = 0;
       let totalSales = 0;
       let feeImpact = 0;
@@ -285,6 +407,7 @@ export default function ReferralFeesDashboard(): JSX.Element {
     } finally {
       setLoading(false);
     }
+
   }, [month, year, country, fileName]);
 
   useEffect(() => {
@@ -399,21 +522,55 @@ export default function ReferralFeesDashboard(): JSX.Element {
   }, [rows]);
 
   // FULL table (all rows from skuwise_table_data)
+  // const skuTableAll: Row[] = useMemo(() => {
+  //   return skuwiseRows.map((r, idx) => {
+  //     const quantity = Math.round(toNumberSafe(r.quantity));
+  //     const sales = toNumberSafe(r.product_sales ?? r.sales);
+  //     const applicable = toNumberSafe(r.answer);
+  //     const charged = toNumberSafe(r.selling_fees);
+  //     const overcharged = toNumberSafe(r.overcharged ?? r.difference);
+
+  //     // Detect TOTAL row (by SKU or by being last row)
+  //     const isTotal =
+  //       String(r.sku ?? "").toUpperCase() === "TOTAL" ||
+  //       idx === skuwiseRows.length - 1;
+
+  //     return {
+  //       sku: isTotal ? "TOTAL" : (r.sku ?? ""),
+  //       productName: isTotal ? "" : (r.product_name ?? ""),
+  //       units: quantity,
+  //       sales,
+  //       applicable,
+  //       charged,
+  //       overcharged,
+  //       _isTotal: isTotal,
+  //     };
+  //   });
+  // }, [skuwiseRows]);
+
+  // FULL table (all product rows + Grand Total) based on new `table`
   const skuTableAll: Row[] = useMemo(() => {
-    return skuwiseRows.map((r, idx) => {
+    if (!skuwiseRows.length) return [];
+
+    // 🔹 Exclude the charge summary rows, but keep "Grand Total"
+    const filtered = skuwiseRows.filter((r) => {
+      const skuStr = String(r.sku ?? "");
+      if (skuStr === "Grand Total") return true;
+      return !skuStr.startsWith("Charge -");
+    });
+
+    return filtered.map((r, idx) => {
       const quantity = Math.round(toNumberSafe(r.quantity));
       const sales = toNumberSafe(r.product_sales ?? r.sales);
       const applicable = toNumberSafe(r.answer);
       const charged = toNumberSafe(r.selling_fees);
       const overcharged = toNumberSafe(r.overcharged ?? r.difference);
 
-      // Detect TOTAL row (by SKU or by being last row)
-      const isTotal =
-        String(r.sku ?? "").toUpperCase() === "TOTAL" ||
-        idx === skuwiseRows.length - 1;
+      const skuStr = String(r.sku ?? "");
+      const isTotal = skuStr.toLowerCase() === "grand total";
 
       return {
-        sku: isTotal ? "TOTAL" : (r.sku ?? ""),
+        sku: isTotal ? "Grand Total" : (r.sku ?? ""),
         productName: isTotal ? "" : (r.product_name ?? ""),
         units: quantity,
         sales,
@@ -443,78 +600,129 @@ export default function ReferralFeesDashboard(): JSX.Element {
   ];
 
   // TOP 5 by Sales for display in browser table
-const skuTableTop5: Row[] = useMemo(() => {
-  if (!skuTableAll.length) return [];
+  // const skuTableTop5: Row[] = useMemo(() => {
+  //   if (!skuTableAll.length) return [];
 
-  // ❌ exclude TOTAL row
-  const nonTotal = skuTableAll.filter((row) => !(row as any)._isTotal);
+  //   // ❌ exclude TOTAL row
+  //   const nonTotal = skuTableAll.filter((row) => !(row as any)._isTotal);
 
-  // sort by Sales
-  const sorted = [...nonTotal].sort(
-    (a, b) =>
-      toNumberSafe((b as any).sales) - toNumberSafe((a as any).sales)
-  );
+  //   // sort by Sales
+  //   const sorted = [...nonTotal].sort(
+  //     (a, b) =>
+  //       toNumberSafe((b as any).sales) - toNumberSafe((a as any).sales)
+  //   );
 
-  // return only TOP 5 rows (no TOTAL)
-  return sorted.slice(0, 5);
-}, [skuTableAll]);
+  //   // return only TOP 5 rows (no TOTAL)
+  //   return sorted.slice(0, 5);
+  // }, [skuTableAll]);
 
+  // Top 5 + OTHERS + TOTAL for browser table
+  const skuTableDisplay: Row[] = useMemo(() => {
+    if (!skuTableAll.length) return [];
 
+    // Separate non-total rows and the total row
+    const nonTotal = skuTableAll.filter((row) => !(row as any)._isTotal);
+    const totalRow = skuTableAll.find((row) => (row as any)._isTotal) || null;
+
+    if (!nonTotal.length) {
+      // Only total row exists
+      return totalRow ? [totalRow] : [];
+    }
+
+    // Sort non-total rows by Sales (desc)
+    const sorted = [...nonTotal].sort(
+      (a, b) =>
+        toNumberSafe((b as any).sales) - toNumberSafe((a as any).sales)
+    );
+
+    // Top 5 rows
+    const top5 = sorted.slice(0, 5);
+
+    // Remaining rows → OTHERS
+    const remaining = sorted.slice(5);
+    let othersRow: Row | null = null;
+
+    if (remaining.length) {
+      type NumericAgg = {
+        units: number;
+        sales: number;
+        applicable: number;
+        charged: number;
+        overcharged: number;
+      };
+
+      const agg = remaining.reduce<NumericAgg>(
+        (acc, row) => {
+          acc.units += Math.round(toNumberSafe((row as any).units));
+          acc.sales += toNumberSafe((row as any).sales);
+          acc.applicable += toNumberSafe((row as any).applicable);
+          acc.charged += toNumberSafe((row as any).charged);
+          acc.overcharged += toNumberSafe((row as any).overcharged);
+          return acc;
+        },
+        {
+          units: 0,
+          sales: 0,
+          applicable: 0,
+          charged: 0,
+          overcharged: 0,
+        }
+      );
+
+      othersRow = {
+        sku: "OTHERS",
+        productName: "",
+        units: agg.units,
+        sales: agg.sales,
+        applicable: agg.applicable,
+        charged: agg.charged,
+        overcharged: agg.overcharged,
+        _isOthers: true,
+      } as Row;
+    }
+
+    const finalRows: Row[] = [...top5];
+
+    if (othersRow) {
+      finalRows.push(othersRow);
+    }
+
+    if (totalRow) {
+      finalRows.push(totalRow);
+    }
+
+    return finalRows;
+  }, [skuTableAll]);
 
   /* ===================== Excel Download ===================== */
-
   // const handleDownloadExcel = useCallback(() => {
-  //   if (!rows.length && !overchargedRows.length) return;
+  //   if (!skuTableAll.length) return;
 
   //   const wb = XLSX.utils.book_new();
 
-  //   // Sheet 1: Overcharged Ref Fees
-  //   const overDataBody = overchargedRows.map((r) => ({
-  //     SKU: r.sku,
-  //     "Product Name": r.productName,
-  //     Units: Math.round(r.quantity),
-  //     Sales: Number(r.sales.toFixed(2)),
-  //     // "Ref %": Number(r.refRate.toFixed(2)),
-  //     "Ref Fees Applicable": Number(r.refFeesApplicable.toFixed(2)),
-  //     "Ref Fees Charged": Number(r.refFeesCharged.toFixed(2)),
-  //     Overcharged: Number(r.overcharged.toFixed(2)),
-  //   }));
+  //   // Sheet 1: Overcharged Ref Fees (FULL TABLE)
+  //   const overData = skuTableAll.map((r) => {
+  //     const units = Math.round(toNumberSafe((r as any).units));
+  //     const sales = toNumberSafe((r as any).sales);
+  //     const applicable = toNumberSafe((r as any).applicable);
+  //     const charged = toNumberSafe((r as any).charged);
+  //     const overcharged = toNumberSafe((r as any).overcharged);
 
-  //   const totals = overchargedRows.reduce(
-  //     (acc, r) => {
-  //       acc.units += Math.round(r.quantity);
-  //       acc.sales += r.sales;
-  //       acc.refFeesApplicable += r.refFeesApplicable;
-  //       acc.refFeesCharged += r.refFeesCharged;
-  //       acc.overcharged += r.overcharged;
-  //       return acc;
-  //     },
-  //     {
-  //       units: 0,
-  //       sales: 0,
-  //       refFeesApplicable: 0,
-  //       refFeesCharged: 0,
-  //       overcharged: 0,
-  //     }
-  //   );
-
-  //   const totalRow = {
-  //     SKU: "TOTAL",
-  //     "Product Name": "",
-  //     Units: totals.units,
-  //     Sales: Number(totals.sales.toFixed(2)),
-  //     // "Ref %": "",
-  //     "Ref Fees Applicable": Number(totals.refFeesApplicable.toFixed(2)),
-  //     "Ref Fees Charged": Number(totals.refFeesCharged.toFixed(2)),
-  //     Overcharged: Number(totals.overcharged.toFixed(2)),
-  //   };
-
-  //   const overData = [...overDataBody, totalRow];
+  //     return {
+  //       SKU: String(r.sku ?? ""),
+  //       "Product Name": String(r.productName ?? ""),
+  //       Units: units,
+  //       Sales: Number(sales.toFixed(2)),
+  //       "Ref Fees Applicable": Number(applicable.toFixed(2)),
+  //       "Ref Fees Charged": Number(charged.toFixed(2)),
+  //       Overcharged: Number(overcharged.toFixed(2)),
+  //     };
+  //   });
 
   //   const wsOver = XLSX.utils.json_to_sheet(overData);
   //   XLSX.utils.book_append_sheet(wb, wsOver, "Overcharged Ref Fees");
 
-  //   // Sheet 2: All Data (raw table_data)
+  //   // Sheet 2: All raw data (unchanged)
   //   const allData = rows.map((r) => ({ ...r }));
   //   const wsAll = XLSX.utils.json_to_sheet(allData);
   //   XLSX.utils.book_append_sheet(wb, wsAll, "All Data");
@@ -523,45 +731,7 @@ const skuTableTop5: Row[] = useMemo(() => {
   //     wb,
   //     `Referral-Fees-${country}-${month}-${year}.xlsx`
   //   );
-  // }, [rows, overchargedRows, country, month, year]);
-
-  const handleDownloadExcel = useCallback(() => {
-  if (!skuTableAll.length) return;
-
-  const wb = XLSX.utils.book_new();
-
-  // Sheet 1: Overcharged Ref Fees (FULL TABLE)
-  const overData = skuTableAll.map((r) => {
-    const units = Math.round(toNumberSafe((r as any).units));
-    const sales = toNumberSafe((r as any).sales);
-    const applicable = toNumberSafe((r as any).applicable);
-    const charged = toNumberSafe((r as any).charged);
-    const overcharged = toNumberSafe((r as any).overcharged);
-
-    return {
-      SKU: String(r.sku ?? ""),
-      "Product Name": String(r.productName ?? ""),
-      Units: units,
-      Sales: Number(sales.toFixed(2)),
-      "Ref Fees Applicable": Number(applicable.toFixed(2)),
-      "Ref Fees Charged": Number(charged.toFixed(2)),
-      Overcharged: Number(overcharged.toFixed(2)),
-    };
-  });
-
-  const wsOver = XLSX.utils.json_to_sheet(overData);
-  XLSX.utils.book_append_sheet(wb, wsOver, "Overcharged Ref Fees");
-
-  // Sheet 2: All raw data (unchanged)
-  const allData = rows.map((r) => ({ ...r }));
-  const wsAll = XLSX.utils.json_to_sheet(allData);
-  XLSX.utils.book_append_sheet(wb, wsAll, "All Data");
-
-  XLSX.writeFile(
-    wb,
-    `Referral-Fees-${country}-${month}-${year}.xlsx`
-  );
-}, [skuTableAll, rows, country, month, year]);
+  // }, [skuTableAll, rows, country, month, year]);
 
 
 
@@ -593,6 +763,66 @@ const skuTableTop5: Row[] = useMemo(() => {
   //   };
   // });
 
+  const handleDownloadExcel = useCallback(() => {
+    // If literally nothing to export, bail out
+    if (!feeSummaryRows.length && !skuTableAll.length && !rows.length) return;
+
+    const wb = XLSX.utils.book_new();
+
+    /* ========== Sheet 1: Summary table (Summary Overview) ========== */
+    const summaryData = feeSummaryRows.map((r) => {
+      const units = Math.round(toNumberSafe(r.units));
+      const sales = toNumberSafe(r.sales);
+      const applicable = toNumberSafe(r.refFeesApplicable);
+      const charged = toNumberSafe(r.refFeesCharged);
+      const overcharged = toNumberSafe(r.overcharged);
+
+      return {
+        "Ref Fees": r.label,
+        Units: units,
+        Sales: Number(sales.toFixed(2)),
+        "Ref Fees Applicable": Number(applicable.toFixed(2)),
+        "Ref Fees Charged": Number(charged.toFixed(2)),
+        Overcharged: Number(overcharged.toFixed(2)),
+      };
+    });
+
+    const wsSummary = XLSX.utils.json_to_sheet(summaryData);
+    XLSX.utils.book_append_sheet(wb, wsSummary, "Summary");
+
+    /* ========== Sheet 2: Product-wise Overcharged Ref Fees (FULL TABLE) ========== */
+    const overData = skuTableAll.map((r) => {
+      const units = Math.round(toNumberSafe((r as any).units));
+      const sales = toNumberSafe((r as any).sales);
+      const applicable = toNumberSafe((r as any).applicable);
+      const charged = toNumberSafe((r as any).charged);
+      const overcharged = toNumberSafe((r as any).overcharged);
+
+      return {
+        SKU: String((r as any).sku ?? ""),
+        "Product Name": String((r as any).productName ?? ""),
+        Units: units,
+        Sales: Number(sales.toFixed(2)),
+        "Ref Fees Applicable": Number(applicable.toFixed(2)),
+        "Ref Fees Charged": Number(charged.toFixed(2)),
+        Overcharged: Number(overcharged.toFixed(2)),
+      };
+    });
+
+    const wsOver = XLSX.utils.json_to_sheet(overData);
+    XLSX.utils.book_append_sheet(wb, wsOver, "Overcharged Ref Fees");
+
+    /* ========== Sheet 3: All raw data (unchanged) ========== */
+    const allData = rows.map((r) => ({ ...r }));
+    const wsAll = XLSX.utils.json_to_sheet(allData);
+    XLSX.utils.book_append_sheet(wb, wsAll, "All Data");
+
+    /* ========== Save file ========== */
+    XLSX.writeFile(
+      wb,
+      `Referral-Fees-${country}-${month}-${year}.xlsx`
+    );
+  }, [feeSummaryRows, skuTableAll, rows, country, month, year]);
 
 
   /* ===================== RENDER ===================== */
@@ -817,7 +1047,7 @@ const skuTableTop5: Row[] = useMemo(() => {
         <div className="flex flex-col md:flex-row items-center justify-between mb-2 gap-2 min-w-max">
 
           <PageBreadcrumb pageTitle="Product-wise Details of Overcharged Ref Fees" variant="page" align="left" className="mt-4" />
-          <Button
+          {/* <Button
             onClick={handleDownloadExcel}
             variant="primary"
             size="sm"
@@ -825,6 +1055,18 @@ const skuTableTop5: Row[] = useMemo(() => {
           >
             <FiDownload className="h-4 w-4" />
             Download Excel
+          </Button> */}
+
+
+          <Button
+            size="sm"
+            onClick={handleDownloadExcel}
+            variant="primary"
+            endIcon={
+              <FiDownload className="text-yellow-200" />
+            }
+          >
+            Download (.xlsx)
           </Button>
         </div>
 
@@ -903,7 +1145,7 @@ const skuTableTop5: Row[] = useMemo(() => {
           </tbody>
         </table> */}
 
-        <DataTable
+        {/* <DataTable
           columns={skuColumns}
           data={skuTableTop5}
           paginate={false}
@@ -914,6 +1156,21 @@ const skuTableTop5: Row[] = useMemo(() => {
           rowClassName={(row) =>
             (row as any)._isTotal ? "bg-[#DDDDDD] font-bold" : ""
           }
+        /> */}
+
+        <DataTable
+          columns={skuColumns}
+          data={skuTableDisplay}
+          paginate={false}
+          scrollY={false}
+          maxHeight="none"
+          zebra={true}
+          stickyHeader={false}
+          rowClassName={(row) => {
+            if ((row as any)._isTotal) return "bg-[#DDDDDD] font-bold";
+            if ((row as any)._isOthers) return "bg-[#F5F5F5] font-semibold";
+            return "";
+          }}
         />
 
 

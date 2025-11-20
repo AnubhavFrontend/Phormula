@@ -158,6 +158,7 @@
 
 "use client";
 
+import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
@@ -210,57 +211,44 @@ const IntegrationsModal: React.FC<Props> = ({ open, onClose }) => {
       />
 
       {/* Modal box */}
-      <div className="relative z-10 w-full max-w-lg rounded-xl border border-gray-200 bg-white p-5 shadow-2xl dark:border-gray-800 dark:bg-gray-900">
+      <div className="relative z-10 w-full max-w-lg rounded-xl border border-gray-200 bg-white px-5 py-8 shadow-2xl dark:border-gray-800 dark:bg-gray-900">
         {/* Modal header */}
-      <div className="mb-4 relative flex items-center justify-center">
-  <h2 className="text-xl font-semibold text-charcoal-500 dark:text-gray-100">
-    Select Your Integration
-  </h2>
-
-  <button
-    onClick={onClose}
-    className="absolute right-0 rounded-md p-2 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
-    aria-label="Close"
-  >
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-      <path
-        d="M6 6l12 12M18 6L6 18"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-      />
-    </svg>
-  </button>
-</div>
+        {/* <div className="mb-4 relative flex items-center justify-center"> */}
+          {/* <h2 className="text-xl text-center font-semibold text-charcoal-500 dark:text-gray-100">
+            Select Your Integration
+          </h2> */}
+          <PageBreadcrumb pageTitle="Select Your Integration" variant="table" textSize="2xl"/>
+          
+        {/* </div> */}
 
 
         {/* Integration selection block */}
-     <div className="flex flex-wrap justify-center gap-6 sm:gap-10">
-  {options.map((opt) => (
-    <button
-      key={opt.key}
-      type="button"
-      disabled={locked}
-      onClick={() => !locked && handleChoose(opt.key)}
-      title={opt.title}
-      aria-label={opt.title}
-      className={`flex flex-col items-center justify-center 
+        <div className="flex flex-wrap justify-center gap-6 sm:gap-10">
+          {options.map((opt) => (
+            <button
+              key={opt.key}
+              type="button"
+              disabled={locked}
+              onClick={() => !locked && handleChoose(opt.key)}
+              title={opt.title}
+              aria-label={opt.title}
+              className={`flex flex-col items-center justify-center 
         w-36 h-36 sm:w-40 sm:h-40
         rounded-2xl border border-[#5EA68E] bg-white
         transition-all 
         ${locked ? "cursor-not-allowed opacity-60" : "hover:bg-emerald-50 hover:scale-105"}`}
-    >
-      <img
-        src={opt.icon}
-        alt={opt.title}
-        className="h-16 w-16 sm:h-20 sm:w-20 object-contain mb-3"
-      />
-      <span className="text-sm sm:text-base font-semibold text-charcoal-500 whitespace-nowrap">
-        {opt.title}
-      </span>
-    </button>
-  ))}
-</div>
+            >
+              <img
+                src={opt.icon}
+                alt={opt.title}
+                className="h-16 w-16 sm:h-20 sm:w-20 object-contain mb-3"
+              />
+              <span className="text-sm sm:text-base font-semibold text-charcoal-500 whitespace-nowrap">
+                {opt.title}
+              </span>
+            </button>
+          ))}
+        </div>
 
 
       </div>

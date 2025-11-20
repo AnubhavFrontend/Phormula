@@ -848,6 +848,7 @@ import {
     PointElement,
     Title as ChartTitle,
 } from "chart.js";
+import { FiDownload } from "react-icons/fi";
 
 ChartJS.register(
     BarElement,
@@ -1509,6 +1510,7 @@ const CashFlowPage: React.FC = () => {
                     pageTitle="Cash Flow"
                     variant="page"
                     align="left"
+                    textSize="2xl"
                 />
             </div>
 
@@ -1574,14 +1576,14 @@ const CashFlowPage: React.FC = () => {
                             className="mb-0"
                         />
                         <span className="text-[#5EA68E] text-xl sm:text-2xl">
-                           {xAxisTitle} ({currencySymbol})
+                            {xAxisTitle} ({currencySymbol})
                         </span>
                     </div>
 
 
                     {/* Summary Table */}
                     <div className="overflow-x-auto">
-                        <table className="w-full max-w-[720px] border-collapse text-[clamp(12px,0.729vw,16px)] font-[Lato]">
+                        <table className="w-full max-w-[720px] border-collapse text-[clamp(12px,0.729vw,16px)] font-[Lato] text-center">
                             <thead>
                                 <tr className="bg-white text-[#5EA68E] border border-[#414042]">
                                     <th className="px-3 py-2 text-center border border-[#414042] w-[60px]">
@@ -1635,7 +1637,7 @@ const CashFlowPage: React.FC = () => {
                                                         </span>
                                                     )}
                                                 </td>
-                                                <td className="px-3 py-2 text-right border border-[#414042]">
+                                                <td className="px-3 py-2 text-center border border-[#414042]">
                                                     {value.toLocaleString(
                                                         undefined,
                                                         {
@@ -1657,18 +1659,18 @@ const CashFlowPage: React.FC = () => {
                             variant="primary"
                             onClick={downloadTableDataAsExcel}
                             disabled={allValuesZero}
-                            startIcon={
-                                <i className="fa-solid fa-download" />
+                            endIcon={
+                                <FiDownload className="text-yellow-200" />
                             }
                         >
-                            Export Table (.xlsx)
+                            Download (.xlsx)
                         </Button>
                     </div>
 
                     {/* Chart Section */}
                     <div className="mt-6 rounded-xl bg-white p-4 shadow border">
                         {/* Metric toggles */}
-                        <div
+                        {/* <div
                             className="flex flex-wrap items-center justify-between gap-2 md:gap-3 mb-4"
                             style={{
                                 opacity: allValuesZero ? 0.3 : 1,
@@ -1706,7 +1708,57 @@ const CashFlowPage: React.FC = () => {
                                     </label>
                                 );
                             })}
+                        </div> */}
+
+                        <div
+                            className="flex flex-wrap items-center gap-2 md:gap-3 mb-4"
+                            style={{
+                                opacity: allValuesZero ? 0.3 : 1,
+                                transition: "opacity 0.3s ease",
+                            }}
+                        >
+                            {columnsToDisplay2.map((name) => {
+                                const label = labelMap[name];
+                                const color = colorMapping[label];
+
+                                return (
+                                    <label
+                                        key={name}
+                                        className={[
+                                            "shrink-0",
+                                            "flex items-center gap-1 sm:gap-1.5",
+                                            "font-semibold cursor-pointer select-none whitespace-nowrap",
+                                            "text-[9px] sm:text-[10px] md:text-[11px] lg:text-xs xl:text-sm",
+                                            "underline decoration-2 underline-offset-[2px]",
+                                        ].join(" ")}
+                                        style={{ color }}
+                                    >
+                                        {/* Checkbox */}
+                                        <input
+                                            type="checkbox"
+                                            checked={!!selectedGraphs[name]}
+                                            onChange={(e) =>
+                                                setSelectedGraphs((prev) => ({
+                                                    ...prev,
+                                                    [name]: e.target.checked,
+                                                }))
+                                            }
+                                            disabled={allValuesZero}
+                                            className="h-3 w-3 sm:h-2.5 sm:w-2.5 appearance-none rounded-sm cursor-pointer disabled:cursor-not-allowed"
+                                            style={{
+                                                border: `1px solid ${color}`,
+                                                backgroundColor: selectedGraphs[name] ? color : "transparent",
+                                            }}
+                                        />
+
+
+                                        {/* Label */}
+                                        <span>{label.toUpperCase()}</span>
+                                    </label>
+                                );
+                            })}
                         </div>
+
 
                         <div className="h-[50vh] sm:h-[40vw] max-h-[560px]">
                             {periodType === "monthly" ? (

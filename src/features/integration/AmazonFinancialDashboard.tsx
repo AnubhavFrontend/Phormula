@@ -9,6 +9,7 @@ import {
   FaExclamationCircle as AlertCircle,
   FaArrowLeft as ArrowLeft,
 } from "react-icons/fa";
+import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:5000";
 const getAuthToken = () => (typeof window !== "undefined" ? localStorage.getItem("jwtToken") : null);
@@ -70,18 +71,18 @@ const toMonthSlug = (year: number | string, monthIdx0: number) => `${year}-${mon
 /** Canonical mappings */
 const regionForCountry = (c: string) =>
   c === "uk" ? "eu-west-1" :
-  c === "us" ? "us-east-1" :
-  c === "canada" ? "ca-central-1" : "";
+    c === "us" ? "us-east-1" :
+      c === "canada" ? "ca-central-1" : "";
 
 const marketplaceForCountry = (c: string) =>
   c === "uk" ? "A1F83G8C2ARO7P" :
-  c === "us" ? "ATVPDKIKX0DER" :
-  c === "canada" ? "A2EUQ1WTGCTBG2" : "";
+    c === "us" ? "ATVPDKIKX0DER" :
+      c === "canada" ? "A2EUQ1WTGCTBG2" : "";
 
 type Props = {
   region?: string;
   country?: string;
-   onClose?: () => void;
+  onClose?: () => void;
 };
 
 const AmazonFinancialDashboard: React.FC<Props> = ({ region, country, onClose }) => {
@@ -92,8 +93,8 @@ const AmazonFinancialDashboard: React.FC<Props> = ({ region, country, onClose })
   const inferredCountry =
     countryNormalized ||
     (region === "eu-west-1" ? "uk" :
-     region === "us-east-1" ? "us" :
-     region === "ca-central-1" ? "canada" : "");
+      region === "us-east-1" ? "us" :
+        region === "ca-central-1" ? "canada" : "");
 
   let countryUsed = inferredCountry || "uk";
   let regionUsed = region || regionForCountry(countryUsed);
@@ -140,13 +141,13 @@ const AmazonFinancialDashboard: React.FC<Props> = ({ region, country, onClose })
       setError(
         e?.message?.startsWith("{")
           ? (() => {
-              try {
-                const parsed = JSON.parse(e.message);
-                return parsed?.message || JSON.stringify(parsed, null, 2);
-              } catch {
-                return e.message;
-              }
-            })()
+            try {
+              const parsed = JSON.parse(e.message);
+              return parsed?.message || JSON.stringify(parsed, null, 2);
+            } catch {
+              return e.message;
+            }
+          })()
           : e.message
       );
     } finally {
@@ -249,12 +250,12 @@ const AmazonFinancialDashboard: React.FC<Props> = ({ region, country, onClose })
       const cols = preview.length
         ? Object.keys(preview[0])
         : [
-            "date/time","settlement id","type","order id","sku","description","quantity","marketplace","fulfilment",
-            "order city","order state","order postal","tax collection model","product sales","product sales tax",
-            "postage credits","shipping credits tax","gift wrap credits","giftwrap credits tax","promotional rebates",
-            "promotional rebates tax","marketplace withheld tax","selling fees","fba fees","other transaction fees",
-            "other","total","currency",
-          ];
+          "date/time", "settlement id", "type", "order id", "sku", "description", "quantity", "marketplace", "fulfilment",
+          "order city", "order state", "order postal", "tax collection model", "product sales", "product sales tax",
+          "postage credits", "shipping credits tax", "gift wrap credits", "giftwrap credits tax", "promotional rebates",
+          "promotional rebates tax", "marketplace withheld tax", "selling fees", "fba fees", "other transaction fees",
+          "other", "total", "currency",
+        ];
 
       setSettlementCols(cols);
       setSettlementRows(preview);
@@ -271,8 +272,8 @@ const AmazonFinancialDashboard: React.FC<Props> = ({ region, country, onClose })
 
       // Navigate to /country/MTD/:country/:month/:year (App Router)
       const fullMonthNames = [
-        "January","February","March","April","May","June",
-        "July","August","September","October","November","December",
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December",
       ];
       const idxForNav = Math.max(0, Math.min(11, parseInt(selMonth, 10) - 1));
       const monthSlug = fullMonthNames[idxForNav].toLowerCase();
@@ -364,8 +365,8 @@ const AmazonFinancialDashboard: React.FC<Props> = ({ region, country, onClose })
 
       // Navigate to latest month
       const fullMonthNames = [
-        "January","February","March","April","May","June",
-        "July","August","September","October","November","December",
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December",
       ];
       const latestMonthIdx = new Date().getMonth();
       const latestYear = new Date().getFullYear();
@@ -376,15 +377,16 @@ const AmazonFinancialDashboard: React.FC<Props> = ({ region, country, onClose })
 
   return (
     <div className="w-full">
-      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="rounded-xl bg-white p-4">
         {/* Header */}
-        <div className="items-center mb-3">
+        <div className="items-center mb-2">
           <div className="text-center">
-            <h2 className="text-xl sm:text-2xl font-bold text-emerald-700">
+            {/* <h2 className="text-xl sm:text-2xl font-bold text-emerald-700">
               Select Data Fetch Period
-            </h2>
-            <p className="text-sm text-slate-500 mt-1">
-              You selected: <b>{countryUsed.toUpperCase()}</b> — region <code>{regionUsed}</code>
+            </h2> */}
+            <PageBreadcrumb pageTitle="Select Data Fetch Period" textSize="2xl" variant="table" />
+            <p className="font-bold text-charcoal-500 mt-1">
+              Link your Amazon Seller Central to sync your sales data
             </p>
           </div>
           <div className="invisible inline-flex items-center gap-2 rounded-md border border-emerald-200 px-2 py-1">
@@ -419,10 +421,15 @@ const AmazonFinancialDashboard: React.FC<Props> = ({ region, country, onClose })
         </div>
 
         {/* Note */}
-        <div className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-emerald-800 text-sm">
-          <span className="font-medium">Note:</span> Longer periods fetch via the finances
-          endpoint; single month uses the settlements endpoint.
+        <div
+          className="mt-4 rounded-lg bg-[#D9D9D9E5] p-3 text-charcoal-500 border border-[#D9D9D9] text-sm"
+          style={{ borderLeft: "6px solid #5EA68E" }} // Tailwind's green-500
+        >
+          <span className="font-medium">Note:&nbsp;</span>
+          Selecting a longer time period will provide more comprehensive historical data for better trend analysis and forecasting.
+          However, it may take longer to complete the initial data fetch.
         </div>
+
 
         {/* 1 month controls */}
         {selectedPeriod === 1 && (

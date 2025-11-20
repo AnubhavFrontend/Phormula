@@ -324,12 +324,25 @@ const Dropdowns: React.FC<DropdownsProps> = ({
                                 ? (summary.cm2_profit / summary.total_sales) * 100
                                 : 0;
 
-                        // simple formatter for money values
+                        // simple formatter for money values (2 decimals max)
                         const formatMoney = (val: number) =>
                             `${currencySymbol} ${val.toLocaleString(undefined, {
-                                minimumFractionDigits: 1,
-                                maximumFractionDigits: 1,
+                                minimumFractionDigits: 0,
+                                maximumFractionDigits: 2,
                             })}`;
+
+                        // units: no decimals at all
+                        const formatUnits = (val: number) =>
+                            val.toLocaleString(undefined, {
+                                maximumFractionDigits: 0,
+                            });
+
+                        // percentage: up to 2 decimals
+                        const formatPercent = (val: number) =>
+                            `${val.toLocaleString(undefined, {
+                                minimumFractionDigits: 0,
+                                maximumFractionDigits: 2,
+                            })}%`;
 
                         return (
                             <div
@@ -345,7 +358,7 @@ const Dropdowns: React.FC<DropdownsProps> = ({
                                         <FaBoxArchive color="#87AD12" size={16} />
                                     </div>
                                     <div className="text-xl font-extrabold text-charcoal-500">
-                                        {summary.unit_sold}
+                                        {formatUnits(summary.unit_sold)}
                                     </div>
                                 </div>
 
@@ -389,8 +402,9 @@ const Dropdowns: React.FC<DropdownsProps> = ({
                                         <FaMoneyBillTrendUp color="#00627B" size={16} />
                                     </div>
                                     <div className="text-xl font-extrabold text-charcoal-500">
-                                        {cm2Percent.toFixed(1)}%
+                                        {formatPercent(cm2Percent)}
                                     </div>
+
                                 </div>
                             </div>
                         );

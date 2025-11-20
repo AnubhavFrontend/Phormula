@@ -1725,10 +1725,10 @@ export default function IntegrationDashboard(_: IntegrationDashboardProps) {
         <Modal
           isOpen
           onClose={() => setActivePopup(null)}
-          className="m-4 max-w-[900px]"
+          className="m-4 max-w-xl"
           showCloseButton
         >
-          <div className="relative w-full rounded-3xl bg-white p-4 no-scrollbar dark:bg-gray-900 lg:p-11">
+          <div className="relative w-full  rounded-3xl bg-white p-4 no-scrollbar dark:bg-gray-900 lg:p-11">
             <SkuMultiCountryUpload
               onClose={() => setActivePopup(null)}
               onComplete={async () => {
@@ -1850,26 +1850,8 @@ export default function IntegrationDashboard(_: IntegrationDashboardProps) {
             className="absolute inset-0 bg-black/40 backdrop-blur-sm"
             onClick={() => setOpenAmazonFinance(false)}
           />
-          <div className="relative w-full max-w-6xl rounded-xl border border-gray-200 bg-white p-4 shadow-2xl dark:border-gray-800 dark:bg-gray-900">
-            <div className="flex items-center justify-between pb-2 border-b border-gray-200 dark:border-gray-800">
-              <h3 className="text-base font-semibold">
-                Amazon Financial Dashboard
-              </h3>
-              <button
-                onClick={() => setOpenAmazonFinance(false)}
-                className="rounded-md p-2 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
-                aria-label="Close"
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                  <path
-                    d="M6 6l12 12M18 6L6 18"
-                    stroke="currentColor"
-                    strokeWidth="1.6"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </button>
-            </div>
+          <div className="relative w-full max-w-4xl rounded-xl bg-white p-4  dark:border-gray-800 dark:bg-gray-900">
+            
             <div className="mt-3">
               <AmazonFinancialDashboard
                 onClose={() => setOpenAmazonFinance(false)}

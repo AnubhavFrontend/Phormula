@@ -93,7 +93,7 @@ export default function SkuMultiCountryUpload({ onClose, onComplete }: Props) {
     const isValidType =
       selected.type === "application/vnd.ms-excel" ||
       selected.type ===
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
       selected.name.toLowerCase().endsWith(".csv");
 
     if (!isValidType) {
@@ -137,37 +137,37 @@ export default function SkuMultiCountryUpload({ onClose, onComplete }: Props) {
   // };
 
 
-const onConfirmUpload = async () => {
-  if (!file) return setError("Please select a file first.");
-  try {
-    await uploadSku({ file }).unwrap();
+  const onConfirmUpload = async () => {
+    if (!file) return setError("Please select a file first.");
+    try {
+      await uploadSku({ file }).unwrap();
 
-    // reset internal UI state
-    setShowConfirm(false);
-    setRows([]);
-    setColumns([]);
-    setFile(null);
-    setFileName("No File Chosen");
+      // reset internal UI state
+      setShowConfirm(false);
+      setRows([]);
+      setColumns([]);
+      setFile(null);
+      setFileName("No File Chosen");
 
-    // ✅ notify parent that upload completed successfully
-    onComplete();
-  } catch (e: unknown) {
-    const err = e as { data?: { error?: string; message?: string } };
-    setError(err?.data?.error || err?.data?.message || "Upload failed.");
-  }
-};
+      // ✅ notify parent that upload completed successfully
+      onComplete();
+    } catch (e: unknown) {
+      const err = e as { data?: { error?: string; message?: string } };
+      setError(err?.data?.error || err?.data?.message || "Upload failed.");
+    }
+  };
 
 
   // ---------- UI ----------
   return (
-    <div className="w-full">
+    <div className="w-full ">
       {/* Step 1: uploader */}
       {!showConfirm && (
         <div className="w-full max-w-[520px] mx-auto">
           {/* <h2 className="text-center text-[28px] font-semibold text-[#5EA68E] mb-5">
             Upload SKU Data
           </h2> */}
-           <PageBreadcrumb pageTitle="Upload SKU Data" variant="table"/>
+          <PageBreadcrumb pageTitle="Upload SKU Data" variant="table" />
 
           <div className="rounded-2xl p-3">
             <div className="flex items-center gap-2 rounded-md border border-gray-300 bg-white px-2 py-1.5">
@@ -203,16 +203,16 @@ const onConfirmUpload = async () => {
           )}
 
           <div className="mt-4 flex justify-center">
-  <Button
-    onClick={() => setShowConfirm(true)}
-    disabled={!file}
-    size="sm"
-    variant="primary"
-    className="font-bold shadow "
-  >
-    Next
-  </Button>
-</div>
+            <Button
+              onClick={() => setShowConfirm(true)}
+              disabled={!file}
+              size="sm"
+              variant="primary"
+              className="font-bold shadow "
+            >
+              Next
+            </Button>
+          </div>
         </div>
       )}
 
@@ -220,18 +220,18 @@ const onConfirmUpload = async () => {
       {showConfirm && (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 p-4">
           <div
-            className="w-[90vw] max-w-5xl rounded-xl bg-white p-5 shadow-xl"
+            className="w-[80vw] max-w-4xl rounded-xl bg-white p-5 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             {/* <h3 className="mb-3 text-center text-2xl font-semibold text-[#5EA68E]">
               Confirm SKU Data
             </h3> */}
-            <PageBreadcrumb pageTitle="Confirm SKU Data" variant="table"/>
+            <PageBreadcrumb pageTitle="Confirm SKU Data" variant="table" />
 
             <DataTable
               columns={columns}
               data={rows}
-                pageSize={10}  
+              pageSize={10}
               maxHeight="60vh"
               stickyHeader
               zebra
@@ -244,24 +244,24 @@ const onConfirmUpload = async () => {
             )}
 
             <div className="mt-4 flex justify-center gap-3">
-  <Button
-    onClick={onConfirmUpload}
-    disabled={isUploading || !file}
-    size="sm"
-    variant="primary"
-  >
-    {isUploading ? "Uploading…" : "Confirm & Upload"}
-  </Button>
+              <Button
+                onClick={onConfirmUpload}
+                disabled={isUploading || !file}
+                size="sm"
+                variant="primary"
+              >
+                {isUploading ? "Uploading…" : "Confirm & Upload"}
+              </Button>
 
-  <Button
-    onClick={() => setShowConfirm(false)}
-    disabled={isUploading}
-    size="sm"
-    variant="outline"
-  >
-    Cancel
-  </Button>
-</div>
+              <Button
+                onClick={() => setShowConfirm(false)}
+                disabled={isUploading}
+                size="sm"
+                variant="outline"
+              >
+                Cancel
+              </Button>
+            </div>
 
           </div>
         </div>

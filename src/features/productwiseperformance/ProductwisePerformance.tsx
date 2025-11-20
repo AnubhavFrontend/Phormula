@@ -868,7 +868,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import {
     Chart as ChartJS,
@@ -918,16 +918,41 @@ interface ProductwisePerformanceProps {
     productname?: string;
 }
 
+
+// ----------------------
+// Slug helper functions
+// ----------------------
+const toSlug = (name: string) =>
+  name
+    .trim()
+    .toLowerCase()
+    .replace(/\s*\+\s*/g, " plus ")
+    .replace(/\s+/g, "-"); // spaces → dashes
+
+const fromSlug = (slug: string) =>
+  slug
+    .replace(/-/g, " ")
+    .replace(/\bplus\b/gi, "+")
+    .replace(/\s+/g, " ")
+    .trim();
+
+
 const ProductwisePerformance: React.FC<ProductwisePerformanceProps> = ({
     productname: propProductName,
 }) => {
     const params = useParams();
-    const urlProductName = (params?.productname as string) || undefined;
+    const router = useRouter();
+
+    const rawSlug = params?.productname as string | undefined;
+    const urlProductName = rawSlug ? fromSlug(rawSlug) : undefined;
+
     const countryName = (params?.countryName as string) || undefined;
     const monthParam = (params?.month as string) || undefined;
     const yearParam = (params?.year as string) || undefined;
 
     const productname = propProductName || urlProductName || "Menthol";
+
+    
 
     const [data, setData] = useState<APIResponse | null>(null);
     const [loading, setLoading] = useState(false);
@@ -937,6 +962,7 @@ const ProductwisePerformance: React.FC<ProductwisePerformanceProps> = ({
         typeof window !== "undefined"
             ? localStorage.getItem("jwtToken")
             : null;
+
 
     const getCurrencySymbol = (country?: string) => {
         if (!country) return "¤";
@@ -1057,13 +1083,24 @@ const ProductwisePerformance: React.FC<ProductwisePerformanceProps> = ({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [searchQuery]);
 
+    // const handleProductSelect = (product: { product_name: string }) => {
+    //     const base = "/productwiseperformance";
+
+    //     const to = `${base}/${product.product_name}/${countryName ?? ""}/${selectedMonth ?? ""}/${selectedYear ?? ""}`;
+
+    //     router.push(to);
+    // };
+
     const handleProductSelect = (product: { product_name: string }) => {
-        const base = "/productwiseperformance";
-        const to = `${base}/${encodeURIComponent(
-            product.product_name
-        )}/${countryName ?? ""}/${selectedMonth ?? ""}/${selectedYear ?? ""}`;
-        window.location.href = to;
-    };
+  const base = "/productwiseperformance";
+  const slug = toSlug(product.product_name);
+
+  const to = `${base}/${slug}/${countryName ?? ""}/${selectedMonth ?? ""}/${selectedYear ?? ""}`;
+  router.push(to);
+};
+
+
+
 
     // -------------------------
     // Fetch Product Data
@@ -1384,78 +1421,78 @@ const ProductwisePerformance: React.FC<ProductwisePerformanceProps> = ({
 
 
     const cards = useMemo(() => {
-    if (!data?.data) return [] as { country: string; stats: any }[];
+        if (!data?.data) return [] as { country: string; stats: any }[];
 
-    const GBP_TO_USD = 1.27; // 🔹 You can adjust or fetch dynamically
+        const GBP_TO_USD = 1.27; // 🔹 You can adjust or fetch dynamically
 
-    return Object.entries(data.data).map(([country, countryData]) => {
-        let processedData = countryData;
+        return Object.entries(data.data).map(([country, countryData]) => {
+            let processedData = countryData;
 
-        // 🔥 GLOBAL REBUILD: Convert UK → USD, combine with US
-        if (country.toLowerCase() === "global") {
-            processedData = monthOrder.map((month) => {
-                const uk = data.data.uk?.find((m) => m.month === month);
-                const us = data.data.us?.find((m) => m.month === month);
+            // 🔥 GLOBAL REBUILD: Convert UK → USD, combine with US
+            if (country.toLowerCase() === "global") {
+                processedData = monthOrder.map((month) => {
+                    const uk = data.data.uk?.find((m) => m.month === month);
+                    const us = data.data.us?.find((m) => m.month === month);
 
-                return {
-                    month,
-                    net_sales:
-                        (uk?.net_sales || 0) * GBP_TO_USD + (us?.net_sales || 0),
-                    profit:
-                        (uk?.profit || 0) * GBP_TO_USD + (us?.profit || 0),
-                    quantity:
-                        (uk?.quantity || 0) + (us?.quantity || 0),
-                };
-            });
-        }
+                    return {
+                        month,
+                        net_sales:
+                            (uk?.net_sales || 0) * GBP_TO_USD + (us?.net_sales || 0),
+                        profit:
+                            (uk?.profit || 0) * GBP_TO_USD + (us?.profit || 0),
+                        quantity:
+                            (uk?.quantity || 0) + (us?.quantity || 0),
+                    };
+                });
+            }
 
-        // ⬇️ Below this, everything uses processedData instead of original
-        const totalSales = processedData.reduce((s, m) => s + m.net_sales, 0);
-        const totalProfit = processedData.reduce((s, m) => s + m.profit, 0);
-        const totalUnits = processedData.reduce((s, m) => s + m.quantity, 0);
+            // ⬇️ Below this, everything uses processedData instead of original
+            const totalSales = processedData.reduce((s, m) => s + m.net_sales, 0);
+            const totalProfit = processedData.reduce((s, m) => s + m.profit, 0);
+            const totalUnits = processedData.reduce((s, m) => s + m.quantity, 0);
 
-        const gross_margin_avg =
-            totalSales > 0 ? (totalProfit / totalSales) * 100 : 0;
+            const gross_margin_avg =
+                totalSales > 0 ? (totalProfit / totalSales) * 100 : 0;
 
-        const monthsWithSales = processedData.filter((m) => m.net_sales > 0);
+            const monthsWithSales = processedData.filter((m) => m.net_sales > 0);
 
-        const avgSales =
-            monthsWithSales.length > 0
-                ? totalSales / monthsWithSales.length
-                : 0;
+            const avgSales =
+                monthsWithSales.length > 0
+                    ? totalSales / monthsWithSales.length
+                    : 0;
 
-        const avgSellingPrice =
-            totalUnits > 0 ? totalSales / totalUnits : 0;
+            const avgSellingPrice =
+                totalUnits > 0 ? totalSales / totalUnits : 0;
 
-        const avgMonthlyProfit =
-            processedData.length > 0
-                ? totalProfit / processedData.length
-                : 0;
+            const avgMonthlyProfit =
+                processedData.length > 0
+                    ? totalProfit / processedData.length
+                    : 0;
 
-        const maxSalesMonth = processedData.reduce((max, m) =>
-            m.net_sales > max.net_sales ? m : max
-        );
+            const maxSalesMonth = processedData.reduce((max, m) =>
+                m.net_sales > max.net_sales ? m : max
+            );
 
-        const maxUnitsMonth = processedData.reduce((max, m) =>
-            m.quantity > max.quantity ? m : max
-        );
+            const maxUnitsMonth = processedData.reduce((max, m) =>
+                m.quantity > max.quantity ? m : max
+            );
 
-        return {
-            country,
-            stats: {
-                totalSales,
-                totalProfit,
-                totalUnits,
-                gross_margin_avg,
-                avgSales,
-                avgSellingPrice,
-                avgMonthlyProfit,
-                maxSalesMonth,
-                maxUnitsMonth,
-            },
-        };
-    });
-}, [data]);
+            return {
+                country,
+                stats: {
+                    totalSales,
+                    totalProfit,
+                    totalUnits,
+                    gross_margin_avg,
+                    avgSales,
+                    avgSellingPrice,
+                    avgMonthlyProfit,
+                    maxSalesMonth,
+                    maxUnitsMonth,
+                },
+            };
+        });
+    }, [data]);
 
 
     const formatMonthYear = (monthName: string, year: number | string) => {

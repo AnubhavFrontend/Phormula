@@ -708,6 +708,7 @@ import { useRouter } from "next/navigation";
 import ModalMsg from "@/components/common/ModalMsg";
 import Button from "../ui/button/Button";
 import PageBreadcrumb from "../common/PageBreadCrumb";
+import { FiDownload } from "react-icons/fi";
 
 ChartJS.register(
   CategoryScale,
@@ -1256,50 +1257,46 @@ const GraphPage: React.FC<GraphPageProps> = ({
       >
         {[
           { name: "sales", label: "Sales", color: "#2CA9E0" },
-          { name: "total_cous", label: "COGS", color: "#FF5C5C" },
-          { name: "AmazonExpense", label: "Amazon Fees", color: "#F47A00" },
+          { name: "total_cous", label: "COGS", color: "#AB64B5" },          // purple
+          { name: "AmazonExpense", label: "Amazon Fees", color: "#FF5C5C" },// red
           { name: "taxncredit", label: "Taxes & Credits", color: "#154B9B" },
           { name: "profit2", label: "CM1 Profit", color: "#5EA49B" },
-          {
-            name: "advertisingCosts",
-            label: "Advertising Costs",
-            color: "#8A4FFF",
-          },
+          { name: "advertisingCosts", label: "Advertising Costs", color: "#F47A00" }, // orange
           { name: "Other", label: "Other", color: "#00627D" },
           { name: "profit", label: "CM2 Profit", color: "#87AD12" },
         ].map(({ name, label, color }) => (
-          <label
-            key={name}
-            className={[
-              "shrink-0",
-              "flex items-center gap-1 sm:gap-1.5",
-              "font-semibold cursor-pointer select-none whitespace-nowrap",
-              "text-[9px] sm:text-[10px] md:text-[11px] lg:text-xs xl:text-sm",
-              "underline decoration-2 underline-offset-[2px]",
-            ].join(" ")}
-            style={{ color }}
-          >
-            <input
-              type="checkbox"
-              name={name}
-              checked={!!selectedGraphs[name]}
-              onChange={handleCheckboxChange}
-              disabled={allValuesZero}
+            <label
+              key={name}
               className={[
-                "h-3 w-3 sm:h-3.5 sm:w-3.5 appearance-none rounded-sm cursor-pointer",
-                accentClass[name],
-                "disabled:cursor-not-allowed",
+                "shrink-0",
+                "flex items-center gap-1 sm:gap-1.5",
+                "font-semibold cursor-pointer select-none whitespace-nowrap",
+                "text-[9px] sm:text-[10px] md:text-[11px] lg:text-xs xl:text-sm",
+                "underline decoration-2 underline-offset-[2px]",
               ].join(" ")}
-            />
-            <span
-              className={[
-                "inline-block h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-sm",
-                swatchClass[name],
-              ].join(" ")}
-            />
-            <span>{label.toUpperCase()}</span>
-          </label>
-        ))}
+              style={{ color }}
+            >
+              <input
+                type="checkbox"
+                name={name}
+                checked={!!selectedGraphs[name]}
+                onChange={handleCheckboxChange}
+                disabled={allValuesZero}
+                className={[
+                  "h-3 w-3 sm:h-3.5 sm:w-3.5 appearance-none rounded-sm cursor-pointer",
+                  accentClass[name],
+                  "disabled:cursor-not-allowed",
+                ].join(" ")}
+              />
+              <span
+                className={[
+                  "inline-block h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-sm",
+                  swatchClass[name],
+                ].join(" ")}
+              />
+              <span>{label.toUpperCase()}</span>
+            </label>
+          ))}
       </div>
 
 
@@ -1433,7 +1430,7 @@ const GraphPage: React.FC<GraphPageProps> = ({
         className={[
           "mt-2 sm:mt-3",
           "w-full mx-auto",
-          "flex justify-end",     
+          "flex justify-end",
           allValuesZero ? "opacity-30" : "opacity-100",
           "transition-opacity duration-300",
         ].join(" ")}
@@ -1444,8 +1441,8 @@ const GraphPage: React.FC<GraphPageProps> = ({
           disabled={allValuesZero}
           className={allValuesZero ? "cursor-not-allowed" : "cursor-pointer"}
         >
-          Download {periodInfo} Metrics (.xlsx)&nbsp;
-          <i className="fa-solid fa-download fa-beat" />
+          Download (.xlsx)
+          <FiDownload className="text-yellow-200" />
         </Button>
       </div>
 

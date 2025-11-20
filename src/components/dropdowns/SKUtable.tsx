@@ -7,6 +7,7 @@ import SkuMultiCountryUpload from "../ui/modal/SkuMultiCountryUpload";
 import Productinfoinpopup from "./Productinfoinpopup";
 import Button from "../ui/button/Button";
 import PageBreadcrumb from "../common/PageBreadCrumb";
+import { FiDownload } from "react-icons/fi";
 
 /* ---------- Types ---------- */
 
@@ -1082,13 +1083,13 @@ const SKUtable: React.FC<SKUtableProps> = ({
 
                 <div className="mt-4 text-center md:text-right">
                     <Button
-                        className={`rounded-md bg-[#2c3e50] px-4 py-2 font-bold text-[#f8edcf] transition-opacity text-[clamp(12px,0.729vw,16px)] ${noDataFound ? "cursor-not-allowed opacity-30" : "opacity-100"
-                            }`}
+                        variant="primary"
+                        size="sm"
                         onClick={handleDownloadExcel}
                         disabled={noDataFound}
                     >
-                        Download SKU&apos;s Profitability &nbsp;
-                        <i className="fa-solid fa-download"></i>
+                        Download (.xlsx)
+                        <FiDownload className="text-yellow-200" />
                     </Button>
                 </div>
 
@@ -1102,7 +1103,7 @@ const SKUtable: React.FC<SKUtableProps> = ({
 
                         <div className="flex gap-2 text-[1.5rem]">
                             <PageBreadcrumb pageTitle="Most 5 Profitable Products" variant="page" align="left" textSize="2xl" />
-                               <span className="text-[#5EA68E] ">&nbsp;({currencySymbol})</span>
+                            <span className="text-[#5EA68E] ">&nbsp;({currencySymbol})</span>
                         </div>
 
                         <div className="overflow-x-auto">
@@ -1200,9 +1201,9 @@ const SKUtable: React.FC<SKUtableProps> = ({
                     </div>
 
                     <div className="flex-1">
-                         <div className="flex gap-2 text-[1.5rem]">
+                        <div className="flex gap-2 text-[1.5rem]">
                             <PageBreadcrumb pageTitle="Least 5 Profitable Products" variant="page" align="left" textSize="2xl" />
-                              <span className="text-[#5EA68E]">&nbsp;({currencySymbol})</span>
+                            <span className="text-[#5EA68E]">&nbsp;({currencySymbol})</span>
                         </div>
                         <div className="overflow-x-auto">
                             <table className="w-full table-auto border-collapse">
