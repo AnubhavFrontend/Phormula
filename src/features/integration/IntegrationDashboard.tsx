@@ -1561,6 +1561,9 @@ type IntegrationDashboardProps = {
 export default function IntegrationDashboard(_: IntegrationDashboardProps) {
   const { countryName } = useParams<{ countryName: string }>();
   const selectedCountry = (countryName || "").toLowerCase();
+  const [shopifyStore, setShopifyStore] = useState<any | null>(null);
+  const [shopifyLoading, setShopifyLoading] = useState(false);
+  const isShopifyConnected = !!(shopifyStore && shopifyStore.access_token);
 
   const {
     fileUploaded,
@@ -1601,6 +1604,57 @@ export default function IntegrationDashboard(_: IntegrationDashboardProps) {
       window.removeEventListener("integration:choose", handler);
     };
   }, []);
+
+ useEffect(() => {
+  const fetchShopifyStore = async () => {
+    try {
+      setShopifyLoading(true);
+
+      const token =
+        typeof window !== "undefined"
+          ? localStorage.getItem("user_token") ||
+            localStorage.getItem("token") ||
+            localStorage.getItem("authToken")
+          : null;
+
+      console.log("JWT from localStorage:", token);
+
+      if (!token) {
+        console.log(
+          "No JWT found in localStorage – make sure you store it under `user_token` or change this code to match your key."
+        );
+        return;
+      }
+
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/shopify/store`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const data = await res.json();
+      console.log("Shopify store from backend:", data);
+
+      if (!res.ok || data?.error) {
+        // not connected yet, just stop here
+        return;
+      }
+
+      setShopifyStore(data);
+    } catch (err) {
+      console.error("Error fetching Shopify store:", err);
+    } finally {
+      setShopifyLoading(false);
+    }
+  };
+
+  fetchShopifyStore();
+}, []);
+
+
 
   // Close Amazon Finance modal on country / integration change
   useEffect(() => {
@@ -1652,6 +1706,24 @@ export default function IntegrationDashboard(_: IntegrationDashboardProps) {
     mtdUploaded,
   ]);
 
+  // const chooseIntegration = (key: Provider, origin: Origin = "page") => {
+  //   setIntegrationMethod(key);
+  //   setActivePopup(null);
+
+  //   if (key === "amazon") {
+  //     if (origin === "header") {
+  //       setShowAmazonLegacyConnect(true);
+  //     } else {
+  //       setShowAmazonConnect(true);
+  //     }
+  //     return;
+  //   }
+
+  //   if (key === "shopify") {
+  //     setShowShopifyConnect(true);
+  //   }
+  // };
+
   const chooseIntegration = (key: Provider, origin: Origin = "page") => {
     setIntegrationMethod(key);
     setActivePopup(null);
@@ -1666,9 +1738,17 @@ export default function IntegrationDashboard(_: IntegrationDashboardProps) {
     }
 
     if (key === "shopify") {
-      setShowShopifyConnect(true);
+      // 🧠 logic: open modal ONLY when not connected
+      if (!isShopifyConnected) {
+        console.log("No Shopify access token – opening connect modal");
+        setShowShopifyConnect(true);
+      } else {
+        console.log("Shopify already connected:", shopifyStore);
+        // optional: show toast / message instead of modal
+      }
     }
   };
+
 
   return (
     <div className="font-lato bg-white box-border">
@@ -1851,7 +1931,7 @@ export default function IntegrationDashboard(_: IntegrationDashboardProps) {
             onClick={() => setOpenAmazonFinance(false)}
           />
           <div className="relative w-full max-w-4xl rounded-xl bg-white p-4  dark:border-gray-800 dark:bg-gray-900">
-            
+
             <div className="mt-3">
               <AmazonFinancialDashboard
                 onClose={() => setOpenAmazonFinance(false)}
