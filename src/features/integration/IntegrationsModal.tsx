@@ -161,6 +161,8 @@
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { useSelector } from "react-redux";
+import { useRouter } from "next/navigation";
 
 type Provider = "amazon" | "shopify";
 
@@ -176,21 +178,96 @@ const options: { key: Provider; title: string; icon: string }[] = [
 
 const IntegrationsModal: React.FC<Props> = ({ open, onClose }) => {
   const [mounted, setMounted] = useState(false);
+  const router = useRouter();
+  const reduxToken = useSelector((state: any) => state.auth?.token);
+  const [shopifyStore, setShopifyStore] = useState<any | null>(null);
+  const [shopifyLoading, setShopifyLoading] = useState(false);
+  const isShopifyConnected = !!(shopifyStore && shopifyStore.access_token);
+
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
+  useEffect(() => {
+    const fetchShopifyStore = async () => {
+      if (!reduxToken) return;
+
+      try {
+        setShopifyLoading(true);
+
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/shopify/store`,
+          {
+            headers: {
+              Authorization: `Bearer ${reduxToken}`,
+            },
+          }
+        );
+
+        const contentType = res.headers.get("content-type") || "";
+        if (!contentType.includes("application/json")) {
+          // probably an HTML error page or something unexpected
+          return;
+        }
+
+        const data = await res.json();
+        console.log("Shopify store (header modal):", data);
+
+        if (!res.ok || data?.error) return;
+
+        setShopifyStore(data);
+      } catch (err) {
+        console.error("Error fetching Shopify store in IntegrationsModal:", err);
+      } finally {
+        setShopifyLoading(false);
+      }
+    };
+
+    fetchShopifyStore();
+  }, [reduxToken]);
+
+
   if (!open || !mounted) return null;
 
-  const handleChoose = (key: Provider) => {
-    window.dispatchEvent(
-      new CustomEvent("integration:choose", {
-        detail: { provider: key, origin: "header" },
-      })
-    );
+  const buildShopifyOrdersUrl = () => {
+  if (!shopifyStore?.shop_name || !shopifyStore?.access_token) {
+    return "/orders";
+  }
+
+  const params = new URLSearchParams({
+    shop: shopifyStore.shop_name,
+    token: shopifyStore.access_token,
+  });
+
+  if (shopifyStore.email) {
+    params.set("email", shopifyStore.email);
+  }
+
+  return `/orders?${params.toString()}`;
+};
+
+
+const handleChoose = (key: Provider) => {
+  // ⭐ Shopify special case: if already connected, go straight to Orders page with query params
+  if (key === "shopify" && isShopifyConnected) {
+    const url = buildShopifyOrdersUrl();
+    console.log("Header modal: Shopify already connected, redirecting to:", url);
+    router.push(url);
     onClose();
-  };
+    return;
+  }
+
+  // Default behavior: delegate to IntegrationDashboard
+  window.dispatchEvent(
+    new CustomEvent("integration:choose", {
+      detail: { provider: key, origin: "header" },
+    })
+  );
+  onClose();
+};
+
+
 
   const locked = false;
 
@@ -214,11 +291,11 @@ const IntegrationsModal: React.FC<Props> = ({ open, onClose }) => {
       <div className="relative z-10 w-full max-w-lg rounded-xl border border-gray-200 bg-white px-5 py-8 shadow-2xl dark:border-gray-800 dark:bg-gray-900">
         {/* Modal header */}
         {/* <div className="mb-4 relative flex items-center justify-center"> */}
-          {/* <h2 className="text-xl text-center font-semibold text-charcoal-500 dark:text-gray-100">
+        {/* <h2 className="text-xl text-center font-semibold text-charcoal-500 dark:text-gray-100">
             Select Your Integration
           </h2> */}
-          <PageBreadcrumb pageTitle="Select Your Integration" variant="table" textSize="2xl"/>
-          
+        <PageBreadcrumb pageTitle="Select Your Integration" variant="table" textSize="2xl" />
+
         {/* </div> */}
 
 
@@ -226,10 +303,10 @@ const IntegrationsModal: React.FC<Props> = ({ open, onClose }) => {
         <div className="flex flex-wrap justify-center gap-6 sm:gap-10">
           {options.map((opt) => (
             <button
-              key={opt.key}
-              type="button"
-              disabled={locked}
-              onClick={() => !locked && handleChoose(opt.key)}
+  key={opt.key}
+  type="button"
+  disabled={locked || (opt.key === "shopify" && shopifyLoading)}
+  onClick={() => !locked && !shopifyLoading && handleChoose(opt.key)}
               title={opt.title}
               aria-label={opt.title}
               className={`flex flex-col items-center justify-center 

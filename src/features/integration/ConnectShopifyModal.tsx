@@ -1,6 +1,9 @@
 "use client";
 
+// import React, { useCallback, useEffect, useState } from "react";
+
 import React, { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:5000";
@@ -22,16 +25,27 @@ function sanitizeShopName(raw: string) {
   return s;
 }
 
+// type Props = {
+//   onClose?: () => void;
+// };
+
 type Props = {
   onClose?: () => void;
+  isAlreadyConnected?: boolean;
 };
 
+
+// export default function ConnectShopifyModal({ onClose }: Props) {
+//   const [shopName, setShopName] = useState("");
+//   const [isConnecting, setIsConnecting] = useState(false);
+//   const [error, setError] = useState("");
 
 
 export default function ConnectShopifyModal({ onClose }: Props) {
   const [shopName, setShopName] = useState("");
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState("");
+
 
   const handleConnectShopify = useCallback(() => {
     const cleaned = sanitizeShopName(shopName);
