@@ -1,3 +1,604 @@
+// // features/integration/IntegrationDashboard.tsx
+// "use client";
+
+// import React, { useMemo, useState, useEffect } from "react";
+// import { useParams } from "next/navigation";
+// import { useRouter } from "next/navigation";
+// import { useIntegrationProgress, LS_KEYS } from "./useIntegrationProgress";
+
+// import { Step1ProductList } from "./steps/Step1ProductList";
+// import { Step2Integration } from "./steps/Step2Integration";
+// import { Step3FeePreview } from "./steps/Step3FeePreview";
+// import { Step4MTD } from "./steps/Step4MTD";
+// import { Step3AmazonFinancial } from "./steps/Step3AmazonFinancial";
+
+// import SkuMultiCountryUpload from "@/components/ui/modal/SkuMultiCountryUpload";
+// import FeepreviewUpload from "@/components/ui/modal/FeepreviewUpload";
+
+// import AmazonConnect from "./AmazonConnect";
+// import AmazonConnectLegacy from "./AmazonConnectLegacy";
+// import { Modal } from "@/components/ui/modal";
+// import FileUploadForm from "@/app/(admin)/(ui-elements)/modals/FileUploadForm";
+// import ConnectShopifyModal from "./ConnectShopifyModal";
+// import ShopifyIntroModal from "./ShopifyIntroModal";
+// import AmazonFinancialDashboard from "./AmazonFinancialDashboard";
+// import { useSelector } from "react-redux";
+
+// type Origin = "header" | "page";
+// type Provider = "amazon" | "shopify";
+
+// // (optional, to satisfy Page.tsx props)
+// type IntegrationDashboardProps = {
+//   open?: boolean;
+//   onClose?: () => void;
+// };
+
+// export default function IntegrationDashboard(_: IntegrationDashboardProps) {
+//   const router = useRouter();
+//   const { countryName } = useParams<{ countryName: string }>();
+//   const selectedCountry = (countryName || "").toLowerCase();
+//   const [shopifyStore, setShopifyStore] = useState<any | null>(null);
+//   const [shopifyLoading, setShopifyLoading] = useState(false);
+//   const isShopifyConnected = !!(shopifyStore && shopifyStore.access_token);
+// // const [showShopifyIntro, setShowShopifyIntro] = useState(false);
+// // const [showShopifyConnect, setShowShopifyConnect] = useState(false);
+
+// const [shopifyStage, setShopifyStage] = useState<"none" | "intro" | "manual">(
+//   "none"
+// );
+
+//   const {
+//     fileUploaded,
+//     profileExists,
+//     integrationMethod,
+//     setIntegrationMethod,
+//     setAmazonConnected,
+//     amazonConnected,
+//     mtdUploaded,
+//     setMtdUploaded,
+//     refetchFileStatus,
+//   } = useIntegrationProgress(selectedCountry);
+
+//   const [activePopup, setActivePopup] = useState<number | null>(null);
+//   const [showAmazonConnect, setShowAmazonConnect] = useState(false);
+//   const [showAmazonLegacyConnect, setShowAmazonLegacyConnect] = useState(false);
+//   // const [showShopifyConnect, setShowShopifyConnect] = useState(false);
+//   const [openAmazonFinance, setOpenAmazonFinance] = useState(false);
+
+//   const [mtdCountry, setMtdCountry] = useState<string>("");
+
+//   const reduxToken = useSelector((state: any) => state.auth?.token);
+
+
+//   // ✅ local in-session flag for SKU step completion
+//   const [skuCompleted, setSkuCompleted] = useState(false);
+
+//   // Listen for Integration choices fired from header modal
+//   // useEffect(() => {
+//   //   const handler = (e: Event) => {
+//   //     const custom = e as CustomEvent<{ provider: Provider; origin?: Origin }>;
+//   //     const { provider, origin = "header" } = custom.detail || {};
+//   //     if (!provider) return;
+//   //     chooseIntegration(provider, origin);
+//   //   };
+
+//   //   // @ts-ignore Custom event name
+//   //   window.addEventListener("integration:choose", handler);
+//   //   return () => {
+//   //     // @ts-ignore
+//   //     window.removeEventListener("integration:choose", handler);
+//   //   };
+//   // }, []);
+
+//   // listener for header modal events
+// useEffect(() => {
+//   const handler = (e: Event) => {
+//     const custom = e as CustomEvent<{ provider: Provider; origin?: Origin }>;
+//     const { provider, origin = "header" } = custom.detail || {};
+//     if (!provider) return;
+//     chooseIntegration(provider, origin);
+//   };
+
+//   // @ts-ignore
+//   window.addEventListener("integration:choose", handler);
+//   return () => {
+//     // @ts-ignore
+//     window.removeEventListener("integration:choose", handler);
+//   };
+// }, []); // <-- ok to leave dependency empty because chooseIntegration is defined inline
+
+
+//   useEffect(() => {
+//     const fetchShopifyStore = async () => {
+//       try {
+//         setShopifyLoading(true);
+
+//         const token = reduxToken; // from useSelector
+
+//         console.log("JWT from Redux:", token);
+//         console.log("API BASE URL:", process.env.NEXT_PUBLIC_API_BASE_URL);
+
+//         if (!token) {
+//           console.log("No JWT found in Redux store.");
+//           return;
+//         }
+
+//         const res = await fetch(
+//           `${process.env.NEXT_PUBLIC_API_BASE_URL}/shopify/store`,
+//           {
+//             headers: {
+//               Authorization: `Bearer ${token}`,
+//             },
+//           }
+//         );
+
+//         const contentType = res.headers.get("content-type") || "";
+
+//         // If backend failed and returned HTML, avoid res.json() crash
+//         if (!contentType.includes("application/json")) {
+//           const text = await res.text();
+//           console.error("Non-JSON response from /shopify/store:", text);
+//           return;
+//         }
+
+//         const data = await res.json();
+//         console.log("Shopify store from backend:", data);
+
+//         if (!res.ok || data?.error) {
+//           return;
+//         }
+
+//         setShopifyStore(data);
+//       } catch (err) {
+//         console.error("Error fetching Shopify store:", err);
+//       } finally {
+//         setShopifyLoading(false);
+//       }
+//     };
+
+//     fetchShopifyStore();
+//   }, [reduxToken]);
+
+//   useEffect(() => {
+//     if (isShopifyConnected && showShopifyConnect) {
+//       // if connection info arrives AFTER the modal is already open, close it
+//       setShowShopifyConnect(false);
+//     }
+//   }, [isShopifyConnected, showShopifyConnect]);
+
+
+//   // Close Amazon Finance modal on country / integration change
+//   useEffect(() => {
+//     setOpenAmazonFinance(false);
+//   }, [selectedCountry, integrationMethod]);
+
+//   const steps = useMemo(() => {
+//     const step1Done = fileUploaded || skuCompleted;
+
+//     const manual = [
+//       { id: 1, completed: step1Done, enabled: true, action: () => setActivePopup(1) },
+//       { id: 2, completed: !!integrationMethod, enabled: step1Done },
+//       {
+//         id: 3,
+//         completed: profileExists,
+//         enabled: !!integrationMethod,
+//         action: () => setActivePopup(2),
+//       },
+//       {
+//         id: 4,
+//         completed: mtdUploaded,
+//         enabled: profileExists,
+//         action: () => setActivePopup(3),
+//       },
+//     ];
+
+//     const amazon = [
+//       { id: 1, completed: step1Done, enabled: true, action: () => setActivePopup(1) },
+//       {
+//         id: 2,
+//         completed: !!integrationMethod && amazonConnected,
+//         enabled: step1Done,
+//       },
+//       {
+//         id: 3,
+//         completed: mtdUploaded,
+//         enabled: !!integrationMethod && amazonConnected,
+//         action: () => setActivePopup(3),
+//       },
+//     ];
+
+//     return integrationMethod === "amazon" ? amazon : manual;
+//   }, [
+//     integrationMethod,
+//     amazonConnected,
+//     fileUploaded,
+//     skuCompleted,
+//     profileExists,
+//     mtdUploaded,
+//   ]);
+
+//   // const chooseIntegration = (key: Provider, origin: Origin = "page") => {
+//   //   setIntegrationMethod(key);
+//   //   setActivePopup(null);
+
+//   //   if (key === "amazon") {
+//   //     if (origin === "header") {
+//   //       setShowAmazonLegacyConnect(true);
+//   //     } else {
+//   //       setShowAmazonConnect(true);
+//   //     }
+//   //     return;
+//   //   }
+
+//   //   if (key === "shopify") {
+//   //     setShowShopifyConnect(true);
+//   //   }
+//   // };
+
+//   // const chooseIntegration = (key: Provider, origin: Origin = "page") => {
+//   //   setIntegrationMethod(key);
+//   //   setActivePopup(null);
+
+//   //   if (key === "amazon") {
+//   //     if (origin === "header") {
+//   //       setShowAmazonLegacyConnect(true);
+//   //     } else {
+//   //       setShowAmazonConnect(true);
+//   //     }
+//   //     return;
+//   //   }
+
+//   //   if (key === "shopify") {
+//   //     // 🧠 logic: open modal ONLY when not connected
+//   //     if (!isShopifyConnected) {
+//   //       console.log("No Shopify access token – opening connect modal");
+//   //       setShowShopifyConnect(true);
+//   //     } else {
+//   //       console.log("Shopify already connected:", shopifyStore);
+//   //       // optional: show toast / message instead of modal
+//   //     }
+//   //   }
+//   // };
+
+// //   const buildShopifyOrdersUrl = () => {
+// //   if (!shopifyStore?.shop_name || !shopifyStore?.access_token) {
+// //     return "/orders";
+// //   }
+
+// //   const params = new URLSearchParams({
+// //     shop: shopifyStore.shop_name,
+// //     token: shopifyStore.access_token,
+// //   });
+
+// //   if (shopifyStore.email) {
+// //     params.set("email", shopifyStore.email);
+// //   }
+
+// //   return `/orders?${params.toString()}`;
+// // };
+
+
+// // shopify orders url (unchanged)
+// const buildShopifyOrdersUrl = () => {
+//   if (!shopifyStore?.shop_name || !shopifyStore?.access_token) {
+//     return "/orders";
+//   }
+//   const params = new URLSearchParams({
+//     shop: shopifyStore.shop_name,
+//     token: shopifyStore.access_token,
+//   });
+//   if (shopifyStore.email) params.set("email", shopifyStore.email);
+//   return `/orders?${params.toString()}`;
+// };
+
+//   // const chooseIntegration = (key: Provider, origin: Origin = "page") => {
+//   //   setIntegrationMethod(key);
+//   //   setActivePopup(null);
+
+//   //   if (key === "amazon") {
+//   //     if (origin === "header") {
+//   //       setShowAmazonLegacyConnect(true);
+//   //     } else {
+//   //       setShowAmazonConnect(true);
+//   //     }
+//   //     return;
+//   //   }
+
+//   //   if (key === "shopify") {
+//   //     // ✅ If already connected, skip modal & go straight to Orders with query params
+//   //     if (isShopifyConnected) {
+//   //       const url = buildShopifyOrdersUrl();
+//   //       console.log("Shopify already connected, redirecting to:", url);
+//   //       router.push(url);
+//   //       return;
+//   //     }
+
+//   //     // ❌ Not connected yet → open connect modal
+//   //     console.log("No Shopify access token – opening connect modal");
+//   //     setShowShopifyConnect(true);
+//   //   }
+
+//   // };
+
+// const chooseIntegration = (key: Provider, origin: Origin = "page") => {
+//   setIntegrationMethod(key);
+//   setActivePopup(null);
+
+//   // 🔁 always reset shopify stage when changing integration
+//   setShopifyStage("none");
+
+//   if (key === "amazon") {
+//     if (origin === "header") {
+//       setShowAmazonLegacyConnect(true);
+//     } else {
+//       setShowAmazonConnect(true);
+//     }
+//     return;
+//   }
+
+//   if (key === "shopify") {
+//     // ✅ already connected → go straight to Orders & never open modals
+//     if (isShopifyConnected) {
+//       const url = buildShopifyOrdersUrl();
+//       console.log("Shopify already connected, redirecting to:", url);
+//       router.push(url);
+//       return;
+//     }
+
+//     // ❌ not connected → ALWAYS start with intro
+//     console.log("No Shopify access token – opening Shopify intro modal");
+//     setShopifyStage("intro");
+//   }
+// };
+
+
+
+//   return (
+//     <div className="font-lato bg-white box-border">
+//       <h2 className="text-[#414042] font-semibold text-lg md:text-xl mb-4">
+//         Start your Journey with Phormula!
+//       </h2>
+
+//       {/* Step 1 */}
+//       <Step1ProductList
+//         completed={steps[0].completed}
+//         onOpen={() => steps[0].enabled && steps[0].action?.()}
+//       />
+
+//       {/* Step 2 */}
+//       <Step2Integration
+//         locked={!steps[1].enabled}
+//         completed={steps[1].completed}
+//         onChoose={(key) => chooseIntegration(key, "page")}
+//       />
+
+//       {/* Manual flow */}
+//       {integrationMethod === "manual" && (
+//         <>
+//           <Step3FeePreview
+//             enabled={steps[2].enabled}
+//             completed={steps[2].completed}
+//             onOpen={() => steps[2].enabled && steps[2].action?.()}
+//           />
+
+//           <Step4MTD
+//             enabled={steps[3]?.enabled}
+//             completed={steps[3]?.completed}
+//             selectedCountry={selectedCountry}
+//             onOpenForCountry={(code) => {
+//               if (code !== selectedCountry) return;
+//               setMtdCountry(code);
+//               setActivePopup(3);
+//             }}
+//           />
+//         </>
+//       )}
+
+//       {/* Amazon flow */}
+//       {integrationMethod === "amazon" && (
+//         <Step3AmazonFinancial
+//           enabled={steps[2].enabled}
+//           completed={steps[2].completed}
+//           onOpen={() => setOpenAmazonFinance(true)}
+//         />
+//       )}
+
+//       {/* Step 1 modal (SKU upload) */}
+//       {activePopup === 1 && (
+//         <Modal
+//           isOpen
+//           onClose={() => setActivePopup(null)}
+//           className="m-4 max-w-xl"
+//           showCloseButton
+//         >
+//           <div className="relative w-full  rounded-3xl bg-white p-4 no-scrollbar dark:bg-gray-900 lg:p-11">
+//             <SkuMultiCountryUpload
+//               onClose={() => setActivePopup(null)}
+//               onComplete={async () => {
+//                 // mark step 1 done right away
+//                 setSkuCompleted(true);
+
+//                 // refresh backend status for future sessions
+//                 try {
+//                   await refetchFileStatus();
+//                 } catch {
+//                   /* ignore */
+//                 }
+
+//                 setActivePopup(null);
+//               }}
+//             />
+//           </div>
+//         </Modal>
+//       )}
+
+//       {/* Step 3 modal (Fee Preview) */}
+//       {activePopup === 2 && (
+//         <Modal
+//           isOpen
+//           onClose={() => setActivePopup(null)}
+//           className="m-4 max-w-[800px]"
+//           showCloseButton
+//         >
+//           <div className="relative w-full rounded-3xl bg-white p-4 no-scrollbar dark:bg-gray-900 lg:p-11">
+//             <FeepreviewUpload
+//               country={selectedCountry}
+//               onClose={() => setActivePopup(null)}
+//             />
+//           </div>
+//         </Modal>
+//       )}
+
+//       {/* Step 4 modal (MTD Upload) */}
+//       {activePopup === 3 && (
+//         <Modal
+//           isOpen
+//           onClose={() => setActivePopup(null)}
+//           className="m-4 max-w-3xl"
+//           showCloseButton
+//         >
+//           <FileUploadForm
+//             initialCountry={mtdCountry || selectedCountry}
+//             onClose={() => {
+//               setActivePopup(null);
+//             }}
+//             onComplete={() => {
+//               setMtdUploaded(true);
+//               setActivePopup(null);
+//             }}
+//           />
+//         </Modal>
+//       )}
+
+//       {/* Amazon connect (page flow) */}
+//       {showAmazonConnect && (
+//         <Modal
+//           isOpen
+//           onClose={() => setShowAmazonConnect(false)}
+//           className="m-4 max-w-xl"
+//           showCloseButton
+//         >
+//           <AmazonConnect
+//             onClose={() => setShowAmazonConnect(false)}
+//             onConnected={(refreshToken?: string) => {
+//               if (typeof window !== "undefined") {
+//                 localStorage.setItem(
+//                   LS_KEYS.amazonRefreshToken(selectedCountry),
+//                   String(refreshToken ?? "")
+//                 );
+//               }
+//               setAmazonConnected(true);
+//               setShowAmazonConnect(false);
+//             }}
+//             onChooseManual={() => {
+//               setShowAmazonConnect(false);
+//               setIntegrationMethod("manual");
+//             }}
+//           />
+//         </Modal>
+//       )}
+
+//       {/* Amazon LEGACY connect (header flow) */}
+//       {showAmazonLegacyConnect && (
+//         <Modal
+//           isOpen
+//           onClose={() => setShowAmazonLegacyConnect(false)}
+//           className="m-4 max-w-xl"
+//           showCloseButton
+//         >
+//           <AmazonConnectLegacy
+//             onClose={() => setShowAmazonLegacyConnect(false)}
+//             onConnected={(refreshToken?: string) => {
+//               if (typeof window !== "undefined") {
+//                 localStorage.setItem(
+//                   LS_KEYS.amazonRefreshToken(selectedCountry),
+//                   String(refreshToken ?? "")
+//                 );
+//               }
+//               setAmazonConnected(true);
+//               setShowAmazonLegacyConnect(false);
+//             }}
+//           />
+//         </Modal>
+//       )}
+
+//       {/* Amazon financial dashboard */}
+//       {integrationMethod === "amazon" && amazonConnected && openAmazonFinance && (
+//         <div
+//           className="fixed inset-0 z-[100000] flex items-center justify-center p-4"
+//           role="dialog"
+//           aria-modal="true"
+//         >
+//           <div
+//             className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+//             onClick={() => setOpenAmazonFinance(false)}
+//           />
+//           <div className="relative w-full max-w-4xl rounded-xl bg-white p-4  dark:border-gray-800 dark:bg-gray-900">
+
+//             <div className="mt-3">
+//               <AmazonFinancialDashboard
+//                 onClose={() => setOpenAmazonFinance(false)}
+//               />
+//             </div>
+//           </div>
+//         </div>
+//       )}
+
+//       {/* Shopify connect */}
+//       {/* {showShopifyConnect && (
+//         <ConnectShopifyModal onClose={() => setShowShopifyConnect(false)} />
+//       )} */}
+
+//       {/* Shopify connect */}
+//       {/* {showShopifyConnect && !isShopifyConnected && (
+//         <ConnectShopifyModal onClose={() => setShowShopifyConnect(false)} />
+//       )} */}
+
+
+//     {/* Shopify intro (first step) */}
+// {shopifyStage === "intro" && !isShopifyConnected && (
+//   <ShopifyIntroModal
+//     onClose={() => setShopifyStage("none")}
+//     onManual={() => {
+//       // go from intro → manual
+//       setShopifyStage("manual");
+//     }}
+//   />
+// )}
+
+// {/* Shopify connect (manual store name) */}
+// {shopifyStage === "manual" && !isShopifyConnected && (
+//   <ConnectShopifyModal onClose={() => setShopifyStage("none")} />
+// )}
+
+
+//     </div>
+//   );
+// }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // features/integration/IntegrationDashboard.tsx
 "use client";
 
@@ -20,6 +621,7 @@ import AmazonConnectLegacy from "./AmazonConnectLegacy";
 import { Modal } from "@/components/ui/modal";
 import FileUploadForm from "@/app/(admin)/(ui-elements)/modals/FileUploadForm";
 import ConnectShopifyModal from "./ConnectShopifyModal";
+import ShopifyIntroModal from "./ShopifyIntroModal";
 import AmazonFinancialDashboard from "./AmazonFinancialDashboard";
 import { useSelector } from "react-redux";
 
@@ -36,9 +638,15 @@ export default function IntegrationDashboard(_: IntegrationDashboardProps) {
   const router = useRouter();
   const { countryName } = useParams<{ countryName: string }>();
   const selectedCountry = (countryName || "").toLowerCase();
+
   const [shopifyStore, setShopifyStore] = useState<any | null>(null);
   const [shopifyLoading, setShopifyLoading] = useState(false);
   const isShopifyConnected = !!(shopifyStore && shopifyStore.access_token);
+
+  // 🔑 SINGLE source of truth for Shopify modal flow
+  const [shopifyStage, setShopifyStage] = useState<"none" | "intro" | "manual">(
+    "none"
+  );
 
   const {
     fileUploaded,
@@ -55,18 +663,16 @@ export default function IntegrationDashboard(_: IntegrationDashboardProps) {
   const [activePopup, setActivePopup] = useState<number | null>(null);
   const [showAmazonConnect, setShowAmazonConnect] = useState(false);
   const [showAmazonLegacyConnect, setShowAmazonLegacyConnect] = useState(false);
-  const [showShopifyConnect, setShowShopifyConnect] = useState(false);
   const [openAmazonFinance, setOpenAmazonFinance] = useState(false);
 
   const [mtdCountry, setMtdCountry] = useState<string>("");
 
   const reduxToken = useSelector((state: any) => state.auth?.token);
 
-
   // ✅ local in-session flag for SKU step completion
   const [skuCompleted, setSkuCompleted] = useState(false);
 
-  // Listen for Integration choices fired from header modal
+  // listener for header modal events
   useEffect(() => {
     const handler = (e: Event) => {
       const custom = e as CustomEvent<{ provider: Provider; origin?: Origin }>;
@@ -75,21 +681,21 @@ export default function IntegrationDashboard(_: IntegrationDashboardProps) {
       chooseIntegration(provider, origin);
     };
 
-    // @ts-ignore Custom event name
+    // @ts-ignore
     window.addEventListener("integration:choose", handler);
     return () => {
       // @ts-ignore
       window.removeEventListener("integration:choose", handler);
     };
-  }, []);
+  }, []); // ok to leave dependency empty because chooseIntegration is stable in this lifecycle
 
+  // Fetch Shopify store info
   useEffect(() => {
     const fetchShopifyStore = async () => {
       try {
         setShopifyLoading(true);
 
         const token = reduxToken; // from useSelector
-
         console.log("JWT from Redux:", token);
         console.log("API BASE URL:", process.env.NEXT_PUBLIC_API_BASE_URL);
 
@@ -134,14 +740,6 @@ export default function IntegrationDashboard(_: IntegrationDashboardProps) {
     fetchShopifyStore();
   }, [reduxToken]);
 
-  useEffect(() => {
-    if (isShopifyConnected && showShopifyConnect) {
-      // if connection info arrives AFTER the modal is already open, close it
-      setShowShopifyConnect(false);
-    }
-  }, [isShopifyConnected, showShopifyConnect]);
-
-
   // Close Amazon Finance modal on country / integration change
   useEffect(() => {
     setOpenAmazonFinance(false);
@@ -151,7 +749,12 @@ export default function IntegrationDashboard(_: IntegrationDashboardProps) {
     const step1Done = fileUploaded || skuCompleted;
 
     const manual = [
-      { id: 1, completed: step1Done, enabled: true, action: () => setActivePopup(1) },
+      {
+        id: 1,
+        completed: step1Done,
+        enabled: true,
+        action: () => setActivePopup(1),
+      },
       { id: 2, completed: !!integrationMethod, enabled: step1Done },
       {
         id: 3,
@@ -168,7 +771,12 @@ export default function IntegrationDashboard(_: IntegrationDashboardProps) {
     ];
 
     const amazon = [
-      { id: 1, completed: step1Done, enabled: true, action: () => setActivePopup(1) },
+      {
+        id: 1,
+        completed: step1Done,
+        enabled: true,
+        action: () => setActivePopup(1),
+      },
       {
         id: 2,
         completed: !!integrationMethod && amazonConnected,
@@ -192,70 +800,25 @@ export default function IntegrationDashboard(_: IntegrationDashboardProps) {
     mtdUploaded,
   ]);
 
-  // const chooseIntegration = (key: Provider, origin: Origin = "page") => {
-  //   setIntegrationMethod(key);
-  //   setActivePopup(null);
-
-  //   if (key === "amazon") {
-  //     if (origin === "header") {
-  //       setShowAmazonLegacyConnect(true);
-  //     } else {
-  //       setShowAmazonConnect(true);
-  //     }
-  //     return;
-  //   }
-
-  //   if (key === "shopify") {
-  //     setShowShopifyConnect(true);
-  //   }
-  // };
-
-  // const chooseIntegration = (key: Provider, origin: Origin = "page") => {
-  //   setIntegrationMethod(key);
-  //   setActivePopup(null);
-
-  //   if (key === "amazon") {
-  //     if (origin === "header") {
-  //       setShowAmazonLegacyConnect(true);
-  //     } else {
-  //       setShowAmazonConnect(true);
-  //     }
-  //     return;
-  //   }
-
-  //   if (key === "shopify") {
-  //     // 🧠 logic: open modal ONLY when not connected
-  //     if (!isShopifyConnected) {
-  //       console.log("No Shopify access token – opening connect modal");
-  //       setShowShopifyConnect(true);
-  //     } else {
-  //       console.log("Shopify already connected:", shopifyStore);
-  //       // optional: show toast / message instead of modal
-  //     }
-  //   }
-  // };
-
+  // shopify orders url
   const buildShopifyOrdersUrl = () => {
-  if (!shopifyStore?.shop_name || !shopifyStore?.access_token) {
-    return "/orders";
-  }
-
-  const params = new URLSearchParams({
-    shop: shopifyStore.shop_name,
-    token: shopifyStore.access_token,
-  });
-
-  if (shopifyStore.email) {
-    params.set("email", shopifyStore.email);
-  }
-
-  return `/orders?${params.toString()}`;
-};
-
+    if (!shopifyStore?.shop_name || !shopifyStore?.access_token) {
+      return "/orders";
+    }
+    const params = new URLSearchParams({
+      shop: shopifyStore.shop_name,
+      token: shopifyStore.access_token,
+    });
+    if (shopifyStore.email) params.set("email", shopifyStore.email);
+    return `/orders?${params.toString()}`;
+  };
 
   const chooseIntegration = (key: Provider, origin: Origin = "page") => {
     setIntegrationMethod(key);
     setActivePopup(null);
+
+    // 🔁 always reset shopify stage when changing integration
+    setShopifyStage("none");
 
     if (key === "amazon") {
       if (origin === "header") {
@@ -267,7 +830,7 @@ export default function IntegrationDashboard(_: IntegrationDashboardProps) {
     }
 
     if (key === "shopify") {
-      // ✅ If already connected, skip modal & go straight to Orders with query params
+      // ✅ already connected → go straight to Orders & never open modals
       if (isShopifyConnected) {
         const url = buildShopifyOrdersUrl();
         console.log("Shopify already connected, redirecting to:", url);
@@ -275,13 +838,11 @@ export default function IntegrationDashboard(_: IntegrationDashboardProps) {
         return;
       }
 
-      // ❌ Not connected yet → open connect modal
-      console.log("No Shopify access token – opening connect modal");
-      setShowShopifyConnect(true);
+      // ❌ not connected → ALWAYS start with intro
+      console.log("No Shopify access token – opening Shopify intro modal");
+      setShopifyStage("intro");
     }
-
   };
-
 
   return (
     <div className="font-lato bg-white box-border">
@@ -341,7 +902,7 @@ export default function IntegrationDashboard(_: IntegrationDashboardProps) {
           className="m-4 max-w-xl"
           showCloseButton
         >
-          <div className="relative w-full  rounded-3xl bg-white p-4 no-scrollbar dark:bg-gray-900 lg:p-11">
+          <div className="relative w-full rounded-3xl bg-white p-4 no-scrollbar dark:bg-gray-900 lg:p-11">
             <SkuMultiCountryUpload
               onClose={() => setActivePopup(null)}
               onComplete={async () => {
@@ -453,39 +1014,43 @@ export default function IntegrationDashboard(_: IntegrationDashboardProps) {
       )}
 
       {/* Amazon financial dashboard */}
-      {integrationMethod === "amazon" && amazonConnected && openAmazonFinance && (
-        <div
-          className="fixed inset-0 z-[100000] flex items-center justify-center p-4"
-          role="dialog"
-          aria-modal="true"
-        >
+      {integrationMethod === "amazon" &&
+        amazonConnected &&
+        openAmazonFinance && (
           <div
-            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-            onClick={() => setOpenAmazonFinance(false)}
-          />
-          <div className="relative w-full max-w-4xl rounded-xl bg-white p-4  dark:border-gray-800 dark:bg-gray-900">
-
-            <div className="mt-3">
-              <AmazonFinancialDashboard
-                onClose={() => setOpenAmazonFinance(false)}
-              />
+            className="fixed inset-0 z-[100000] flex items-center justify-center p-4"
+            role="dialog"
+            aria-modal="true"
+          >
+            <div
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+              onClick={() => setOpenAmazonFinance(false)}
+            />
+            <div className="relative w-full max-w-4xl rounded-xl bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+              <div className="mt-3">
+                <AmazonFinancialDashboard
+                  onClose={() => setOpenAmazonFinance(false)}
+                />
+              </div>
             </div>
           </div>
-        </div>
+        )}
+
+      {/* Shopify intro (first step) */}
+      {shopifyStage === "intro" && !isShopifyConnected && (
+        <ShopifyIntroModal
+          onClose={() => setShopifyStage("none")}
+          onManual={() => {
+            // go from intro → manual
+            setShopifyStage("manual");
+          }}
+        />
       )}
 
-      {/* Shopify connect */}
-      {/* {showShopifyConnect && (
-        <ConnectShopifyModal onClose={() => setShowShopifyConnect(false)} />
-      )} */}
-
-      {/* Shopify connect */}
-      {showShopifyConnect && !isShopifyConnected && (
-        <ConnectShopifyModal onClose={() => setShowShopifyConnect(false)} />
+      {/* Shopify connect (manual store name) */}
+      {shopifyStage === "manual" && !isShopifyConnected && (
+        <ConnectShopifyModal onClose={() => setShopifyStage("none")} />
       )}
-
-
-
     </div>
   );
 }

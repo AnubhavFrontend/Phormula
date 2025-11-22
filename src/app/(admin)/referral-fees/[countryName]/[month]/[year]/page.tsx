@@ -116,6 +116,45 @@ const toNumberSafe = (v: any): number => {
 };
 
 /* ===================== Donut Component ===================== */
+// function Donut({ label, pct, amount, color = "#60A68E" }: DonutProps) {
+//   const data = {
+//     labels: [label, "Remaining"],
+//     datasets: [
+//       {
+//         data: [pct, Math.max(0, 100 - pct)],
+//         backgroundColor: [color, "#e5e7eb"],
+//         borderWidth: 0,
+//       },
+//     ],
+//   };
+
+//   const options = {
+//     cutout: "70%",
+//     plugins: { legend: { display: false } },
+//     maintainAspectRatio: false,
+//   } as const;
+
+//   return (
+//     <div className="bg-white rounded-2xl p-3 sm:p-4 flex flex-col items-center">
+//       <h3 className="text-xs sm:text-sm font-semibold text-slate-700 mb-1 sm:mb-2">
+//         {label}
+//       </h3>
+
+//       <div className="w-28 h-28 sm:w-32 sm:h-32 lg:w-36 lg:h-36">
+//         <Doughnut data={data} options={options} />
+//       </div>
+
+//       <p className="mt-2 text-lg sm:text-xl lg:text-2xl font-bold">
+//         {Number.isFinite(pct) ? pct.toFixed(2) : 0}%
+//       </p>
+
+//       <p className="text-[10px] sm:text-xs text-gray-500 mt-1">
+//         {fmtCurrency(amount)}
+//       </p>
+//     </div>
+//   );
+// }
+
 function Donut({ label, pct, amount, color = "#60A68E" }: DonutProps) {
   const data = {
     labels: [label, "Remaining"],
@@ -130,7 +169,13 @@ function Donut({ label, pct, amount, color = "#60A68E" }: DonutProps) {
 
   const options = {
     cutout: "70%",
-    plugins: { legend: { display: false } },
+    plugins: { 
+      legend: { display: false },
+      tooltip: { enabled: false },          // ❌ disable hover tooltips
+    },
+    hover: {
+      mode: undefined as any,               // no hover behavior
+    },
     maintainAspectRatio: false,
   } as const;
 
@@ -154,7 +199,6 @@ function Donut({ label, pct, amount, color = "#60A68E" }: DonutProps) {
     </div>
   );
 }
-
 
 
 const donutColors = [
@@ -450,7 +494,8 @@ export default function ReferralFeesDashboard(): JSX.Element {
 
     const applicablePct = sales ? (applicable / sales) * 100 : 0;
     const chargedPct = sales ? (charged / sales) * 100 : 0;
-    const overchargedPct = charged ? (overcharged / charged) * 100 : 0;
+    // const overchargedPct = charged ? (overcharged / charged) * 100 : 0;
+    const overchargedPct = (applicablePct - chargedPct) ;
 
     return [
       {
@@ -470,6 +515,20 @@ export default function ReferralFeesDashboard(): JSX.Element {
       },
     ];
   }, [totalFeeRow]);
+
+const summaryTableRows: Row[] = useMemo(() => {
+  return feeSummaryRows.map((r, index) => ({
+    label: r.label,
+    units: r.units,
+    sales: r.sales,
+    refFeesApplicable: r.refFeesApplicable,
+    refFeesCharged: r.refFeesCharged,
+    overcharged: r.overcharged,
+    // mark last row as total for styling
+    _isTotal: index === feeSummaryRows.length - 1,
+  })) as Row[];
+}, [feeSummaryRows]);
+
 
   /* ===================== Product-wise Overcharged Rows (for Excel) ===================== */
 
@@ -598,6 +657,36 @@ export default function ReferralFeesDashboard(): JSX.Element {
       )
     },
   ];
+
+  const summaryColumns: ColumnDef<Row>[] = [
+  { key: "label", header: "Ref. Fees" },
+  {
+    key: "units",
+    header: "Units",
+    render: (_, v) => fmtInteger(Number(v)),
+  },
+  {
+    key: "sales",
+    header: "Sales",
+    render: (_, v) => fmtCurrency(Number(v)),
+  },
+  {
+    key: "refFeesApplicable",
+    header: "Ref Fees Applicable",
+    render: (_, v) => fmtCurrency(Number(v)),
+  },
+  {
+    key: "refFeesCharged",
+    header: "Ref Fees Charged",
+    render: (_, v) => fmtCurrency(Number(v)),
+  },
+  {
+    key: "overcharged",
+    header: "Overcharged",
+    render: (_, v) => fmtCurrency(Number(v)),
+  },
+];
+
 
   // TOP 5 by Sales for display in browser table
   // const skuTableTop5: Row[] = useMemo(() => {
@@ -965,7 +1054,7 @@ export default function ReferralFeesDashboard(): JSX.Element {
 
 
       {/* Summary Overview table */}
-      <div className="bg-white rounded-2xl shadow p-4 overflow-x-auto">
+      {/* <div className="bg-white rounded-2xl shadow p-4 overflow-x-auto">
         <table className="min-w-[720px] w-full text-xs md:text-sm whitespace-nowrap">
           <thead className="text-charcoal-500 border-b-[1px] border-charcoal-500">
             <tr className="font-black">
@@ -1025,7 +1114,33 @@ export default function ReferralFeesDashboard(): JSX.Element {
             )}
           </tbody>
         </table>
-      </div>
+      </div> */}
+
+        
+{/* Summary Overview table using DataTable */}
+<div className="bg-white rounded-2xl shadow p-4 overflow-x-auto">
+  {summaryTableRows.length ? (
+    <div className="[&_table]:w-full [&_th]:text-center [&_td]:text-center [&_tr:hover]:bg-transparent">
+      <DataTable
+        columns={summaryColumns}
+        data={summaryTableRows}
+        paginate={false}
+        scrollY={false}
+        maxHeight="none"
+        zebra={false}
+        stickyHeader={false}
+        rowClassName={(row) =>
+          (row as any)._isTotal ? "font-black border-t-2 border-charcoal-500" : ""
+        }
+      />
+    </div>
+  ) : (
+    <div className="py-4 text-center text-slate-500 italic text-sm">
+      No summary available.
+    </div>
+  )}
+</div>
+
 
 
       {/* Donuts */}
@@ -1044,137 +1159,43 @@ export default function ReferralFeesDashboard(): JSX.Element {
 
       {/* ✅ SKU-wise table using skuwise_table_data */}
       <div className="bg-white rounded-2xl shadow p-4 w-full overflow-x-auto">
-        <div className="flex flex-col md:flex-row items-center justify-between mb-2 gap-2 min-w-max">
+  <div className="flex flex-col md:flex-row items-center justify-between mb-2 gap-2 min-w-max">
+    <PageBreadcrumb
+      pageTitle="Product-wise Details of Overcharged Ref Fees"
+      variant="page"
+      align="left"
+      className="mt-4"
+    />
 
-          <PageBreadcrumb pageTitle="Product-wise Details of Overcharged Ref Fees" variant="page" align="left" className="mt-4" />
-          {/* <Button
-            onClick={handleDownloadExcel}
-            variant="primary"
-            size="sm"
-          // className="inline-flex items-center gap-2 bg-gray-800 text-white px-3 py-2 rounded-xl text-xs md:text-sm whitespace-nowrap"
-          >
-            <FiDownload className="h-4 w-4" />
-            Download Excel
-          </Button> */}
+    <Button
+      size="sm"
+      onClick={handleDownloadExcel}
+      variant="primary"
+      endIcon={<FiDownload className="text-yellow-200" />}
+    >
+      Download (.xlsx)
+    </Button>
+  </div>
 
+  {/* wrapper that centers all table text */}
+  <div className="[&_table]:w-full [&_th]:text-center [&_td]:text-center">
+    <DataTable
+      columns={skuColumns}
+      data={skuTableDisplay}
+      paginate={false}
+      scrollY={false}
+      maxHeight="none"
+      zebra={true}
+      stickyHeader={false}
+      rowClassName={(row) => {
+        if ((row as any)._isTotal) return "bg-[#DDDDDD] font-bold";
+        if ((row as any)._isOthers) return "bg-[#F5F5F5] font-semibold";
+        return "";
+      }}
+    />
+  </div>
+</div>
 
-          <Button
-            size="sm"
-            onClick={handleDownloadExcel}
-            variant="primary"
-            endIcon={
-              <FiDownload className="text-yellow-200" />
-            }
-          >
-            Download (.xlsx)
-          </Button>
-        </div>
-
-        {/* <table className="min-w-[960px] text-sm">
-          <thead className="text-gray-500 border-b">
-            <tr>
-              <th className="text-left py-2 px-2 whitespace-nowrap">SKU</th>
-              <th className="text-left py-2 px-2 whitespace-nowrap">
-                Product Name
-              </th>
-              <th className="text-left py-2 px-2 whitespace-nowrap">Units</th>
-              <th className="text-left py-2 px-2 whitespace-nowrap">Sales</th>
-              <th className="text-left py-2 px-2 whitespace-nowrap">Ref %</th>
-              <th className="text-left py-2 px-2 whitespace-nowrap">
-                Ref Fees Applicable
-              </th>
-              <th className="text-left py-2 px-2 whitespace-nowrap">
-                Ref Fees Charged
-              </th>
-              <th className="text-left py-2 px-2 whitespace-nowrap">
-                Overcharged
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {skuwiseRows.map((r, idx) => {
-              const quantity = Math.round(toNumberSafe(r.quantity));
-              const sales = Number(toNumberSafe(r.product_sales ?? r.sales).toFixed(2));
-              const applicable = Number(toNumberSafe(r.answer).toFixed(2));
-              const charged = Number(toNumberSafe(r.selling_fees).toFixed(2));
-              const over = Number(toNumberSafe(r.overcharged ?? r.difference).toFixed(2));
-
-              const refPct = sales ? (applicable / sales) * 100 : 0;
-
-              return (
-                <tr
-                  key={`${r.sku ?? "sku"}-${idx}`}
-                  className="border-b"
-                >
-                  <td className="py-2 px-2 font-medium whitespace-nowrap">
-                    {r.sku}
-                  </td>
-                  <td className="py-2 px-2">{r.product_name}</td>
-                  
-                  <td className="py-2 px-2 whitespace-nowrap">
-                    {fmtInteger(quantity)}
-                  </td>
-                  <td className="py-2 px-2 whitespace-nowrap">
-                    {fmtCurrency(sales)}
-                  </td>
-                  <td className="py-2 px-2 whitespace-nowrap">
-                    {refPct.toFixed(2)}%
-                  </td>
-                  <td className="py-2 px-2 whitespace-nowrap">
-                    {fmtCurrency(applicable)}
-                  </td>
-                  <td className="py-2 px-2 whitespace-nowrap">
-                    {fmtCurrency(charged)}
-                  </td>
-                  <td className="py-2 px-2 whitespace-nowrap text-rose-600 font-semibold">
-                    {fmtCurrency(over)}
-                  </td>
-                </tr>
-              );
-            })}
-            {!skuwiseRows.length && (
-              <tr>
-                <td
-                  colSpan={11}
-                  className="py-4 text-center text-slate-500 italic"
-                >
-                  No SKU-wise data available.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table> */}
-
-        {/* <DataTable
-          columns={skuColumns}
-          data={skuTableTop5}
-          paginate={false}
-          scrollY={false}
-          maxHeight="none"
-          zebra={true}
-          stickyHeader={false}
-          rowClassName={(row) =>
-            (row as any)._isTotal ? "bg-[#DDDDDD] font-bold" : ""
-          }
-        /> */}
-
-        <DataTable
-          columns={skuColumns}
-          data={skuTableDisplay}
-          paginate={false}
-          scrollY={false}
-          maxHeight="none"
-          zebra={true}
-          stickyHeader={false}
-          rowClassName={(row) => {
-            if ((row as any)._isTotal) return "bg-[#DDDDDD] font-bold";
-            if ((row as any)._isOthers) return "bg-[#F5F5F5] font-semibold";
-            return "";
-          }}
-        />
-
-
-      </div>
     </div>
   );
 }
