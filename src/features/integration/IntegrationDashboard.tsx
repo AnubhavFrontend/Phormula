@@ -673,21 +673,41 @@ export default function IntegrationDashboard(_: IntegrationDashboardProps) {
   const [skuCompleted, setSkuCompleted] = useState(false);
 
   // listener for header modal events
-  useEffect(() => {
-    const handler = (e: Event) => {
-      const custom = e as CustomEvent<{ provider: Provider; origin?: Origin }>;
-      const { provider, origin = "header" } = custom.detail || {};
-      if (!provider) return;
-      chooseIntegration(provider, origin);
-    };
+  // useEffect(() => {
+  //   const handler = (e: Event) => {
+  //     const custom = e as CustomEvent<{ provider: Provider; origin?: Origin }>;
+  //     const { provider, origin = "header" } = custom.detail || {};
+  //     if (!provider) return;
+  //     chooseIntegration(provider, origin);
+  //   };
 
-    // @ts-ignore
-    window.addEventListener("integration:choose", handler);
-    return () => {
-      // @ts-ignore
-      window.removeEventListener("integration:choose", handler);
-    };
-  }, []); // ok to leave dependency empty because chooseIntegration is stable in this lifecycle
+  //   // @ts-ignore
+  //   window.addEventListener("integration:choose", handler);
+  //   return () => {
+  //     // @ts-ignore
+  //     window.removeEventListener("integration:choose", handler);
+  //   };
+  // }, []); 
+
+  useEffect(() => {
+  const handler = (e: Event) => {
+    const custom = e as CustomEvent<{ provider: Provider; origin?: Origin }>;
+    const { provider, origin = "page" } = custom.detail || {};
+    if (!provider) return;
+
+    // 🚫 Ignore header-origin events here
+    if (origin === "header") return;
+
+    // Only page-origin events should go through dashboard flow
+    chooseIntegration(provider, origin);
+  };
+
+  window.addEventListener("integration:choose", handler as EventListener);
+  return () => {
+    window.removeEventListener("integration:choose", handler as EventListener);
+  };
+}, []);
+
 
   // Fetch Shopify store info
   useEffect(() => {
@@ -813,37 +833,72 @@ export default function IntegrationDashboard(_: IntegrationDashboardProps) {
     return `/orders?${params.toString()}`;
   };
 
-  const chooseIntegration = (key: Provider, origin: Origin = "page") => {
-    setIntegrationMethod(key);
-    setActivePopup(null);
+  // const chooseIntegration = (key: Provider, origin: Origin = "page") => {
+  //   setIntegrationMethod(key);
+  //   setActivePopup(null);
 
-    // 🔁 always reset shopify stage when changing integration
-    setShopifyStage("none");
+  //   // 🔁 always reset shopify stage when changing integration
+  //   setShopifyStage("none");
 
-    if (key === "amazon") {
-      if (origin === "header") {
-        setShowAmazonLegacyConnect(true);
-      } else {
-        setShowAmazonConnect(true);
-      }
+  //   if (key === "amazon") {
+  //     if (origin === "header") {
+  //       setShowAmazonLegacyConnect(true);
+  //     } else {
+  //       setShowAmazonConnect(true);
+  //     }
+  //     return;
+  //   }
+
+  //   if (key === "shopify") {
+  //     // ✅ already connected → go straight to Orders & never open modals
+  //     if (isShopifyConnected) {
+  //       const url = buildShopifyOrdersUrl();
+  //       console.log("Shopify already connected, redirecting to:", url);
+  //       router.push(url);
+  //       return;
+  //     }
+
+  //     // ❌ not connected → ALWAYS start with intro
+  //     console.log("No Shopify access token – opening Shopify intro modal");
+  //     setShopifyStage("intro");
+  //   }
+  // };
+
+const chooseIntegration = (key: Provider, origin: Origin = "page") => {
+  // 🟢 SPECIAL CASE: Amazon selected from the *header* integration modal
+  if (origin === "header" && key === "amazon") {
+    // Don't touch integrationMethod or steps – just show the legacy modal
+    setShowAmazonLegacyConnect(true);
+    return;
+  }
+
+  // Default flow (page-based integration)
+  setIntegrationMethod(key);
+  setActivePopup(null);
+
+  // 🔁 always reset shopify stage when changing integration
+  setShopifyStage("none");
+
+  if (key === "amazon") {
+    // page flow → new AmazonConnect modal
+    setShowAmazonConnect(true);
+    return;
+  }
+
+  if (key === "shopify") {
+    if (isShopifyConnected) {
+      const url = buildShopifyOrdersUrl();
+      console.log("Shopify already connected, redirecting to:", url);
+      router.push(url);
       return;
     }
 
-    if (key === "shopify") {
-      // ✅ already connected → go straight to Orders & never open modals
-      if (isShopifyConnected) {
-        const url = buildShopifyOrdersUrl();
-        console.log("Shopify already connected, redirecting to:", url);
-        router.push(url);
-        return;
-      }
+    console.log("No Shopify access token – opening Shopify intro modal");
+    setShopifyStage("intro");
+  }
+};
 
-      // ❌ not connected → ALWAYS start with intro
-      console.log("No Shopify access token – opening Shopify intro modal");
-      setShopifyStage("intro");
-    }
-  };
-
+  
   return (
     <div className="font-lato bg-white box-border">
       <h2 className="text-[#414042] font-semibold text-lg md:text-xl mb-4">

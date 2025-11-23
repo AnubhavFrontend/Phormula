@@ -4,6 +4,7 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Button from "@/components/ui/button/Button";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:5000";
@@ -98,7 +99,7 @@ export default function ConnectShopifyModal({ onClose }: Props) {
         onMouseDown={(e) => e.stopPropagation()}    // guard focus edge cases
       >
         {/* Back / Close */}
-        <button
+        {/* <button
           type="button"
           onClick={onClose}
           className="absolute left-2 top-2 sm:left-3 sm:top-3 inline-flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full hover:bg-gray-100 focus:outline-none"
@@ -106,7 +107,7 @@ export default function ConnectShopifyModal({ onClose }: Props) {
           title="Close"
         >
           <img src={ICONS.back} alt="Back" className="h-6 w-6 sm:h-8 sm:w-8" />
-        </button>
+        </button> */}
 
         {/* Body */}
         <div className="max-h-[90vh] overflow-y-auto px-4 sm:px-6 md:px-8 pb-6 pt-12 sm:pt-14">
@@ -182,16 +183,16 @@ export default function ConnectShopifyModal({ onClose }: Props) {
 
           {/* Connect button */}
           <div className="mt-4 flex w-full justify-center">
-            <button
-              type="button"
+            <Button
+              // type="button"
+              variant="primary"
+              size="sm"
               onClick={handleConnectShopify}
               disabled={isConnecting}
-              className={`group mx-auto inline-flex w-full sm:w-2/3 md:w-1/2 lg:w-[45%] items-center justify-center gap-2 rounded-md
-                px-4 py-2.5 sm:py-2 text-sm sm:text-base font-bold text-white
-                shadow-[0_4px_4px_-1px_#00000040] transition
+              className={`w-full
                 ${isConnecting
-                  ? "bg-[#5EA68E] cursor-not-allowed"
-                  : "bg-[#5EA68E] hover:bg-[#5EA68E] active:bg-[#5EA68E]"
+                  ? "bg-blue-700 cursor-not-allowed"
+                  : "bg-blue-700 "
                 }`}
             >
               <img
@@ -200,7 +201,7 @@ export default function ConnectShopifyModal({ onClose }: Props) {
                 className="h-5 w-5 sm:h-8 sm:w-8 opacity-90"
               />
               {isConnecting ? "Working..." : "Connect"}
-            </button>
+            </Button>
           </div>
         </div>
       </div>

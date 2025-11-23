@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import AmazonFinancialDashboard from "./AmazonFinancialDashboard";
+import Button from "@/components/ui/button/Button";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:5000";
@@ -272,7 +273,7 @@ export default function AmazonConnectLegacy({ onClose, onConnected }: Props) {
       aria-labelledby="amazon-connect-title"
     >
       <div className="relative w-11/12 sm:w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-xl rounded-xl bg-white shadow-xl">
-        <button
+        {/* <button
           type="button"
           onClick={onClose}
           className="absolute left-2 top-2 sm:left-3 sm:top-3 inline-flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full hover:bg-gray-100 focus:outline-none"
@@ -280,7 +281,7 @@ export default function AmazonConnectLegacy({ onClose, onConnected }: Props) {
           title="Close"
         >
           <img src={ICONS.back} alt="Back" className="h-6 w-6 sm:h-8 sm:w-8" />
-        </button>
+        </button> */}
 
         <div className="max-h-[90vh] overflow-y-auto px-4 sm:px-6 md:px-8 pb-6 pt-12 sm:pt-14">
           <div className="mx-auto mb-3 sm:mb-4 flex h-10 w-10 items-center justify-center">
@@ -340,21 +341,20 @@ export default function AmazonConnectLegacy({ onClose, onConnected }: Props) {
           </div>
 
           <div className="mt-2 flex w-full justify-center">
-            <button
-              type="button"
+            <Button
+              variant="primary"
+              size="sm"
               onClick={handleAmazonLogin}
               disabled={isConnecting}
-              className={`group mx-auto inline-flex w-full sm:w-2/3 md:w-1/2 lg:w-[45%] items-center justify-center gap-2 rounded-md
-                px-4 py-2.5 sm:py-3 text-sm sm:text-base md:text-lg font-semibold text-white
-                shadow-[0_4px_4px_-1px_#00000040] transition
-                ${isConnecting ? "bg-emerald-300 cursor-not-allowed" : "bg-[#5EA68E] hover:bg-[#5EA68E]"}`}
+              className={` w-full
+                ${isConnecting ? "bg-blue-700 cursor-not-allowed" : "bg-blue-700"}`}
             >
               <img src={ICONS.link} alt="" className="h-5 w-5 sm:h-6 sm:w-6 opacity-90" />
               {isConnecting ? "Working..." : "Connect"}
-            </button>
+            </Button>
           </div>
 
-          <div className="mt-4 text-sm text-gray-700">
+          {/* <div className="mt-4 text-sm text-gray-700">
             <span
               className={`inline-flex items-center gap-2 ${
                 isStep3Unlocked ? "text-emerald-600" : "text-gray-500"
@@ -362,7 +362,7 @@ export default function AmazonConnectLegacy({ onClose, onConnected }: Props) {
             >
               {isStep3Unlocked ? "✅" : "⬜️"} Step 3: Amazon Integration Unlocked
             </span>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>

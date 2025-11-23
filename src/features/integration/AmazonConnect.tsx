@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { FaLink } from "react-icons/fa";
 import AmazonConnectLegacy from "./AmazonConnectLegacy";
+import Button from "@/components/ui/button/Button";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:5000";
@@ -227,19 +228,21 @@ export default function AmazonConnect({
             ))}
           </ul>
 
-          <button
+          <Button
             type="button"
+ variant="primary"
+              size="sm"
             // onClick={handleAmazonLogin} // original
             onClick={() => setShowLegacy(true)} // show legacy modal
             disabled={isConnecting}
-            className={`w-full py-2.5 mt-1 text-white font-semibold rounded-md flex items-center justify-center gap-2 transition 
-              ${isConnecting ? "bg-emerald-300 cursor-not-allowed" : "bg-[#5EA68E] hover:bg-[#499e81]"}`}
+            className={`w-full 
+              ${isConnecting ? "bg-blue-700 cursor-not-allowed" : "bg-blue-700"}`}
           >
             <FaLink size={16} />
             <span className="text-[#F8EDCE]">
               {isConnecting ? "Connecting..." : "Connect"}
             </span>
-          </button>
+          </Button>
         </div>
 
         {/* OR */}

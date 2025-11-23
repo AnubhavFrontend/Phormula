@@ -1,5 +1,6 @@
 "use client";
 
+import Button from "@/components/ui/button/Button";
 import React, { useEffect, useCallback } from "react";
 
 const API_BASE =
@@ -76,7 +77,7 @@ const ShopifyIntroModal: React.FC<Props> = ({ onClose, onManual }) => {
         className="relative w-11/12 sm:w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-xl rounded-xl bg-white shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Back / Close */}
+        {/* Back / Close
         <button
           type="button"
           onClick={onClose}
@@ -85,7 +86,7 @@ const ShopifyIntroModal: React.FC<Props> = ({ onClose, onManual }) => {
           title="Close"
         >
           <img src={ICONS.back} alt="Back" className="h-6 w-6 sm:h-8 sm:w-8" />
-        </button>
+        </button> */}
 
         {/* Body */}
         <div className="max-h-[90vh] overflow-y-auto px-6 sm:px-8 pb-6 pt-12 sm:pt-14">
@@ -130,13 +131,15 @@ const ShopifyIntroModal: React.FC<Props> = ({ onClose, onManual }) => {
 
           {/* Connect button */}
           <div className="mt-2 flex w-full justify-center">
-            <button
-              type="button"
+            <Button
+              variant = "primary"
+              size="sm"
               onClick={handleConnect}
-              className="group mx-auto inline-flex w-full sm:w-2/3 md:w-1/2 lg:w-[45%] items-center justify-center gap-2 rounded-md
-                px-4 py-2.5 sm:py-2 text-sm sm:text-base font-bold text-white
-                shadow-[0_4px_4px_-1px_#00000040] transition
-                bg-[#5EA68E] hover:bg-[#5EA68E] active:bg-[#5EA68E]"
+              className= "w-full"
+              // className="group mx-auto inline-flex w-full items-center justify-center gap-2 rounded-md
+              //   px-4 py-2.5 sm:py-2 text-sm sm:text-base font-bold text-white
+              //   shadow-[0_4px_4px_-1px_#00000040] transition
+              //   bg-[#5EA68E] hover:bg-[#5EA68E] active:bg-[#5EA68E]"
             >
               <img
                 src={ICONS.link}
@@ -144,7 +147,7 @@ const ShopifyIntroModal: React.FC<Props> = ({ onClose, onManual }) => {
                 className="h-5 w-5 sm:h-8 sm:w-8 opacity-90"
               />
               Connect
-            </button>
+            </Button>
           </div>
 
           {/* Divider */}
@@ -156,13 +159,15 @@ const ShopifyIntroModal: React.FC<Props> = ({ onClose, onManual }) => {
 
           {/* Manual store name link */}
           <div className="flex justify-center">
-            <button
-              type="button"
-              className="text-xs sm:text-sm font-semibold text-[#414042] underline underline-offset-4"
+            <Button
+              // type="button"
+              variant="outline"
+              size="sm"
+              className="w-full"
               onClick={onManual}
             >
               Enter Store Name Manually
-            </button>
+            </Button>
           </div>
         </div>
       </div>
