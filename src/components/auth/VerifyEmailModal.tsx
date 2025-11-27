@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useResendVerificationMutation } from "@/lib/api/userApi";
 import { FaCircleCheck } from "react-icons/fa6";
@@ -56,6 +56,15 @@ export default function VerifyEmailModal({
       );
     }
   };
+
+  
+useEffect(() => {
+  const timer = setTimeout(() => {
+    onClose();     // 🔥 close modal instead of redirecting
+  }, 4000);       // adjust delay (4 seconds here)
+
+  return () => clearTimeout(timer);
+}, []);
 
   return (
     <div

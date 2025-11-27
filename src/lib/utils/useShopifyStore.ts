@@ -53,7 +53,7 @@ export const useShopifyStore = (): UseShopifyStoreReturn => {
         }
 
         const data = await res.json();
-        console.log("Shopify store from backend:", data);
+        // console.log("Shopify store from backend:", data);
 
         if (!res.ok || data?.error) {
           setShopifyStore(null);

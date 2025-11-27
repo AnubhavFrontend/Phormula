@@ -561,6 +561,8 @@ import * as XLSX from "xlsx";
 import { useRouter } from "next/navigation";
 import PageBreadcrumb from "../common/PageBreadCrumb";
 import Loader from "@/components/loader/Loader"; // 👈 NEW
+import Button from "../ui/button/Button";
+import { FiDownload } from "react-icons/fi";
 
 ChartJS.register(
   CategoryScale,
@@ -791,7 +793,7 @@ const Bargraph: React.FC<BargraphProps> = ({
     if (!data || data.length === 0) {
       const emptyData: ChartData<"bar"> = { labels: [], datasets: [] };
       const emptyOptions: ChartOptions<"bar"> = {};
-      const noop = () => {};
+      const noop = () => { };
       return {
         chartData: emptyData,
         chartOptions: emptyOptions,
@@ -884,8 +886,8 @@ const Bargraph: React.FC<BargraphProps> = ({
               const salesValue =
                 salesIndex >= 0
                   ? Number(
-                      (chartData.datasets[0].data as number[])[salesIndex] ?? 1
-                    )
+                    (chartData.datasets[0].data as number[])[salesIndex] ?? 1
+                  )
                   : 1;
               const percentage = (value / (salesValue || 1)) * 100;
               const metricLabel = String(context.label ?? "");
@@ -962,23 +964,21 @@ const Bargraph: React.FC<BargraphProps> = ({
 
   return (
     <div className="relative w-full">
-      <PageBreadcrumb
-        pageTitle="Tracking Profitability - "
-        variant="page"
-        align="left"
-        textSize="2xl"
-      />
-
-      {/* Export button */}
-      <div className="w-full mt-3 flex justify-end">
-        <button
-          className="styled-button inline-flex items-center gap-2 rounded-md bg-[#5EA68E] text-white px-4 py-2 font-semibold hover:bg-[#4d8d78] transition-colors"
-          onClick={exportToExcel}
-        >
-          Download {formattedMonthYear} Metrics (.xlsx)
-          <i className="fa-solid fa-download fa-beat" />
-        </button>
+      <div className="flex gap-2">
+        <PageBreadcrumb
+          pageTitle="Tracking Profitability -"
+          variant="page"
+          align="left"
+          textSize="2xl"
+        />
+        <span className="text-[#5EA68E] text-2xl">
+          {countryName?.toLowerCase() === "global"
+            ? "GLOBAL"
+            : countryName?.toUpperCase()}
+        </span>
       </div>
+
+
 
       {/* Chart container – show loader or chart */}
       <div
@@ -1006,6 +1006,37 @@ const Bargraph: React.FC<BargraphProps> = ({
             <Bar data={chartData} options={chartOptions} />
           )
         )}
+      </div>
+
+      {/* Export button */}
+      {/* <div className="w-full mt-3 flex justify-end">
+        <button
+          className="styled-button inline-flex items-center gap-2 rounded-md bg-[#5EA68E] text-white px-4 py-2 font-semibold hover:bg-[#4d8d78] transition-colors"
+          onClick={exportToExcel}
+        >
+          Download {formattedMonthYear} Metrics (.xlsx)
+          <i className="fa-solid fa-download fa-beat" />
+        </button>
+      </div> */}
+
+      <div
+        className={[
+          "mt-2 sm:mt-3",
+          "w-full mx-auto",
+          "flex justify-end",
+          allValuesZero ? "opacity-30" : "opacity-100",
+          "transition-opacity duration-300",
+        ].join(" ")}
+      >
+        <Button
+          onClick={exportToExcel}
+          size="sm"
+          disabled={allValuesZero}
+          className={allValuesZero ? "cursor-not-allowed" : "cursor-pointer"}
+        >
+          Download (.xlsx)
+          <FiDownload className="text-yellow-200" />
+        </Button>
       </div>
 
       {/* No data overlay (only when NOT loading) */}

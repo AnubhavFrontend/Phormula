@@ -624,6 +624,7 @@ import ConnectShopifyModal from "./ConnectShopifyModal";
 import ShopifyIntroModal from "./ShopifyIntroModal";
 import AmazonFinancialDashboard from "./AmazonFinancialDashboard";
 import { useSelector } from "react-redux";
+import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 
 type Origin = "header" | "page";
 type Provider = "amazon" | "shopify";
@@ -689,16 +690,33 @@ export default function IntegrationDashboard(_: IntegrationDashboardProps) {
   //   };
   // }, []); 
 
-  useEffect(() => {
+//   useEffect(() => {
+//   const handler = (e: Event) => {
+//     const custom = e as CustomEvent<{ provider: Provider; origin?: Origin }>;
+//     const { provider, origin = "page" } = custom.detail || {};
+//     if (!provider) return;
+
+//     // 🚫 Ignore header-origin events here
+//     if (origin === "header") return;
+
+//     // Only page-origin events should go through dashboard flow
+//     chooseIntegration(provider, origin);
+//   };
+
+//   window.addEventListener("integration:choose", handler as EventListener);
+//   return () => {
+//     window.removeEventListener("integration:choose", handler as EventListener);
+//   };
+// }, []);
+
+
+useEffect(() => {
   const handler = (e: Event) => {
     const custom = e as CustomEvent<{ provider: Provider; origin?: Origin }>;
-    const { provider, origin = "page" } = custom.detail || {};
+    const { provider, origin = "header" } = custom.detail || {};
     if (!provider) return;
 
-    // 🚫 Ignore header-origin events here
-    if (origin === "header") return;
-
-    // Only page-origin events should go through dashboard flow
+    // Let dashboard handle BOTH header & page events
     chooseIntegration(provider, origin);
   };
 
@@ -901,9 +919,11 @@ const chooseIntegration = (key: Provider, origin: Origin = "page") => {
   
   return (
     <div className="font-lato bg-white box-border">
-      <h2 className="text-[#414042] font-semibold text-lg md:text-xl mb-4">
+      {/* <h2 className="text-[#414042] font-semibold text-lg md:text-xl mb-4">
         Start your Journey with Phormula!
-      </h2>
+      </h2> */}
+
+      <PageBreadcrumb pageTitle="Start your Journey with Phormula!" variant="page" textSize="2xl" align="left"/>
 
       {/* Step 1 */}
       <Step1ProductList
@@ -1021,7 +1041,7 @@ const chooseIntegration = (key: Provider, origin: Origin = "page") => {
         <Modal
           isOpen
           onClose={() => setShowAmazonConnect(false)}
-          className="m-4 max-w-xl"
+          className="m-4 z-99999 max-w-xl"
           showCloseButton
         >
           <AmazonConnect
@@ -1049,7 +1069,7 @@ const chooseIntegration = (key: Provider, origin: Origin = "page") => {
         <Modal
           isOpen
           onClose={() => setShowAmazonLegacyConnect(false)}
-          className="m-4 max-w-xl"
+          className="m-4 z-99999 max-w-xl"
           showCloseButton
         >
           <AmazonConnectLegacy
@@ -1089,7 +1109,7 @@ const chooseIntegration = (key: Provider, origin: Origin = "page") => {
               </div>
             </div>
           </div>
-        )}
+      )}
 
       {/* Shopify intro (first step) */}
       {shopifyStage === "intro" && !isShopifyConnected && (

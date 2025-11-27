@@ -30,6 +30,21 @@ interface SkuItem {
   sales_mix?: number;
   unit_wise_profitability?: number;
   profit?: number;
+
+  // ✅ new raw fields from backend for Excel:
+  quantity_month1?: number;
+  quantity_month2?: number;
+  asp_month1?: number;
+  asp_month2?: number;
+  net_sales_month1?: number;
+  net_sales_month2?: number;
+  sales_mix_month1?: number;
+  sales_mix_month2?: number;
+  unit_wise_profitability_month1?: number;
+  unit_wise_profitability_month2?: number;
+  profit_month1?: number;
+  profit_month2?: number;
+
   [key: string]: any; // For growth fields like 'Unit Growth'
 }
 
@@ -102,6 +117,9 @@ const MonthsforBI: React.FC = () => {
   const [fbSubmitting, setFbSubmitting] = useState<boolean>(false);
   const [fbSuccess, setFbSuccess] = useState<boolean>(false);
 
+  // ✅ NEW: available periods from backend (['YYYY-MM'])
+  const [availablePeriods, setAvailablePeriods] = useState<string[]>([]);
+
   // Helpers
   const months: MonthOption[] = [
     { value: '01', label: 'January' },   { value: '02', label: 'February' },
@@ -124,6 +142,14 @@ const MonthsforBI: React.FC = () => {
     key === 'new_or_reviving_skus' ? 'New/Reviving SKUs' : 'Other SKUs';
   const getTabNumberForFeedback = (key: keyof CategorizedGrowth): number =>
     key === 'top_80_skus' ? 1 : key === 'new_or_reviving_skus' ? 2 : 3;
+
+  // ✅ NEW helper: check if (year, month) allowed by backend
+  const isPeriodAvailable = (year: string, month: string) => {
+    if (!year || !month) return false;
+    if (!availablePeriods.length) return true; // if API failed, don't block UI
+    const key = `${year}-${month}`;
+    return availablePeriods.includes(key);
+  };
 
   // =========================
   // Persistence: helpers
@@ -197,6 +223,35 @@ const MonthsforBI: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
 
+  // ✅ NEW: fetch available periods from backend
+  useEffect(() => {
+    if (!countryName) return;
+    const fetchAvailable = async () => {
+      try {
+        const res = await api.get<{ periods: string[] }>('/MonthsforBI/available-periods', {
+          params: { countryName },
+        });
+        setAvailablePeriods(res.data?.periods || []);
+      } catch (err: any) {
+        console.error('Failed to load available periods:', err?.response?.data || err.message);
+      }
+    };
+    fetchAvailable();
+  }, [countryName]);
+
+  // ✅ NEW: if year change ke baad combination invalid ho jaye to month reset
+  useEffect(() => {
+    if (year1 && month1 && !isPeriodAvailable(year1, month1)) {
+      setMonth1('');
+    }
+  }, [year1, availablePeriods]);
+
+  useEffect(() => {
+    if (year2 && month2 && !isPeriodAvailable(year2, month2)) {
+      setMonth2('');
+    }
+  }, [year2, availablePeriods]);
+
   // =====================
   // Fetch compare result
   // =====================
@@ -209,6 +264,16 @@ const MonthsforBI: React.FC = () => {
     setModalOpen(false);
     // Clear previous persisted insights if any (fresh compare)
     saveInsightsToStorage({});
+
+    // ✅ NEW: basic + availability validation
+    if (!month1 || !year1 || !month2 || !year2) {
+      setError('Please select both months and years.');
+      return;
+    }
+    if (!isPeriodAvailable(year1, month1) || !isPeriodAvailable(year2, month2)) {
+      setError('Selected month ka data available nahi hai. Sirf highlighted months select karein.');
+      return;
+    }
 
     try {
       const res = await api.get<ApiResponse>('/MonthsforBI', {
@@ -292,24 +357,61 @@ const MonthsforBI: React.FC = () => {
   // =====================
   // Export to Excel
   // =====================
-  const exportToExcel = (rows: SkuItem[], filename = 'export.xlsx') => {
-    const normalized = rows.map((row) => {
-      const r = { ...row };
-      [
-        'Unit Growth', 'ASP Growth', 'Sales Growth',
-        'Sales Mix Change', 'Profit Per Unit', 'CM1 Profit Impact',
-      ].forEach((k) => {
-        if (r[k] && typeof r[k] === 'object') {
-          r[k] = `${(r[k] as GrowthCategory).category} (${Number((r[k] as GrowthCategory).value || 0).toFixed(2)}%)`;
-        }
-      });
-      return r;
-    });
-    const ws = XLSX.utils.json_to_sheet(normalized);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
-    XLSX.writeFile(wb, filename);
-  };
+const exportToExcel = (rows: SkuItem[], filename = 'export.xlsx') => {
+  // Month labels for header, like Sep / Oct
+  const m1Abbr = getAbbr(month1); // e.g. "Sep"
+  const m2Abbr = getAbbr(month2); // e.g. "Oct"
+
+  const formatted = rows.map((row) => {
+    const unitGrowth = row['Unit Growth'] as GrowthCategory | undefined;
+    const aspGrowth = row['ASP Growth'] as GrowthCategory | undefined;
+    const salesGrowth = row['Sales Growth'] as GrowthCategory | undefined;
+    const mixGrowth = row['Sales Mix Change'] as GrowthCategory | undefined;
+    const unitProfitGrowth = row['Profit Per Unit'] as GrowthCategory | undefined;
+    const profitGrowth = row['CM1 Profit Impact'] as GrowthCategory | undefined;
+
+    return {
+      // Basic identifiers
+      SKU: row.sku || '',
+      Product: row.product_name || '',
+
+      // Qty
+      [`Qty ${m1Abbr}`]: row.quantity_month1 ?? null,
+      [`Qty ${m2Abbr}`]: row.quantity_month2 ?? null,
+      'Qty %': unitGrowth?.value ?? null,
+
+      // ASP
+      [`ASP ${m1Abbr}`]: row.asp_month1 ?? null,
+      [`ASP ${m2Abbr}`]: row.asp_month2 ?? null,
+      'ASP %': aspGrowth?.value ?? null,
+
+      // Net Sales
+      [`Net Sales ${m1Abbr}`]: row.net_sales_month1 ?? null,
+      [`Net Sales ${m2Abbr}`]: row.net_sales_month2 ?? null,
+      'Net Sales %': salesGrowth?.value ?? null,
+
+      // Sales Mix
+      [`Sales Mix ${m1Abbr}`]: row.sales_mix_month1 ?? null,
+      [`Sales Mix ${m2Abbr}`]: row.sales_mix_month2 ?? row['Sales Mix (Month2)'] ?? null,
+      'Sales Mix %': mixGrowth?.value ?? null,
+
+      // Unit Profit (Unit-wise profitability)
+      [`Unit Profit ${m1Abbr}`]: row.unit_wise_profitability_month1 ?? null,
+      [`Unit Profit ${m2Abbr}`]: row.unit_wise_profitability_month2 ?? null,
+      'Unit Profit %': unitProfitGrowth?.value ?? null,
+
+      // Profit
+      [`Profit ${m1Abbr}`]: row.profit_month1 ?? null,
+      [`Profit ${m2Abbr}`]: row.profit_month2 ?? null,
+      'Profit %': profitGrowth?.value ?? null,
+    };
+  });
+
+  const ws = XLSX.utils.json_to_sheet(formatted);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Growth Comparison');
+  XLSX.writeFile(wb, filename);
+};
 
   // =====================
   // Save feedback (Summary)
@@ -519,47 +621,128 @@ const MonthsforBI: React.FC = () => {
     });
   };
 
-  // =====================
-  // Render
-  // =====================
+  const getAllSkusForExport = (): SkuItem[] => {
+  return [
+    ...(categorizedGrowth.top_80_skus || []),
+    ...(categorizedGrowth.new_or_reviving_skus || []),
+    ...(categorizedGrowth.other_skus || []),
+  ];
+};
+
   const currentTabData = categorizedGrowth[activeTab] || [];
 
   return (
     <>
-      <style>{`
-        div{ font-family: 'Lato', sans-serif; }
-        select{ outline: none; }
-       
-        .total-row td{ background-color:#ccc; font-weight:bold; }
-        .styled-button, .compare-button{
-          padding:8px 16px; font-size:.9rem; border:none; border-radius:6px; cursor:pointer;
-          transition:background-color .2s ease; box-shadow:0 3px 6px rgba(0,0,0,.15);
-          background-color:#2c3e50; color:#f8edcf; font-weight:bold;
-        }
-        .styled-button:hover, .compare-button:hover{ background-color:#1f2a36; }
-        .month-form{ max-width:98%; margin:15px 0; border:1px solid #ccc; padding:20px; background:#fff; }
-        .month-tag{ font-size:12px; font-weight:bold; color:#414042; position:absolute; top:-25px; }
-        .highlight{ color:#60a68e; }
-        .subtitle{ margin-top:0; color:#414042; font-size:14px; }
-        .month-row{ display:flex; align-items:center; margin-top:20px; }
-        .year-dropdown{ margin-right:10px; padding:6px; font-size:14px; border-radius:4px; border:1px solid #ccc; }
-        .month-slider{ margin-top:30px; display:flex; flex-grow:1; justify-content:space-between; padding:0 10px; position:relative; border-top:2px solid #ccc; }
-        .month-dot{ display:flex; flex-direction:column; align-items:center; cursor:pointer; position:relative; top:-6px; }
-        .month-dot .dot{ width:12px; height:12px; background:#ccc; border-radius:50%; margin-bottom:4px; }
-        .month-dot.selected .dot{ background:#5EA68E; }
-        .month-label{ font-size:12px; color:#414042; }
-        .compare-button-container{ margin-top:20px; text-align:right; }
-        .theadc{ background:#5EA68E; color:#f8edcf; }
-        .tablec{ width:100%; border-collapse:collapse; }
-        .tablec td, .tablec th{ border:1px solid #ddd; padding:10px 8px; text-align:center; }
-        .insight-section-title{ font-size:15px; color:#414042; }
-        .insight-list{ margin: 6px 0 10px 20px; padding:0; }
-        .insight-list-item{ line-height:1.6; }
-        .insight-paragraphs p{ margin:4px 0; line-height:1.6; }
-      `}</style>
+     <style>{`
+  div{ font-family: 'Lato', sans-serif; }
+  select{ outline: none; }
+ 
+  .total-row td{ background-color:#ccc; font-weight:bold; }
+  .styled-button, .compare-button{
+    padding:8px 16px; font-size:.9rem; border:none; border-radius:6px; cursor:pointer;
+    transition:background-color .2s ease; box-shadow:0 3px 6px rgba(0,0,0,.15);
+    background-color:#2c3e50; color:#f8edcf; font-weight:bold;
+  }
+  .styled-button:hover, .compare-button:hover{ background-color:#1f2a36; }
+  .month-form{ max-width:100%; margin:15px 0; border:1px solid #000000; padding:10px; background:#fff; }
+  .month-tag{ font-size:12px; font-weight:bold; color:#414042; position:absolute; top:-25px; }
+  .highlight{ color:#60a68e; }
+  .subtitle{ margin-top:0; color:#414042; font-size:14px; }
+
+  .month-row{
+    display:flex;
+    align-items:center;
+    margin-top:20px;
+    gap:10px;
+  }
+  .year-dropdown{
+    margin-right:10px;
+    padding:6px;
+    font-size:14px;
+    border-radius:4px;
+    border:1px solid #ccc;
+  }
+  .month-slider{
+    margin-top:30px;
+    display:flex;
+    flex-grow:1;
+    justify-content:space-between;
+    padding:0 10px;
+    position:relative;
+    border-top:2px solid #ccc;
+  }
+  .month-dot{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    cursor:pointer;
+    position:relative;
+    top:-6px;
+  }
+  .month-dot .dot{
+    width:12px;
+    height:12px;
+    background:#ccc;
+    border-radius:50%;
+    margin-bottom:4px;
+  }
+  .month-dot.selected .dot{ background:#5EA68E; }
+
+  /* ✅ NEW: disabled months styling */
+  .month-dot.disabled{
+    opacity:0.3;
+    cursor:not-allowed;
+  }
+  .month-dot.disabled .dot{
+    background:#eee;
+  }
+
+  .month-label{
+    font-size:12px;
+    color:#414042;
+    white-space:nowrap;
+  }
+  .month-label-short{ display:none; }   /* default: desktop pe short hidden */
+  .month-label-full{ display:inline; }
+
+  /* ======= Responsive changes (under lg) ======= */
+  @media (max-width: 1023.98px){
+    .month-row{
+      flex-direction:column;
+      align-items:stretch;
+    }
+    .year-dropdown{
+      width:100%;
+      margin-right:0;
+    }
+    .month-slider{
+      margin-top:20px;
+      padding:0 4px;
+    }
+    .month-label{
+      font-size:10px;
+    }
+    .month-label-full{ display:none; }   /* mobile: sirf 3 letter show */
+    .month-label-short{ display:inline; }
+
+    .month-tag{
+      top:-20px;
+      font-size:11px;
+    }
+  }
+
+  .compare-button-container{ margin-top:20px; text-align:right; }
+  .theadc{ background:#5EA68E; color:#f8edcf; }
+  .tablec{ width:100%; border-collapse:collapse; }
+  .tablec td, .tablec th{ border:1px solid #414042; padding:10px 8px; text-align:center; }
+  .insight-section-title{ font-size:15px; color:#414042; }
+  .insight-list{ margin: 6px 0 10px 20px; padding:0; }
+  .insight-list-item{ line-height:1.6; }
+  .insight-paragraphs p{ margin:4px 0; line-height:1.6; }
+`}</style>
 
       {/* Month selectors */}
-      <h2 className="text-3xl font-bold text-[#414042] mb-2">
+      <h2 className="text-2xl font-bold text-[#414042] mb-2">
           Business Insights - AI Analyst&nbsp;
           <span className="text-[#5EA68E]">
             {month1 && year1 && month2 && year2
@@ -568,7 +751,7 @@ const MonthsforBI: React.FC = () => {
           </span>
         </h2>
         <p><i className="">Choose any two months to performance trends.</i></p>
-      <form onSubmit={handleSubmit} className="month-form">
+      <form onSubmit={handleSubmit} className="month-form ">
         {/* Row 1 */}
         <div className="month-row">
           <select value={year1} onChange={(e)=>setYear1(e.target.value)} className="year-dropdown">
@@ -576,17 +759,27 @@ const MonthsforBI: React.FC = () => {
             {years.map(y => <option key={y} value={y}>{y}</option>)}
           </select>
           <div className="month-slider">
-            {months.map(m => (
-              <div
-                key={m.value}
-                className={`month-dot ${month1===m.value ? 'selected':''}`}
-                onClick={()=>setMonth1(m.value)}
-              >
-                {month1===m.value && <div className="month-tag text-nowrap">Month 1</div>}
-                <span className="dot"></span>
-                <div className="month-label">{m.label}</div>
-              </div>
-            ))}
+            {months.map(m => {
+             const disabled = !year1 || !isPeriodAvailable(year1, m.value);
+              const selected = month1 === m.value;
+              return (
+                <div
+                  key={m.value}
+                  className={`month-dot ${selected ? 'selected':''} ${disabled ? 'disabled' : ''}`}
+                  onClick={() => {
+                    if (disabled) return;
+                    setMonth1(m.value);
+                  }}
+                >
+                  {selected && !disabled && <div className="month-tag text-nowrap">Month 1</div>}
+                  <span className="dot"></span>
+                  <div className="month-label">
+                    <span className="month-label-full">{m.label}</span>
+                    <span className="month-label-short">{m.label.slice(0, 3)}</span>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
         {/* Row 2 */}
@@ -596,20 +789,31 @@ const MonthsforBI: React.FC = () => {
             {years.map(y => <option key={y} value={y}>{y}</option>)}
           </select>
           <div className="month-slider">
-            {months.map(m => (
-              <div
-                key={m.value}
-                className={`month-dot ${month2===m.value ? 'selected':''}`}
-                onClick={()=>setMonth2(m.value)}
-              >
-                {month2===m.value && <div className="month-tag text-nowrap">Month 2</div>}
-                <span className="dot"></span>
-                <div className="month-label">{m.label}</div>
-              </div>
-            ))}
+            {months.map(m => {
+             const disabled = !year2 || !isPeriodAvailable(year2, m.value);
+              const selected = month2 === m.value;
+              return (
+                <div
+                  key={m.value}
+                  className={`month-dot ${selected ? 'selected':''} ${disabled ? 'disabled' : ''}`}
+                  onClick={() => {
+                    if (disabled) return;
+                    setMonth2(m.value);
+                  }}
+                >
+                  {selected && !disabled && <div className="month-tag text-nowrap">Month 2</div>}
+                  <span className="dot"></span>
+                  <div className="month-label">
+                    <span className="month-label-full">{m.label}</span>
+                    <span className="month-label-short">{m.label.slice(0, 3)}</span>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </form>
+       
 
       <div className="compare-button-container">
         <button type="submit" onClick={handleSubmit} className="compare-button">Compare</button>
@@ -620,135 +824,147 @@ const MonthsforBI: React.FC = () => {
       {/* Table + actions */}
       {Object.values(categorizedGrowth).some(arr => arr.length > 0) && (
         <div>
-          <h2 className="text-3xl font-bold text-[#414042] mb-4">Performance-based SKU split</h2>
-
-          <div style={{ marginBottom: '1rem' }}>
-            {['top_80_skus','new_or_reviving_skus','other_skus'].map(key => (
-              <button
-                key={key}
-                onClick={() => setActiveTab(key as keyof CategorizedGrowth)}
-                className="styled-button"
-                style={{
-                  marginRight: 10,
-                  backgroundColor: activeTab===key ? '#2c3e50' : '#fff',
-                  color: activeTab===key ? '#f8edcf' : '#414042',
-                  border: '1px solid',
-                  borderColor: activeTab===key ? '#2c3e50' : '#414042'
-                }}
-              >
-                {getTabLabel(key as keyof CategorizedGrowth)}
-              </button>
-            ))}
+          <div className='flex md:flex-row flex-col justify-between items-center mt-10'>
+            <h2 className="text-2xl font-bold text-[#414042] mb-4">Performance-based SKU split</h2>
+            <div
+              style={{
+                marginBottom: '1rem',
+                border: '1px solid #D9D9D9E5',
+                borderRadius: 8,
+                display: 'inline-flex',
+                overflow: 'hidden'
+              }}
+              className='p-1'
+            >
+              {['top_80_skus','new_or_reviving_skus','other_skus'].map(key => (
+                <button
+                  key={key}
+                  onClick={() => setActiveTab(key as keyof CategorizedGrowth)}
+                  className="text-sm font-normal"
+                  style={{
+                    padding: '3px 12px',
+                    backgroundColor: activeTab === key ? '#5EA68E80' : '#ffffff',
+                    color: '#414042',
+                    border: 'none',
+                    borderRadius: 5,
+                    fontWeight: activeTab === key ? 600 : 400
+                  }}
+                >
+                  {getTabLabel(key as keyof CategorizedGrowth)}
+                </button>
+              ))}
+            </div>
           </div>
-<div className="overflow-x-auto">
-  <table className="tablec w-full border-collapse">
-    <thead className="theadc">
-      <tr>
-        <th>S.No.</th>
-        <th className="text-left">Product Name</th>
-        <th>Sales Mix ({month2Label || 'Month 2'})</th>
-        <th>{activeTab==='new_or_reviving_skus' ? `Units (${month2Label})` : 'Unit Growth (%)'}</th>
-        <th>{activeTab==='new_or_reviving_skus' ? `ASP (${month2Label})`   : 'ASP Growth (%)'}</th>
-        <th>{activeTab==='new_or_reviving_skus' ? `Sales (${month2Label})` : 'Sales Growth (%)'}</th>
-        {activeTab!=='new_or_reviving_skus' && <th>Sales Mix Change (%)</th>}
-        <th>{activeTab==='new_or_reviving_skus' ? `Unit Profit (${month2Label})` : 'Profit Per Unit (%)'}</th>
-        <th>{activeTab==='new_or_reviving_skus' ? `Profit (${month2Label})`      : 'CM1 Profit Impact (%)'}</th>
-        {Object.keys(skuInsights).length > 0 && <th>AI Insight</th>}
-      </tr>
-    </thead>
 
-    <tbody>
-      {categorizedGrowth[activeTab]?.map((item, idx) => (
-        <tr key={idx} className="odd:bg-white even:bg-green-50">
-          <td className="border border-gray-300 px-2 py-2.5 text-center">{idx + 1}</td>
-          <td className="border border-gray-300 px-2 py-2.5 text-left">{item.product_name}</td>
-          <td className="border border-gray-300 px-2 py-2.5 text-center">
-            {item['Sales Mix (Month2)'] != null
-              ? `${Number(item['Sales Mix (Month2)']).toFixed(2)}%` : 'N/A'}
-          </td>
+          <div className="overflow-x-auto">
+            <table className="tablec w-full border-collapse md:text-sm text-xs">
+              <thead className="theadc">
+                <tr>
+                  <th>S.No.</th>
+                  <th className="text-left">Product Name</th>
+                  <th>Sales Mix ({month2Label || 'Month 2'})</th>
+                  <th>{activeTab==='new_or_reviving_skus' ? `Units (${month2Label})` : 'Unit Growth (%)'}</th>
+                  <th>{activeTab==='new_or_reviving_skus' ? `ASP (${month2Label})`   : 'ASP Growth (%)'}</th>
+                  <th>{activeTab==='new_or_reviving_skus' ? `Sales (${month2Label})` : 'Sales Growth (%)'}</th>
+                  {activeTab!=='new_or_reviving_skus' && <th>Sales Mix Change (%)</th>}
+                  <th>{activeTab==='new_or_reviving_skus' ? `Unit Profit (${month2Label})` : 'Profit Per Unit (%)'}</th>
+                  <th>{activeTab==='new_or_reviving_skus' ? `Profit (${month2Label})`      : 'CM1 Profit Impact (%)'}</th>
+                  {Object.keys(skuInsights).length > 0 && <th>AI Insight</th>}
+                </tr>
+              </thead>
 
-          {[
-            { field:'Unit Growth', raw:'quantity' },
-            { field:'ASP Growth',  raw:'asp' },
-            { field:'Sales Growth',raw:'net_sales' },
-            ...(activeTab !== 'new_or_reviving_skus' ? [{ field:'Sales Mix Change', raw:'sales_mix' }] : []),
-            { field:'Profit Per Unit', raw:'unit_wise_profitability' },
-            { field:'CM1 Profit Impact', raw:'profit' },
-          ].map(({ field, raw }) => {
-            const growth = item[field];
+              <tbody>
+                {categorizedGrowth[activeTab]?.map((item, idx) => (
+                  <tr key={idx} className="odd:bg-white even:bg-green-50">
+                    <td className="border border-[#414042] px-2 py-2.5 text-center">{idx + 1}</td>
+                    <td className="border border-[#414042] px-2 py-2.5 text-left">{item.product_name}</td>
+                    <td className="border border-[#414042] px-2 py-2.5 text-center">
+                      {item['Sales Mix (Month2)'] != null
+                        ? `${Number(item['Sales Mix (Month2)']).toFixed(2)}%` : 'N/A'}
+                    </td>
 
-            if (activeTab === 'new_or_reviving_skus') {
-              const v = item[raw];
-              return <td key={field} className="border border-gray-300 px-2 py-2.5 text-center">{v != null ? Number(v).toFixed(2) : 'N/A'}</td>;
-            }
+                    {[
+                      { field:'Unit Growth', raw:'quantity' },
+                      { field:'ASP Growth',  raw:'asp' },
+                      { field:'Sales Growth',raw:'net_sales' },
+                      ...(activeTab !== 'new_or_reviving_skus' ? [{ field:'Sales Mix Change', raw:'sales_mix' }] : []),
+                      { field:'Profit Per Unit', raw:'unit_wise_profitability' },
+                      { field:'CM1 Profit Impact', raw:'profit' },
+                    ].map(({ field, raw }) => {
+                      const growth = item[field];
 
-            if (!growth || (growth as GrowthCategory).value == null) return <td key={field} className="border border-gray-300 px-2 py-2.5 text-center">N/A</td>;
-            let color = '#414042';
-            if ((growth as GrowthCategory).category === 'High Growth') color = '#5EA68E';
-            else if ((growth as GrowthCategory).category === 'Negative Growth') color = '#FF5C5C';
-            const sign = (growth as GrowthCategory).value >= 0 ? '+' : '';
-            return (
-              <td key={field} className="border border-gray-300 px-2 py-2.5 text-center" style={{ color, fontWeight: 600 }}>
-                {(growth as GrowthCategory).category} ({sign}{Number((growth as GrowthCategory).value).toFixed(2)}%)
-              </td>
-            );
-          })}
+                      if (activeTab === 'new_or_reviving_skus') {
+                        const v = item[raw];
+                        return <td key={field} className="border border-[#414042] px-2 py-2.5 text-center">{v != null ? Number(v).toFixed(2) : 'N/A'}</td>;
+                      }
 
-          {Object.keys(skuInsights).length > 0 && (
-            <td className="border border-gray-300 px-2 text-nowrap py-2.5 text-center">
-              {(() => {
-                const entry = getInsightForItem(item);
-                if (entry) {
-                  return (
-                    <button
-                      className="styled-button"
-                      style={{ margin: 0 }}
-                      onClick={() => {
-                        setSelectedSku(entry[0]);
-                        setModalOpen(true);
-                        setFbType(null);
-                        setFbText('');
-                        setFbSuccess(false);
-                      }}
-                    >
-                      View Insights
-                    </button>
-                  );
-                }
-                return (
-                  <em style={{ color:'#888' }}>
-                    Not analyzed
-                    <br />
-                    <small style={{ fontSize: 10 }}>
-                      ({isGlobalData() ? 'Global/Product Name' : 'SKU'}: {item.product_name || item.sku || 'N/A'})
-                    </small>
-                  </em>
-                );
-              })()}
-            </td>
-          )}
-        </tr>
-      ))}
-    </tbody>
+                      if (!growth || (growth as GrowthCategory).value == null) return <td key={field} className="border border-[#414042] px-2 py-2.5 text-center">N/A</td>;
+                      let color = '#414042';
+                      if ((growth as GrowthCategory).category === 'High Growth') color = '#5EA68E';
+                      else if ((growth as GrowthCategory).category === 'Negative Growth') color = '#FF5C5C';
+                      const sign = (growth as GrowthCategory).value >= 0 ? '+' : '';
+                      return (
+                        <td key={field} className="border border-[#414042] px-2 py-2.5 text-center" style={{ color, fontWeight: 600 }}>
+                          {(growth as GrowthCategory).category} ({sign}{Number((growth as GrowthCategory).value).toFixed(2)}%)
+                        </td>
+                      );
+                    })}
 
-    <tfoot>
-      <tr className="odd:bg-white even:bg-green-50 total-row">
-        <td className="border border-gray-300 px-2 py-2.5 text-center"></td>
-        <td className="border border-gray-300 px-2 py-2.5 text-left font-bold"><strong>Total</strong></td>
-        <td className="border border-gray-300 px-2 py-2.5 text-center font-bold">
-          {categorizedGrowth[activeTab]
-            ?.filter(r => r['Sales Mix (Month2)'] != null)
-            ?.reduce((s, r) => s + Number(r['Sales Mix (Month2)'] || 0), 0)
-            ?.toFixed(2)}%
-        </td>
-        {['Unit Growth','ASP Growth','Sales Growth',
-          ...(activeTab!=='new_or_reviving_skus' ? ['Sales Mix Change'] : []),
-          'Profit Per Unit','CM1 Profit Impact'].map((_, i) => <td key={i} className="border border-gray-300 px-2 py-2.5 text-center"></td>)}
-        {Object.keys(skuInsights).length > 0 && <td className="border border-gray-300 px-2 py-2.5 text-center"></td>}
-      </tr>
-    </tfoot>
-  </table>
-</div>
+                    {Object.keys(skuInsights).length > 0 && (
+                      <td className="border border-[#414042] px-2 text-nowrap py-2.5 text-center">
+                        {(() => {
+                          const entry = getInsightForItem(item);
+                          if (entry) {
+                            return (
+                              <button
+                                className="styled-button"
+                                style={{ margin: 0 }}
+                                onClick={() => {
+                                  setSelectedSku(entry[0]);
+                                  setModalOpen(true);
+                                  setFbType(null);
+                                  setFbText('');
+                                  setFbSuccess(false);
+                                }}
+                              >
+                                View Insights
+                              </button>
+                            );
+                          }
+                          return (
+                            <em style={{ color:'#888' }}>
+                              Not analyzed
+                              <br />
+                              <small style={{ fontSize: 10 }}>
+                                ({isGlobalData() ? 'Global/Product Name' : 'SKU'}: {item.product_name || item.sku || 'N/A'})
+                              </small>
+                            </em>
+                          );
+                        })()}
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+
+              <tfoot>
+                <tr className="odd:bg-white even:bg-green-50 ">
+                  <td className="border border-[#414042] px-2 py-2.5 text-center"></td>
+                  <td className="border border-[#414042] px-2 py-2.5 text-left font-bold"><strong>Total</strong></td>
+                  <td className="border border-[#414042] px-2 py-2.5 text-center font-bold">
+                    {categorizedGrowth[activeTab]
+                      ?.filter(r => r['Sales Mix (Month2)'] != null)
+                      ?.reduce((s, r) => s + Number(r['Sales Mix (Month2)'] || 0), 0)
+                      ?.toFixed(2)}%
+                  </td>
+                  {['Unit Growth','ASP Growth','Sales Growth',
+                    ...(activeTab!=='new_or_reviving_skus' ? ['Sales Mix Change'] : []),
+                    'Profit Per Unit','CM1 Profit Impact'].map((_, i) => <td key={i} className="border border-[#414042] px-2 py-2.5 text-center"></td>)}
+                  {Object.keys(skuInsights).length > 0 && <td className="border border-[#414042] px-2 py-2.5 text-center"></td>}
+                </tr>
+              </tfoot>
+            </table>
+          </div>
 
           <div className='flex justify-end' style={{ gap:10, marginTop:12 }}>
             <button
@@ -761,8 +977,9 @@ const MonthsforBI: React.FC = () => {
 
             <button
               onClick={() => {
-                const file = `BusinessInsights-${getTabLabel(activeTab).replace(/\s+/g,'')}-${getAbbr(month1)}'${String(year1).slice(2)}vs${getAbbr(month2)}'${String(year2).slice(2)}.xlsx`;
-                exportToExcel(categorizedGrowth[activeTab] || [], file);
+                const file = `AllSKUs-${getAbbr(month1)}'${String(year1).slice(2)}vs${getAbbr(month2)}'${String(year2).slice(2)}.xlsx`;
+const allRows = getAllSkusForExport();
+exportToExcel(allRows, file);
               }}
               className="styled-button"
             >

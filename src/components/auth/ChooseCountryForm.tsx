@@ -512,7 +512,7 @@ const onNext = async (e: React.FormEvent) => {
         <div>
           <div className="mb-5 sm:mb-8">
             <h1 className="mb-2 font-semibold text-charcoal-500 text-title-sm dark:text-white/90 sm:text-title-md">
-              Which <span className="text-green-500">country</span> do <br />you want to start with?
+              Which <span className="text-[#5EA68E]">Country</span> do <br />you want to start with?
             </h1>
           </div>
 

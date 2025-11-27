@@ -359,7 +359,7 @@ export default function DataTable<T extends Row>({
   stickyHeader = true,
   zebra = true,
   emptyMessage = "No data found.",
-  showCellTitle = true,
+  showCellTitle = false,
   pageSize = 10,
   initialPage = 1,
   paginate = true, // default on

@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import AmazonFinancialDashboard from "./AmazonFinancialDashboard";
 import Button from "@/components/ui/button/Button";
 
+
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:5000";
 const CALLBACK_ORIGIN = process.env.NEXT_PUBLIC_CALLBACK_ORIGIN || ""; // e.g. https://your-ngrok.ngrok-free.app
@@ -106,6 +107,7 @@ export default function AmazonConnectLegacy({ onClose, onConnected }: Props) {
     localStorage.setItem("amazonMarketplaceRegion", region);
     localStorage.setItem("amazonMarketplaceId", marketplaceId);
 
+    
     localStorage.setItem("amazonIntegrationStep3Unlocked", "true");
     setIsStep3Unlocked(true);
 
@@ -267,12 +269,15 @@ export default function AmazonConnectLegacy({ onClose, onConnected }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50 p-3 sm:p-4 md:p-6"
+      className="fixed inset-0 z-99999 flex items-center justify-center bg-black/50 p-3 sm:p-4 md:p-6"
       role="dialog"
       aria-modal="true"
       aria-labelledby="amazon-connect-title"
+       onClick={onClose} 
     >
-      <div className="relative w-11/12 sm:w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-xl rounded-xl bg-white shadow-xl">
+      <div className="relative w-11/12 sm:w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-xl rounded-xl bg-white shadow-xl"
+      onClick={(e) => e.stopPropagation()}
+      >
         {/* <button
           type="button"
           onClick={onClose}

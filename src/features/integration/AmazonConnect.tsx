@@ -79,7 +79,7 @@ export default function AmazonConnect({
   const closePopup = () => {
     try {
       if (popupRef.current && !popupRef.current.closed) popupRef.current.close();
-    } catch {}
+    } catch { }
     popupRef.current = null;
   };
 
@@ -96,7 +96,7 @@ export default function AmazonConnect({
       const qs = new URLSearchParams({ region }).toString();
       const s = await api(`/amazon_api/status?${qs}`);
       if ((s as any)?.success) finalizeConnection();
-    } catch {}
+    } catch { }
   };
 
   const handleAmazonLogin = async () => {
@@ -172,13 +172,16 @@ export default function AmazonConnect({
 
   return (
     <div
-      className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50 p-4"
+      className="fixed inset-0 z-99999 flex items-center justify-center bg-black/50 p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="amazon-connect-title"
+      onClick={onClose} 
     >
-      <div className="relative w-full max-w-xl bg-white rounded-2xl shadow-xl p-6 sm:p-8">
-        {/* Header: back + logo */}
+      <div className="relative w-full max-w-xl bg-white rounded-2xl shadow-xl p-6 sm:p-8"
+      onClick={(e) => e.stopPropagation()}
+      >
+    {/* Header: back + logo */}
         <div className="flex items-center justify-between relative">
           <button
             onClick={onClose}
@@ -230,8 +233,8 @@ export default function AmazonConnect({
 
           <Button
             type="button"
- variant="primary"
-              size="sm"
+            variant="primary"
+            size="sm"
             // onClick={handleAmazonLogin} // original
             onClick={() => setShowLegacy(true)} // show legacy modal
             disabled={isConnecting}

@@ -67,7 +67,7 @@ const ShopifyIntroModal: React.FC<Props> = ({ onClose, onManual }) => {
 
   return (
     <div
-      className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50 p-3 sm:p-4 md:p-6"
+      className="fixed inset-0 z-99999 flex items-center justify-center bg-black/50 p-3 sm:p-4 md:p-6"
       role="dialog"
       aria-modal="true"
       aria-labelledby="shopify-intro-title"

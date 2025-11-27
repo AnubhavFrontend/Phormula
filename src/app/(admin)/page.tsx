@@ -1688,6 +1688,14 @@ const fmtUSDk = (val: any) => {
   return `${base}k`;
 };
 
+const fmtInt = (val: any) =>
+  val === null || val === undefined || val === "" || isNaN(Number(val))
+    ? "—"
+    : new Intl.NumberFormat("en-GB", {
+        maximumFractionDigits: 0,
+      }).format(Math.round(Number(val)));
+
+
 const toNumberSafe = (v: any) => {
   if (v === null || v === undefined) return 0;
   if (typeof v === "number") return v;
@@ -1733,12 +1741,12 @@ function SalesTargetCard({
 
   // thinner arcs
   const strokeMain = 10; // main (grey + green) arc thickness
-  const strokeLast = 6; // orange arc thickness
+  const strokeLast = 5; // orange arc thickness
 
   const cx = size / 2;
   const rBase = size / 2 - strokeMain;
 
-  const gap = 14;
+  const gap = 15;
 
   // radii
   const rTarget = rBase; // grey background arc
@@ -1838,7 +1846,7 @@ function SalesTargetCard({
           <path
             d={arcPath(fullFrom, toDeg_MTD, rCurrent)}
             fill="none"
-            stroke="#16a34a"
+            stroke="#5EA68E"
             strokeWidth={strokeMain}
             strokeLinecap="round"
           />
@@ -1847,7 +1855,7 @@ function SalesTargetCard({
           <circle
             cx={knobYellow.x}
             cy={knobYellow.y}
-            r={12} // bigger orange pointer
+            r={10} // bigger orange pointer
             fill="#f59e0b"
             stroke="#fffbeb"
             strokeWidth={4}
@@ -1856,8 +1864,8 @@ function SalesTargetCard({
           <circle
             cx={knobGreen.x}
             cy={knobGreen.y}
-            r={16} // bigger main pointer
-            fill="#16a34a"
+            r={14} // bigger main pointer
+            fill="#5EA68E"
             stroke="#ecfdf3"
             strokeWidth={5}
           />
@@ -1887,11 +1895,11 @@ function SalesTargetCard({
           <div className="mt-0.5 font-semibold">{fmtUSDk(mtdUSD)}</div>
         </div>
         <div className="flex flex-col items-center rounded-xl justify-between bg-gray-50 p-3">
-          <div className="text-gray-500">Target</div>
+          <div className="text-gray-500">Sales Target</div>
           <div className="mt-0.5 font-semibold">{fmtUSDk(targetUSD)}</div>
         </div>
         <div className="flex flex-col items-center rounded-xl justify-between bg-gray-50 p-3">
-          <div className="text-gray-500">{prevLabel}</div>
+          <div className="text-gray-500">{prevLabel} Sales</div>
           <div className="mt-0.5 font-semibold">{fmtUSDk(lastMonthTotalUSD)}</div>
         </div>
       </div>
@@ -2098,7 +2106,6 @@ export default function DashboardPage() {
         }
 
         const data = await res.json();
-        console.log("Shopify store for dashboard:", data);
 
         if (!res.ok || data?.error) return;
 
@@ -2150,7 +2157,6 @@ export default function DashboardPage() {
       if (!res.ok) throw new Error(`Shopify request failed: ${res.status}`);
 
       const json = await res.json();
-      console.log("Shopify dropdown (current month):", json);
 
       const row = json?.last_row_data ? json.last_row_data : null;
       setShopifyRows(row ? [row] : []);
@@ -2199,7 +2205,6 @@ export default function DashboardPage() {
       if (!res.ok) throw new Error(`Shopify (prev) request failed: ${res.status}`);
 
       const json = await res.json();
-      console.log("Shopify dropdown (prev month):", json);
 
       const row = json?.last_row_data ? json.last_row_data : null;
       setShopifyPrevRows(row ? [row] : []);
@@ -2401,7 +2406,7 @@ export default function DashboardPage() {
  if (initialLoading) {
   return (
     <Loader
-      src="/infinity-unscreen.gif"          // 👈 your video in /public
+      src="/infinity-unscreen.gif"         
       label="Loading sales dashboard…"
       fullscreen
       size={120}
@@ -2544,7 +2549,7 @@ export default function DashboardPage() {
                   <div className="text-sm text-charcoal-500">Units</div>
                   <div className="mt-2 text-lg font-semibold">
                     <ValueOrSkeleton loading={loading} mode="inline" compact>
-                      {fmtNum(cms?.total_quantity ?? 0)}
+                      {fmtInt(cms?.total_quantity ?? 0)}
                     </ValueOrSkeleton>
                   </div>
                 </div>

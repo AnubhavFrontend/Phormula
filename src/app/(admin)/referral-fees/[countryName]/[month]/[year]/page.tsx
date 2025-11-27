@@ -1624,7 +1624,8 @@ export default function ReferralFeesDashboard(): JSX.Element {
 
     const applicablePct = sales ? (applicable / sales) * 100 : 0;
     const chargedPct = sales ? (charged / sales) * 100 : 0;
-    const overchargedPct = applicablePct - chargedPct;
+    const overchargedPct = Math.abs(applicablePct - chargedPct);
+
 
     return [
       {

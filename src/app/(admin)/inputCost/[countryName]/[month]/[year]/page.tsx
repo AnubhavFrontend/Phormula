@@ -494,13 +494,13 @@ export default function InputCostPage({ params }: Params) {
           scrollbar-width: thin; scrollbar-color: #5EA68E #f8edcf; -webkit-overflow-scrolling: touch;
         }
         .tablec { width: 100%; border-collapse: collapse; min-width: 900px; }
-        .tablec td, .tablec th { border: 1px solid #ddd; padding: 8px; text-align: center;  font-size: clamp(12px, 0.729vw, 16px) !important; }
+        .tablec td, .tablec th { border: 1px solid #414042; padding: 8px; text-align: center;  font-size: clamp(12px, 0.729vw, 16px) !important; }
        .theadc th {
 background-color: #5EA68E;
 color: #f8edcf;
 font-weight: bold;
 }
-        .tablec tbody tr:nth-child(even) { background-color: #f9f9f9; }
+        .tablec tbody tr:nth-child(even) { background-color: #5EA68E33; }
         .tablec tbody tr:nth-child(odd) { background-color: #ffffff; }
         .left-align { text-align: left !important; width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .gross-margin-positive { color: #28a745; font-weight: bold; }
@@ -509,7 +509,7 @@ font-weight: bold;
         .serial-no-col { max-width: 38px; width: 38px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       `}</style>
 
-      <h2 className='text-3xl text-[#414042] font-bold '>
+      <h2 className='text-2xl text-[#414042] font-bold '>
         Uploaded SKU Price Data - <span style={{ color: '#60a68e' }}> {countryName?.toUpperCase()}</span>
       </h2>
 

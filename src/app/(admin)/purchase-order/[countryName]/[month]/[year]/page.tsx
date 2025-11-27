@@ -240,31 +240,24 @@ export default function PurchaseOrderPage() {
           box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
           transform: translateY(1px);
         }
-        .total-row td {
-          background: #ccc;
-          font-weight: bold;
+       .table-wrapper {
+          width: 100%; max-width: 100%; max-height: 80vh; overflow-x: auto; overflow-y: auto; margin-top: 20px;
+          scrollbar-width: thin; scrollbar-color: #5EA68E #f8edcf; -webkit-overflow-scrolling: touch;
         }
-        body,
-        td,
-        th,
-        select,
-        button {
-          font-size: clamp(12px, 0.729vw, 16px) !important;
-          font-family: 'Lato', sans-serif;
-        }
-        .table-wrapper {
-          width: 100%;
-          overflow-x: auto;
-        }
-        table {
-          width: 100%;
-          min-width: 600px;
-        }
+        .tablec { width: 100%; border-collapse: collapse; min-width: 900px; }
+        .tablec td, .tablec th { border: 1px solid #414042; padding: 8px; text-align: center;  font-size: clamp(12px, 0.729vw, 16px) !important; }
+       .theadc th {
+background-color: #5EA68E;
+color: #f8edcf;
+font-weight: bold;
+}
+        .tablec tbody tr:nth-child(even) { background-color: #5EA68E33; }
+        .tablec tbody tr:nth-child(odd) { background-color: #ffffff; }
         .inline-dropdowns {
-          display: flex;
+         
           gap: 15px;
           align-items: center;
-          flex-wrap: nowrap;
+         
           margin-bottom: 30px;
         }
         @media (max-width: 768px) {
@@ -354,31 +347,9 @@ export default function PurchaseOrderPage() {
           padding: 0;
           white-space: nowrap;
         }
-        .tablec {
-          border-collapse: collapse;
-          width: 100%;
-          margin-bottom: 20px;
-        }
-        .tablec th,
-        .tablec td {
-          border: 1px solid #ddd;
-          padding: 8px;
-          text-align: left;
-        }
-        .tablec th {
-          background-color: #5EA68E;
-          color: #f8edcf;
-          font-weight: bold;
-        }
-        .theadc {
-          background-color: #5EA68E;
-        }
-        .explanatory-row td {
-          font-style: italic;
-          font-weight: bold;
-        }
+        
       `}</style>
-      <h2 className='text-3xl font-bold text-[#414042] mb-6'>
+      <h2 className='text-2xl font-bold text-[#414042] mb-6'>
         {isGlobalRoute ? (
           <>
             <span style={{ color: '#414042' }}>PO Report for </span>
@@ -392,7 +363,7 @@ export default function PurchaseOrderPage() {
         )}
       </h2>
 
-      <div className="inline-dropdowns">
+      <div className="inline-dropdowns flex sm:flex-row flex-col">
         <table className="dropdown-table">
           <thead>
             <tr className="dropdown-header">
@@ -434,7 +405,7 @@ export default function PurchaseOrderPage() {
           </tbody>
         </table>
 
-        <div className="flex gap-4">
+        <div className="flex sm:flex-row flex-col gap-4">
           <button
             className="fetch-button"
             onClick={isGlobalRoute ? fetchGlobalDispatchFile : fetchDispatchFile}
@@ -458,12 +429,12 @@ export default function PurchaseOrderPage() {
             <i className="fa-solid fa-circle-exclamation alert-icon" />
             <span>{error}</span>
           </div>
-          {/* <button className="alert-button" onClick={handleRedirectToForecast}>
+          <button className="alert-button" onClick={handleRedirectToForecast}>
             Run Now <i className="fa-solid fa-chevron-right" />
-          </button> */}
+          </button>
         </div>
       ) : (
-        <div className="forecast-data">
+        <div className="">
           {skuData.length > 0 ? (
             <>
               <div className="table-wrapper">

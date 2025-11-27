@@ -1124,7 +1124,7 @@ const CashFlowPage: React.FC = () => {
 
   const currentYear = new Date().getFullYear();
   const years = useMemo(
-    () => Array.from({ length: 5 }, (_, i) => currentYear - i),
+    () => Array.from({ length: 2 }, (_, i) => currentYear - i),
     [currentYear]
   );
 

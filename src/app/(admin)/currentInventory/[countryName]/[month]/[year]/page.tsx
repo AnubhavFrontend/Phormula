@@ -56,7 +56,7 @@ export default function CurrentInventoryPage({ params }: PageParams) {
   ];
   const years = Array.from({ length: 2 }, (_, i) => new Date().getFullYear() - i);
 
-  const currentMonthCol = `Current Month Units (${capitalize(month) || 'Month'})`;
+  const currentMonthCol = `Current Month Units Sold (${capitalize(month) || 'Month'})`;
 
   const displayedColumns: string[] = [
     'Sno.',
@@ -122,17 +122,24 @@ export default function CurrentInventoryPage({ params }: PageParams) {
       }
 
       // Convert base64 -> ArrayBuffer
-      const byteCharacters = atob(fileData);
-      const byteArrays: Uint8Array[] = [];
-      for (let offset = 0; offset < byteCharacters.length; offset += 1024) {
-        const slice = byteCharacters.slice(offset, offset + 1024);
-        const byteNumbers = new Array(slice.length);
-        for (let i = 0; i < slice.length; i++) byteNumbers[i] = slice.charCodeAt(i);
-        byteArrays.push(new Uint8Array(byteNumbers));
-      }
-      const blob = new Blob(byteArrays, {
-        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      });
+   const byteCharacters = atob(fileData);
+const buffers: ArrayBuffer[] = [];
+
+for (let offset = 0; offset < byteCharacters.length; offset += 1024) {
+  const slice = byteCharacters.slice(offset, offset + 1024);
+  const byteNumbers = new Array(slice.length);
+
+  for (let i = 0; i < slice.length; i++) {
+    byteNumbers[i] = slice.charCodeAt(i);
+  }
+
+  const uint8 = new Uint8Array(byteNumbers);
+  buffers.push(uint8.buffer as ArrayBuffer); 
+}
+
+const blob = new Blob(buffers, {
+  type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+});
 
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -186,7 +193,12 @@ export default function CurrentInventoryPage({ params }: PageParams) {
   return (
     <>
       <style>{`
-        .tablec tbody tr:last-child { color: #414042; text-align: center; background-color: #ccc; font-weight: bold; }
+        .tablec tbody tr:last-child {
+  background-color: #ccc !important;
+  color: #414042;
+  text-align: center;
+  font-weight: bold;
+}
         .tablec td:first-child, .tablec th:first-child { text-align: center; width: 19px; }
         .tablec thead th {
   background-color: #5EA68E !important;
@@ -195,6 +207,8 @@ export default function CurrentInventoryPage({ params }: PageParams) {
   text-align: center !important;
   font-size: clamp(12px, 0.729vw, 16px) !important;
 }
+  .tablec tbody tr:nth-child(even) { background-color: #5EA68E33; }
+        .tablec tbody tr:nth-child(odd) { background-color: #ffffff; }
         .filter-wrapper { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
         .filter-container { display: flex; background: white; border: 1px solid #414042; box-shadow: 0 2px 5px rgba(0,0,0,0.1); overflow: hidden; flex-wrap: wrap; }
         .inline-dropdowns { display: flex; flex-wrap: nowrap; gap: 0.5vw; align-items: center; justify-content: flex-start; margin-bottom: 3vh; }
@@ -215,7 +229,7 @@ export default function CurrentInventoryPage({ params }: PageParams) {
         .alert-button { background: none; border: none; color: #414042; font-weight: 600; cursor: pointer; font-size: 14px; text-decoration: underline; display: inline-flex; align-items: center; gap: 5px; padding: 0; white-space: nowrap; }
       `}</style>
 
-      <h2 style={{ color: '#414042' }} className='text-3xl font-bold text-[#414042] mb-6'>
+      <h2 style={{ color: '#414042' }} className='text-2xl font-bold text-[#414042] mb-6'>
         Current Inventory Report for <span style={{ color: '#60a68e' }}>{countryName.toUpperCase()}</span>
       </h2>
 
@@ -289,7 +303,8 @@ export default function CurrentInventoryPage({ params }: PageParams) {
   <>
     {skuData.length > 0 ? (
       <>
-        <table className="tablec">
+      <div className="overflow-x-auto">
+<table className="tablec">
           <thead className="bg-[#5EA68E] !text-[#f8edcf]">
             <tr>
               {displayedColumns.map((col) => (
@@ -316,6 +331,8 @@ export default function CurrentInventoryPage({ params }: PageParams) {
           </tbody>
         </table>
 
+      </div>
+        
         <button
           className="styled-button"
           style={{ display: 'flex' }}

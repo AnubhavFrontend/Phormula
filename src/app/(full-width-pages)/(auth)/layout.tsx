@@ -64,9 +64,9 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
     // ---------- SIGN UP (poster with heading and image) ----------
     if (pathname.includes("signup")) {
       return (
-        <div className="relative h-screen w-full bg-green-500 flex flex-col justify-end px-6">
+        <div className=" w-full bg-[#5EA68E] flex flex-col justify-end px-6">
           {/* Logo - top left */}
-          <Link href="/" className="fixed left-6 top-6 z-20">
+          <Link href="/" className="fixed left-3 top-3 z-20">
             <Image
               width={220}
               height={40}
@@ -79,14 +79,14 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           {/* Centered content */}
           <div className="flex flex-col text-right">
             {/* Heading */}
-            <h1 className="text-charcoal-500 text-xl sm:text-xl lg:text-5xl font-semibold leading-tight mt-12">
+            <h1 className="text-[#414042] text-xl sm:text-xl lg:text-4xl xl:text-5xl font-semibold leading-tight ">
               Trusted Finance Partner
               <br />
-              for <span className="text-yellow-200">D2C Entrepreneurs</span>
+              for <span className="text-[#F8EDCE]">D2C Entrepreneurs</span>
             </h1>
 
             {/* Illustration */}
-            <div className="relative w-full h-[480px] sm:h-[480px] flex items-center justify-center overflow-hidden">
+            <div className=" w-full  flex items-center justify-center overflow-hidden">
               <Image
                 src="/images/auth/signup.png"
                 alt="Trusted Finance partner for D2C Entrepreneur"
@@ -149,51 +149,10 @@ if (
   pathname.startsWith("/reset_password") ||   
   pathname.startsWith("/verify-email")
 ) {
-  return (
-    <div className="relative h-screen w-full bg-green-500 flex flex-col justify-end px-6">
-      {/* Logo - top left */}
-      <Link href="/" className="fixed left-6 top-6 z-20">
-        <Image
-          width={150}
-          height={40}
-          src="/images/auth/Phormula.png"
-          alt="Phormula"
-          priority
-        />
-      </Link>
-
-      {/* Heading */}
-      <div className="flex flex-col text-right">
-        <h1 className="text-charcoal-500 text-xl sm:text-xl lg:text-5xl font-semibold leading-tight mt-12">
-          Built for Founders,
-          <br />
-          Powered by <span className="text-yellow-200">Insight</span>
-        </h1>
-      </div>
-
-      {/* Illustration below heading */}
-      <div className="mt-10">
-        <div className="relative w-full max-w-[760px] aspect-[16/10] rounded-3xl shadow-2xl">
-          <Image
-            src="/images/auth/signin.png"
-            alt="Performance Analysis dashboard"
-            fill
-            className="object-contain"
-            priority
-          />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-
-    // ---------- Choose Country ----------
-    if (pathname.includes("choose-country")) {
-      return (
-       <div className="relative h-screen w-full bg-green-500 flex flex-col justify-end px-6">
+ return (
+       <div className="w-full bg-[#5EA68E] flex flex-col justify-end px-6">
           {/* Logo - top left */}
-          <Link href="/" className="fixed left-6 top-6 z-20">
+          <Link href="/" className="fixed left-3 top-3 z-20">
             <Image
               width={150}
               height={40}
@@ -206,20 +165,64 @@ if (
           {/* Heading */}
           <div className="flex flex-col text-right">
             {/* Heading */}
-            <h1 className="text-charcoal-500 text-xl sm:text-xl lg:text-5xl font-semibold leading-tight mt-12">
-             Control Expenses with
+            <h1 className="text-[#414042] text-xl sm:text-xl lg:text-4xl xl:text-5xl font-semibold leading-tight">
+              Built for Founders,
               <br />
-              <span className="text-yellow-200">Auto Marketplace Recons</span>
+              Powered by <span className="text-[#F8EDCE]">Insight</span>
             </h1>
           </div>
 
           {/* Illustration below heading */}
-          <div className="mt-10">
-            <div className="relative w-full max-w-[760px] aspect-[16/10] rounded-3xl shadow-2xl">
+          <div className="">
+            <div className=" w-full  flex items-center justify-center overflow-hidden">
+              <Image
+                src="/images/auth/signin.png"
+                alt="Performance Analysis dashboard"
+                 width={800}
+                height={500}
+                className="object-contain"
+                priority
+              />
+            </div>
+          </div>
+        </div>
+      );
+}
+
+
+    // ---------- Choose Country ----------
+    if (pathname.includes("choose-country")) {
+     return (
+       <div className="w-full bg-[#5EA68E] flex flex-col justify-end px-6">
+          {/* Logo - top left */}
+          <Link href="/" className="fixed left-3 top-3 z-20">
+            <Image
+              width={150}
+              height={40}
+              src="/images/auth/Phormula.png"
+              alt="Phormula"
+              priority
+            />
+          </Link>
+
+          {/* Heading */}
+          <div className="flex flex-col text-right">
+            {/* Heading */}
+            <h1 className="text-[#414042] text-xl sm:text-xl lg:text-4xl xl:text-5xl font-semibold leading-tight">
+             Control Expenses with
+              <br />
+              <span className="text-[#F8EDCE]">Auto Marketplace Recons</span>
+            </h1>
+          </div>
+
+          {/* Illustration below heading */}
+          <div className="">
+            <div className="w-full  flex items-center justify-center overflow-hidden">
               <Image
                 src="/images/auth/choosecountry.png"
                 alt="Performance Analysis dashboard"
-                fill
+                 width={800}
+                height={500}
                 className="object-contain"
                 priority
               />
@@ -231,10 +234,10 @@ if (
 
     // ---------- Brand ----------
     if (pathname.includes("brand")) {
-      return (
-       <div className="relative h-screen w-full bg-green-500 flex flex-col justify-end px-6">
+    return (
+       <div className="w-full bg-[#5EA68E] flex flex-col justify-end px-6">
           {/* Logo - top left */}
-          <Link href="/" className="fixed left-6 top-6 z-20">
+          <Link href="/" className="fixed left-3 top-3 z-20">
             <Image
               width={150}
               height={40}
@@ -247,19 +250,20 @@ if (
           {/* Heading */}
           <div className="flex flex-col text-right">
             {/* Heading */}
-            <h1 className="text-charcoal-500 text-xl sm:text-xl lg:text-5xl font-semibold leading-tight mt-12">
+            <h1 className="text-[#414042] text-xl sm:text-xl lg:text-4xl xl:text-5xl font-semibold leading-tight">
              CXO’s tool for&nbsp; 
-              <span className="text-yellow-200">Faster Decisions</span>
+              <span className="text-[#F8EDCE]">Faster Decisions</span>
             </h1>
           </div>
 
           {/* Illustration below heading */}
           <div className="mt-10">
-            <div className="relative w-full max-w-[760px] aspect-[16/10] rounded-3xl shadow-2xl">
+            <div className="w-full  flex items-center justify-center overflow-hidden">
               <Image
                 src="/images/auth/brand.png"
                 alt="Performance Analysis dashboard"
-                fill
+                 width={800}
+                height={500}
                 className="object-contain"
                 priority
               />
@@ -271,10 +275,10 @@ if (
 
     // ---------- Revenue ----------
     if (pathname.includes("chooserevenue")) {
-      return (
-       <div className="relative h-screen w-full bg-green-500 flex flex-col justify-end px-6">
+       return (
+       <div className="w-full bg-[#5EA68E] flex flex-col justify-end px-6">
           {/* Logo - top left */}
-          <Link href="/" className="fixed left-6 top-6 z-20">
+          <Link href="/" className="fixed left-3 top-3 z-20">
             <Image
               width={150}
               height={40}
@@ -287,18 +291,19 @@ if (
           {/* Heading */}
           <div className="flex flex-col text-right">
             {/* Heading */}
-            <h1 className="text-charcoal-500 text-xl sm:text-xl lg:text-5xl font-semibold leading-tight mt-12">
-             See. <span className="text-yellow-200">Forecast. </span>Win.
+            <h1 className="text-[#414042] text-xl sm:text-xl lg:text-4xl xl:text-5xl font-semibold leading-tight">
+             See. <span className="text-[#F8EDCE]">Forecast. </span>Win.
             </h1>
           </div>
 
           {/* Illustration below heading */}
-          <div className="mt-10">
-            <div className="relative w-full max-w-[760px] aspect-[16/10] rounded-3xl shadow-2xl">
+          <div className="">
+            <div className="w-full  flex items-center justify-center overflow-hidden">
               <Image
                 src="/images/auth/revenue.png"
                 alt="Performance Analysis dashboard"
-                fill
+                width={800}
+                height={500}
                 className="object-contain"
                 priority
               />

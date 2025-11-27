@@ -306,62 +306,22 @@ export default function DispatchPage() {
         }
 
         /* ---------- Main Data Table Styles (Enhanced for Better Application) ---------- */
-        .tablec {
-          border-collapse: collapse;
-          width: 100%;
-          font-family: 'Lato', sans-serif;
-          margin-top: 20px;
-          border: 0.05vw solid #414042;
-         
-          overflow: hidden;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-          table-layout: fixed; /* Helps with consistent column widths */
-        }
-
-         .tablec thead th {
+        .tablec tbody tr:last-child {
+  background-color: #ccc !important;
+  color: #414042;
+  text-align: center;
+  font-weight: bold;
+}
+        .tablec td:first-child, .tablec th:first-child { text-align: center; width: 19px; }
+        .tablec thead th {
   background-color: #5EA68E !important;
   color: #f8edcf !important;
   font-weight: bold !important;
   text-align: center !important;
   font-size: clamp(12px, 0.729vw, 16px) !important;
 }
-
-        .tablec thead th {
-          padding: 1vh 0.9vw;
-          text-align: center;
-          font-size: clamp(12px, 0.729vw, 16px);
-          font-weight: bold;
-          border: 0.05vw solid #414042;
-          background-color: #5ea68e !important; /* Force background on th */
-        }
-
-        .tablec tbody th,
-        .tablec tbody td {
-          padding: 1vh 0.9vw;
-          border: 0.05vw solid #414042;
-          text-align: center;
-          font-size: clamp(12px, 0.729vw, 16px);
-        }
-
-        .tablec tbody tr {
-          background-color: #fff;
-        }
-
-        .tablec tbody tr:hover {
-          background-color: #f5f5f5;
-        }
-
-        .tablec tbody tr:last-child {
-          color: #414042;
-          text-align: center;
-          background-color: #ccc !important;
-          font-weight: bold;
-        }
-
-        .tablec tbody tr:last-child td {
-          border-top: 2px solid #999; /* Thicker line for total row */
-          text-align: center;
-        }
+  .tablec tbody tr:nth-child(even) { background-color: #5EA68E33; }
+        .tablec tbody tr:nth-child(odd) { background-color: #ffffff; }
 
         /* ---------- Select Dropdowns ---------- */
         .dropdown-select {
@@ -481,7 +441,7 @@ export default function DispatchPage() {
           font-size: 14px;
           color: #414042;
           border-radius: 4px;
-          width: 30%;
+          
         }
 
         .forecast-banner i.fa-circle-exclamation {
@@ -562,7 +522,7 @@ export default function DispatchPage() {
           margin-top: 20px;
         }
       `}</style>
-     <h2 className='text-3xl font-bold text-[#414042] mb-6'>
+     <h2 className='text-2xl font-bold text-[#414042] mb-6'>
       Dispatch Report for <span style={{ color: '#60a68e' }}>{countryName.toUpperCase()}</span>
     </h2>
 
@@ -623,7 +583,7 @@ export default function DispatchPage() {
         </button>
       </div>
     ) : showForecastMessage ? (
-      <div className="forecast-banner">
+      <div className="forecast-banner lg:w-[40%]  w-full">
         <i className="fa-solid fa-circle-exclamation"></i>
         <span>Run the Inventory Forecast to view dispatch reports.</span>
         <button className="forecast-action" onClick={handleRedirectToForecast}>

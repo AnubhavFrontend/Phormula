@@ -1,102 +1,130 @@
-// "use client";
-// import React, { useState, useEffect, useRef, useCallback } from "react";
-// import Link from "next/link";
-// import Image from "next/image";
-// import { useParams, usePathname, useRouter } from "next/navigation";
-// import { useSidebar } from "../context/SidebarContext";
-// import { FaChevronDown, FaChevronRight, FaBars, FaTimes, FaChartBar, FaBrain, FaWarehouse, FaBalanceScale, FaPlug, FaCalendarAlt, FaBoxOpen, FaFileInvoiceDollar } from 'react-icons/fa';
-// import RegionSelect, { RegionOption } from "@/components/sidebar/RegionSelect";
-// import { LuLayoutDashboard } from "react-icons/lu";
-// import { BsBoxes } from "react-icons/bs";
-// import { useGetProfileCountriesQuery, useGetUploadHistoryQuery } from "@/lib/api/feePreviewApi";
+// // "use client";
+// // import React, { useState, useEffect, useRef, useCallback } from "react";
+// // import Link from "next/link";
+// // import Image from "next/image";
+// // import { useParams, usePathname, useRouter } from "next/navigation";
+// // import { useSidebar } from "../context/SidebarContext";
+// // import { FaChevronDown, FaChevronRight, FaBars, FaTimes, FaChartBar, FaBrain, FaWarehouse, FaBalanceScale, FaPlug, FaCalendarAlt, FaBoxOpen, FaFileInvoiceDollar } from 'react-icons/fa';
+// // import RegionSelect, { RegionOption } from "@/components/sidebar/RegionSelect";
+// // import { LuLayoutDashboard } from "react-icons/lu";
+// // import { BsBoxes } from "react-icons/bs";
+// // import { useGetProfileCountriesQuery, useGetUploadHistoryQuery } from "@/lib/api/feePreviewApi";
 
-// import { buildRegionOptions } from "@/lib/utils/region";
-// import { handleRegionChangeNext } from "@/lib/utils/handleRegionChange-next";
+// // import { buildRegionOptions } from "@/lib/utils/region";
+// // import { handleRegionChangeNext } from "@/lib/utils/handleRegionChange-next";
 
-// import { buildPlatformOptions, platformToCountryName, PlatformId } from "@/lib/utils/platforms";
-// import { useConnectedPlatforms } from "@/lib/utils/useConnectedPlatforms";
+// // import { buildPlatformOptions, platformToCountryName, PlatformId } from "@/lib/utils/platforms";
+// // import { useConnectedPlatforms } from "@/lib/utils/useConnectedPlatforms";
 
-// type PathParams = { ranged: string; countryName: string; month: string; year: string; productname?: string };
+// // type PathParams = { ranged: string; countryName: string; month: string; year: string; productname?: string };
 
-// type NavSubItem = {
-//   name: string;
-//   path: string | ((params: { ranged: string; countryName: string; month: string; year: string }) => string);
-// };
+// // type NavSubItem = {
+// //   name: string;
+// //   path: string | ((params: { ranged: string; countryName: string; month: string; year: string }) => string);
+// // };
 
-// type NavSection = {
-//   key: string;
-//   name: string;
-//   icon: React.ReactNode;
-//   subItems: NavSubItem[];
-// };
+// // type NavSection = {
+// //   key: string;
+// //   name: string;
+// //   icon: React.ReactNode;
+// //   subItems: NavSubItem[];
+// // };
 
-// const AppSidebar: React.FC = () => {
-//   const { isExpanded, isMobileOpen, isHovered, setIsHovered, setIsMobileOpen } = useSidebar();
-//   const pathname = usePathname();
-//   const router = useRouter();
+// // const AppSidebar: React.FC = () => {
+// //   const { isExpanded, isMobileOpen, isHovered, setIsHovered, setIsMobileOpen } = useSidebar();
+// //   const pathname = usePathname();
+// //   const router = useRouter();
 
-//   // ===== Region data from RTK Query (only countries user has) =====
-//   const { data: countriesData } = useGetProfileCountriesQuery();
-//   const { data: uploadsData } = useGetUploadHistoryQuery();
-//   const countryList = countriesData?.countries ?? [];
-//   const uploadHistory = uploadsData?.uploads ?? [];
-//   // const regionOptions: RegionOption[] = buildRegionOptions(countryList);
+// //   // ===== Region data from RTK Query (only countries user has) =====
+// //   const { data: countriesData } = useGetProfileCountriesQuery();
+// //   const { data: uploadsData } = useGetUploadHistoryQuery();
+// //   const countryList = countriesData?.countries ?? [];
+// //   const uploadHistory = uploadsData?.uploads ?? [];
+// //   // const regionOptions: RegionOption[] = buildRegionOptions(countryList);
 
-// // ===== Region / Platform data =====
-// const connectedPlatforms = useConnectedPlatforms();
-// const regionOptions: RegionOption[] = buildPlatformOptions(connectedPlatforms); // now platform options
-
-
-//   // ===== Selected country =====
-//   // const [selectedCountry, setSelectedCountry] = useState<string>(() => {
-//   //   // prefer saved choice if exists
-//   //   if (typeof window !== "undefined") {
-//   //     const saved = localStorage.getItem("selectedCountry");
-//   //     if (saved) return saved;
-//   //   }
-//   //   // else first option or "us" fallback
-//   //   return regionOptions[0]?.value ?? "us";
-//   // });
-
-//   const [selectedPlatform, setSelectedPlatform] = useState<string>(() => {
-//   if (typeof window !== "undefined") {
-//     const saved = localStorage.getItem("selectedPlatform");
-//     if (saved) return saved;
-//   }
-//   // default to global
-//   return "global";
-// });
+// // // ===== Region / Platform data =====
+// // const connectedPlatforms = useConnectedPlatforms();
+// // const regionOptions: RegionOption[] = buildPlatformOptions(connectedPlatforms); // now platform options
 
 
-//   // keep in sync if countries load later / first time
-//   // useEffect(() => {
-//   //   if (!regionOptions.length) return;
-//   //   if (!selectedCountry || !regionOptions.find(o => o.value === selectedCountry)) {
-//   //     setSelectedCountry(regionOptions[0].value);
-//   //   }
-//   // }, [regionOptions, selectedCountry]);
+// //   // ===== Selected country =====
+// //   // const [selectedCountry, setSelectedCountry] = useState<string>(() => {
+// //   //   // prefer saved choice if exists
+// //   //   if (typeof window !== "undefined") {
+// //   //     const saved = localStorage.getItem("selectedCountry");
+// //   //     if (saved) return saved;
+// //   //   }
+// //   //   // else first option or "us" fallback
+// //   //   return regionOptions[0]?.value ?? "us";
+// //   // });
 
-// useEffect(() => {
-//   if (!regionOptions.length) return;
-//   if (!selectedPlatform || !regionOptions.find(o => o.value === selectedPlatform)) {
-//     setSelectedPlatform(regionOptions[0].value);
-//   }
-// }, [regionOptions, selectedPlatform]);
-
-
-// // const onRegionChange = (val: string) => {
-// //   setSelectedPlatform(val);
-// //   const platform = val as PlatformId;
-// //   const countryNameForRoutes = platformToCountryName(platform);
-
+// //   const [selectedPlatform, setSelectedPlatform] = useState<string>(() => {
 // //   if (typeof window !== "undefined") {
-// //     localStorage.setItem("selectedPlatform", val);
+// //     const saved = localStorage.getItem("selectedPlatform");
+// //     if (saved) return saved;
+// //   }
+// //   // default to global
+// //   return "global";
+// // });
+
+
+// //   // keep in sync if countries load later / first time
+// //   // useEffect(() => {
+// //   //   if (!regionOptions.length) return;
+// //   //   if (!selectedCountry || !regionOptions.find(o => o.value === selectedCountry)) {
+// //   //     setSelectedCountry(regionOptions[0].value);
+// //   //   }
+// //   // }, [regionOptions, selectedCountry]);
+
+// // useEffect(() => {
+// //   if (!regionOptions.length) return;
+// //   if (!selectedPlatform || !regionOptions.find(o => o.value === selectedPlatform)) {
+// //     setSelectedPlatform(regionOptions[0].value);
+// //   }
+// // }, [regionOptions, selectedPlatform]);
+
+
+// // // const onRegionChange = (val: string) => {
+// // //   setSelectedPlatform(val);
+// // //   const platform = val as PlatformId;
+// // //   const countryNameForRoutes = platformToCountryName(platform);
+
+// // //   if (typeof window !== "undefined") {
+// // //     localStorage.setItem("selectedPlatform", val);
+// // //     localStorage.removeItem("chatHistory");
+// // //   }
+
+// // //   handleRegionChangeNext({
+// // //     value: countryNameForRoutes,   // still pass a country-like string here
+// // //     ranged: undefined,             // default "QTD" inside util; set if you want.
+// // //     uploadHistory,
+// // //     push: router.push,
+// // //     onAddMore: () => router.push("/settings/countries"),
+// // //     onBeforeNavigate: () => localStorage.removeItem("chatHistory"),
+// // //   });
+// // // };
+
+
+// //   // Current route params for dynamic paths
+
+// //   const onRegionChange = (val: string) => {
+// //   // Special case: Shopify
+// //   if (val === "shopify") {
+// //     // ✅ This is the redirect you wanted “when I click Shopify”
+// //     router.push("/orders");
+// //     return;
+// //   }
+
+// //   // All other platforms / regions behave as before
+// //   setSelectedCountry(val);
+// //   if (typeof window !== "undefined") {
+// //     localStorage.setItem("selectedCountry", val);
 // //     localStorage.removeItem("chatHistory");
 // //   }
 
 // //   handleRegionChangeNext({
-// //     value: countryNameForRoutes,   // still pass a country-like string here
-// //     ranged: undefined,             // default "QTD" inside util; set if you want.
+// //     value: val,
+// //     ranged: undefined,
 // //     uploadHistory,
 // //     push: router.push,
 // //     onAddMore: () => router.push("/settings/countries"),
@@ -105,292 +133,264 @@
 // // };
 
 
-//   // Current route params for dynamic paths
-  
-//   const onRegionChange = (val: string) => {
-//   // Special case: Shopify
-//   if (val === "shopify") {
-//     // ✅ This is the redirect you wanted “when I click Shopify”
-//     router.push("/orders");
-//     return;
-//   }
+// //   const routeParams = useParams();
+// //   const defaultRanged = "QTD";
+// //   const defaultMonth = "NA";
+// //   const defaultYear = "NA";
+// //   // const currentParams = {
+// //   //   ranged: (routeParams?.ranged as string) || defaultRanged,
+// //   //   countryName: (routeParams?.countryName as string) || selectedCountry || "us",
+// //   //   month: (routeParams?.month as string) || defaultMonth,
+// //   //   year: (routeParams?.year as string) || defaultYear,
+// //   // };
 
-//   // All other platforms / regions behave as before
-//   setSelectedCountry(val);
-//   if (typeof window !== "undefined") {
-//     localStorage.setItem("selectedCountry", val);
-//     localStorage.removeItem("chatHistory");
-//   }
+// // const currentPlatform = (routeParams?.platform as string) || selectedPlatform || "global";
+// // // if your routes still use /country/:countryName/, we still have to provide countryName:
+// // const currentCountryName = platformToCountryName(currentPlatform as PlatformId);
 
-//   handleRegionChangeNext({
-//     value: val,
-//     ranged: undefined,
-//     uploadHistory,
-//     push: router.push,
-//     onAddMore: () => router.push("/settings/countries"),
-//     onBeforeNavigate: () => localStorage.removeItem("chatHistory"),
-//   });
-// };
-
-  
-//   const routeParams = useParams();
-//   const defaultRanged = "QTD";
-//   const defaultMonth = "NA";
-//   const defaultYear = "NA";
-//   // const currentParams = {
-//   //   ranged: (routeParams?.ranged as string) || defaultRanged,
-//   //   countryName: (routeParams?.countryName as string) || selectedCountry || "us",
-//   //   month: (routeParams?.month as string) || defaultMonth,
-//   //   year: (routeParams?.year as string) || defaultYear,
-//   // };
-
-// const currentPlatform = (routeParams?.platform as string) || selectedPlatform || "global";
-// // if your routes still use /country/:countryName/, we still have to provide countryName:
-// const currentCountryName = platformToCountryName(currentPlatform as PlatformId);
-
-// const currentParams = {
-//   ranged: (routeParams?.ranged as string) || defaultRanged,
-//   countryName: currentCountryName,
-//   month: (routeParams?.month as string) || defaultMonth,
-//   year: (routeParams?.year as string) || defaultYear,
-// };
+// // const currentParams = {
+// //   ranged: (routeParams?.ranged as string) || defaultRanged,
+// //   countryName: currentCountryName,
+// //   month: (routeParams?.month as string) || defaultMonth,
+// //   year: (routeParams?.year as string) || defaultYear,
+// // };
 
 
-//   // Sections with sub-items
-//   const sections: NavSection[] = [
-//     {
-//       key: "dashboard",
-//       name: "Dashboard",
-//       icon: <LuLayoutDashboard className="h-6 w-6" />,
-//       subItems: [
-//         { name: "Profits", path: ({ ranged, countryName, month, year }) => `/country/${ranged}/${countryName}/${month}/${year}`,},
+// //   // Sections with sub-items
+// //   const sections: NavSection[] = [
+// //     {
+// //       key: "dashboard",
+// //       name: "Dashboard",
+// //       icon: <LuLayoutDashboard className="h-6 w-6" />,
+// //       subItems: [
+// //         { name: "Profits", path: ({ ranged, countryName, month, year }) => `/country/${ranged}/${countryName}/${month}/${year}`,},
 
-//         { name: "SKU-Wise Profit", path: (params: { productname?: string; countryName: string; month: string; year: string }) => `/productwiseperformance/${params.productname ?? "Classic"}/${params.countryName}/${params.month}/${params.year}` },
+// //         { name: "SKU-Wise Profit", path: (params: { productname?: string; countryName: string; month: string; year: string }) => `/productwiseperformance/${params.productname ?? "Classic"}/${params.countryName}/${params.month}/${params.year}` },
 
-//         { name: "Cash Flow", path: ({
-//         countryName,
-//         month,
-//         year,
-//       }: {
-//         countryName: string;
-//         month: string;
-//         year: string;
-//       }) =>
-//         `/cashflow/${encodeURIComponent(countryName)}/${encodeURIComponent(
-//           month
-//         )}/${encodeURIComponent(year)}` },
-//       ],
-//     },
-//     {
-//       key: "business-intelligence",
-//       name: "Business Intelligence",
-//       icon: <FaBrain className="h-4 w-4" />,
-//       subItems: [
-//         { name: "Business Insights", path: `/improvements/${currentParams.ranged}/${currentParams.countryName}/${currentParams.month}/${currentParams.year}` },
-//         { name: "Chatbot", path: `/chatbot/${currentParams.ranged}/${currentParams.countryName}/${currentParams.month}/${currentParams.year}` },
-//         { name: "Inventory Forecast", path: `/inventoryChoice/${currentParams.countryName}/${currentParams.month}/${currentParams.year}` },
-//         { name: "P/L Forecast", path: `/pnlforecast/${currentParams.countryName}/${currentParams.month}/${currentParams.year}` },
-//       ],
-//     },
-//     {
-//       key: "inventory",
-//       name: "Inventory",
-//       icon: <BsBoxes className="h-6 w-6" />,
-//       subItems: [
-//         { name: "Input Cost", path: `/inputCost/${currentParams.countryName}/${currentParams.month}/${currentParams.year}` },
-//         { name: "Current Inventory", path: `/currentInventory/${currentParams.countryName}/${currentParams.month}/${currentParams.year}` },
-//         { name: "Dispatches", path: `/dispatch/${currentParams.countryName}/${currentParams.month}/${currentParams.year}` },
-//         { name: "PO", path: `/purchase-order/${currentParams.countryName}/${currentParams.month}/${currentParams.year}` },
-//       ],
-//     },
-//     {
-//       key: "recon",
-//       name: "Recon",
-//       icon: <FaBalanceScale className="h-4 w-4" />,
-//       subItems: [
-//         // { name: "Error Status", path: `/errorPage/${currentParams.countryName}/${currentParams.month}/${currentParams.year}` },
-//         { name: "Referral Fees", path: ({
-//         countryName,
-//         month,
-//         year,
-//       }: {
-//         countryName: string;
-//         month: string;
-//         year: string;
-//       }) =>
-//         `/referral-fees/${encodeURIComponent(countryName)}/${encodeURIComponent(
-//           month
-//         )}/${encodeURIComponent(year)}`},
-//         { name: "FBA Fees", path: `/fba/${currentParams.countryName}/${currentParams.month}/${currentParams.year}` },
-//       ],
-//     },
-//     // Integrations as a non-collapsible item (or handle modal separately)
-//     // {
-//     //   key: "integrations",
-//     //   name: "Integrations",
-//     //   icon: <FaPlug className="h-4 w-4" />,
-//     //   subItems: [], // No sub-items, can add onClick for modal if needed
-//     // },
-//   ];
+// //         { name: "Cash Flow", path: ({
+// //         countryName,
+// //         month,
+// //         year,
+// //       }: {
+// //         countryName: string;
+// //         month: string;
+// //         year: string;
+// //       }) =>
+// //         `/cashflow/${encodeURIComponent(countryName)}/${encodeURIComponent(
+// //           month
+// //         )}/${encodeURIComponent(year)}` },
+// //       ],
+// //     },
+// //     {
+// //       key: "business-intelligence",
+// //       name: "Business Intelligence",
+// //       icon: <FaBrain className="h-4 w-4" />,
+// //       subItems: [
+// //         { name: "Business Insights", path: `/improvements/${currentParams.ranged}/${currentParams.countryName}/${currentParams.month}/${currentParams.year}` },
+// //         { name: "Chatbot", path: `/chatbot/${currentParams.ranged}/${currentParams.countryName}/${currentParams.month}/${currentParams.year}` },
+// //         { name: "Inventory Forecast", path: `/inventoryChoice/${currentParams.countryName}/${currentParams.month}/${currentParams.year}` },
+// //         { name: "P/L Forecast", path: `/pnlforecast/${currentParams.countryName}/${currentParams.month}/${currentParams.year}` },
+// //       ],
+// //     },
+// //     {
+// //       key: "inventory",
+// //       name: "Inventory",
+// //       icon: <BsBoxes className="h-6 w-6" />,
+// //       subItems: [
+// //         { name: "Input Cost", path: `/inputCost/${currentParams.countryName}/${currentParams.month}/${currentParams.year}` },
+// //         { name: "Current Inventory", path: `/currentInventory/${currentParams.countryName}/${currentParams.month}/${currentParams.year}` },
+// //         { name: "Dispatches", path: `/dispatch/${currentParams.countryName}/${currentParams.month}/${currentParams.year}` },
+// //         { name: "PO", path: `/purchase-order/${currentParams.countryName}/${currentParams.month}/${currentParams.year}` },
+// //       ],
+// //     },
+// //     {
+// //       key: "recon",
+// //       name: "Recon",
+// //       icon: <FaBalanceScale className="h-4 w-4" />,
+// //       subItems: [
+// //         // { name: "Error Status", path: `/errorPage/${currentParams.countryName}/${currentParams.month}/${currentParams.year}` },
+// //         { name: "Referral Fees", path: ({
+// //         countryName,
+// //         month,
+// //         year,
+// //       }: {
+// //         countryName: string;
+// //         month: string;
+// //         year: string;
+// //       }) =>
+// //         `/referral-fees/${encodeURIComponent(countryName)}/${encodeURIComponent(
+// //           month
+// //         )}/${encodeURIComponent(year)}`},
+// //         { name: "FBA Fees", path: `/fba/${currentParams.countryName}/${currentParams.month}/${currentParams.year}` },
+// //       ],
+// //     },
+// //     // Integrations as a non-collapsible item (or handle modal separately)
+// //     // {
+// //     //   key: "integrations",
+// //     //   name: "Integrations",
+// //     //   icon: <FaPlug className="h-4 w-4" />,
+// //     //   subItems: [], // No sub-items, can add onClick for modal if needed
+// //     // },
+// //   ];
 
-//   // Toggle states for sections
-//   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
-//     dashboard: true,
-//     "business-intelligence": true,
-//     inventory: true,
-//     recon: true,
-//     integrations: false,
-//   });
+// //   // Toggle states for sections
+// //   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
+// //     dashboard: true,
+// //     "business-intelligence": true,
+// //     inventory: true,
+// //     recon: true,
+// //     integrations: false,
+// //   });
 
-//   const toggleSection = useCallback((key: string) => {
-//     setOpenSections(prev => ({ ...prev, [key]: !prev[key] }));
-//   }, []);
+// //   const toggleSection = useCallback((key: string) => {
+// //     setOpenSections(prev => ({ ...prev, [key]: !prev[key] }));
+// //   }, []);
 
-//   const isActive = useCallback((path: string | ((params: typeof currentParams) => string)) => {
-//     const resolvedPath = typeof path === 'function' ? path(currentParams) : path;
-//     return pathname === resolvedPath;
-//   }, [pathname, currentParams]);
+// //   const isActive = useCallback((path: string | ((params: typeof currentParams) => string)) => {
+// //     const resolvedPath = typeof path === 'function' ? path(currentParams) : path;
+// //     return pathname === resolvedPath;
+// //   }, [pathname, currentParams]);
 
-//   // Mobile hamburger button (shown when sidebar closed on mobile)
-//   const showHamburger = !isExpanded && !isHovered && !isMobileOpen;
+// //   // Mobile hamburger button (shown when sidebar closed on mobile)
+// //   const showHamburger = !isExpanded && !isHovered && !isMobileOpen;
 
-//   return (
-//     <>
-//       {/* Mobile Hamburger Button */}
-//       {/* {showHamburger && (
-//         <button
-//           onClick={() => setIsMobileOpen(true)}
-//           className="fixed top-4 left-4 z-[1100] p-2 bg-[#5EA68E] text-white rounded-md md:hidden"
-//           aria-label="Open sidebar"
-//         >
-//           <FaBars className="h-5 w-5" />
-//         </button>
-//       )} */}
+// //   return (
+// //     <>
+// //       {/* Mobile Hamburger Button */}
+// //       {/* {showHamburger && (
+// //         <button
+// //           onClick={() => setIsMobileOpen(true)}
+// //           className="fixed top-4 left-4 z-[1100] p-2 bg-[#5EA68E] text-white rounded-md md:hidden"
+// //           aria-label="Open sidebar"
+// //         >
+// //           <FaBars className="h-5 w-5" />
+// //         </button>
+// //       )} */}
 
-//       {/* Overlay for mobile */}
-//       {isMobileOpen && (
-//         <div
-//           className="fixed inset-0 bg-black/30 z-[1000] md:hidden"
-//           onClick={() => setIsMobileOpen(false)}
-//         />
-//       )}
+// //       {/* Overlay for mobile */}
+// //       {isMobileOpen && (
+// //         <div
+// //           className="fixed inset-0 bg-black/30 z-[1000] md:hidden"
+// //           onClick={() => setIsMobileOpen(false)}
+// //         />
+// //       )}
 
-//       <aside
-//         className={`fixed mt-16 flex flex-col lg:mt-0 top-0 px-4 left-0 bg-white text-gray-900 h-screen transition-all duration-300 ease-in-out 
-//           ${isExpanded || isMobileOpen ? "w-[290px]" : isHovered ? "w-[290px]" : "w-[90px]"}
-//           ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
-//           lg:translate-x-0 font-lato`}
-//         onMouseEnter={() => !isExpanded && setIsHovered(true)}
-//         onMouseLeave={() => setIsHovered(false)}
-//       >
-//         {/* Logo */}
-//         <div className={`py-8 flex ${!isExpanded && !isHovered ? "lg:justify-center" : "justify-start"}`}>
-//           <Link href="/">
-//             {isExpanded || isHovered || isMobileOpen ? (
-//               <>
-//                 <Image className="dark:hidden" src="/images/logo/Logo_Phormula.png" alt="Logo" width={240} height={40} />
-//                 <Image className="hidden dark:block" src="/images/logo/logo-dark.svg" alt="Logo" width={150} height={40} />
-//               </>
-//             ) : (
-//               <Image src="/images/logo/Logo_small.png" alt="Logo" width={50} height={50} />
-//             )}
-//           </Link>
-//         </div>
+// //       <aside
+// //         className={`fixed mt-16 flex flex-col lg:mt-0 top-0 px-4 left-0 bg-white text-gray-900 h-screen transition-all duration-300 ease-in-out 
+// //           ${isExpanded || isMobileOpen ? "w-[290px]" : isHovered ? "w-[290px]" : "w-[90px]"}
+// //           ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
+// //           lg:translate-x-0 font-lato`}
+// //         onMouseEnter={() => !isExpanded && setIsHovered(true)}
+// //         onMouseLeave={() => setIsHovered(false)}
+// //       >
+// //         {/* Logo */}
+// //         <div className={`py-8 flex ${!isExpanded && !isHovered ? "lg:justify-center" : "justify-start"}`}>
+// //           <Link href="/">
+// //             {isExpanded || isHovered || isMobileOpen ? (
+// //               <>
+// //                 <Image className="dark:hidden" src="/images/logo/Logo_Phormula.png" alt="Logo" width={240} height={40} />
+// //                 <Image className="hidden dark:block" src="/images/logo/logo-dark.svg" alt="Logo" width={150} height={40} />
+// //               </>
+// //             ) : (
+// //               <Image src="/images/logo/Logo_small.png" alt="Logo" width={50} height={50} />
+// //             )}
+// //           </Link>
+// //         </div>
 
-//         {/* Region Select */}
-//         {(isExpanded || isHovered || isMobileOpen) && regionOptions.length > 0 && (
-//           // <RegionSelect
-//           //   selectedCountry={selectedCountry}
-//           //   options={regionOptions}
-//           //   onChange={onRegionChange}
-//           //   className="mb-2 px-2 py-1 border border-gray-300 rounded text-sm bg-transparent text-gray-800 focus:outline-none focus:ring-1 focus:ring-[#5EA68E]"
-//           // />
+// //         {/* Region Select */}
+// //         {(isExpanded || isHovered || isMobileOpen) && regionOptions.length > 0 && (
+// //           // <RegionSelect
+// //           //   selectedCountry={selectedCountry}
+// //           //   options={regionOptions}
+// //           //   onChange={onRegionChange}
+// //           //   className="mb-2 px-2 py-1 border border-gray-300 rounded text-sm bg-transparent text-gray-800 focus:outline-none focus:ring-1 focus:ring-[#5EA68E]"
+// //           // />
 
-//           <RegionSelect
-//   label="PLATFORM"
-//   selectedCountry={selectedPlatform}        // actually platform
-//   options={regionOptions}                  // built from tokens
-//   onChange={onRegionChange}
-//   className="mb-2 px-2 py-1 border border-gray-300 rounded text-sm bg-transparent text-gray-800 focus:outline-none focus:ring-1 focus:ring-[#5EA68E]"
-// />
+// //           <RegionSelect
+// //   label="PLATFORM"
+// //   selectedCountry={selectedPlatform}        // actually platform
+// //   options={regionOptions}                  // built from tokens
+// //   onChange={onRegionChange}
+// //   className="mb-2 px-2 py-1 border border-gray-300 rounded text-sm bg-transparent text-gray-800 focus:outline-none focus:ring-1 focus:ring-[#5EA68E]"
+// // />
 
-//         )}
+// //         )}
 
-//         {/* Navigation Sections */}
-//         <div className="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar px-2">
-//           <nav className="mb-6">
-//             <div className="flex flex-col gap-1">
-//               {sections.map((section) => {
-//                 const resolvedSubPaths = section.subItems.map(sub => 
-//                   typeof sub.path === 'function' ? sub.path(currentParams) : sub.path
-//                 );
-//                 const isSectionActive = resolvedSubPaths.some(path => isActive(path as any));
+// //         {/* Navigation Sections */}
+// //         <div className="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar px-2">
+// //           <nav className="mb-6">
+// //             <div className="flex flex-col gap-1">
+// //               {sections.map((section) => {
+// //                 const resolvedSubPaths = section.subItems.map(sub => 
+// //                   typeof sub.path === 'function' ? sub.path(currentParams) : sub.path
+// //                 );
+// //                 const isSectionActive = resolvedSubPaths.some(path => isActive(path as any));
 
-//                 return (
-//                   <div key={section.key} className="flex flex-col">
-//                     {/* Section Header */}
-//                     <button
-//                       onClick={() => toggleSection(section.key)}
-//                       className={`flex items-center justify-between w-full px-2 py-2 text-sm text-left text-[#5EA68E] font-semibold rounded hover:bg-[#5EA68E]/20 transition-colors cursor-pointer group ${
-//                         isSectionActive ? 'bg-[#5EA68E]/10' : ''
-//                       }`}
-//                     >
-//                       <div className="flex items-center">
-//                         {section.icon}
-//                         {(isExpanded || isHovered || isMobileOpen) && (
-//                           <span className="ml-2">{section.name}</span>
-//                         )}
-//                       </div>
-//                       {(isExpanded || isHovered || isMobileOpen) && (
-//                         <FaChevronDown 
-//                           className={`h-3 w-3 transition-transform duration-200 ${
-//                             openSections[section.key] ? 'rotate-0' : 'rotate-90'
-//                           }`} 
-//                         />
-//                       )}
-//                     </button>
+// //                 return (
+// //                   <div key={section.key} className="flex flex-col">
+// //                     {/* Section Header */}
+// //                     <button
+// //                       onClick={() => toggleSection(section.key)}
+// //                       className={`flex items-center justify-between w-full px-2 py-2 text-sm text-left text-[#5EA68E] font-semibold rounded hover:bg-[#5EA68E]/20 transition-colors cursor-pointer group ${
+// //                         isSectionActive ? 'bg-[#5EA68E]/10' : ''
+// //                       }`}
+// //                     >
+// //                       <div className="flex items-center">
+// //                         {section.icon}
+// //                         {(isExpanded || isHovered || isMobileOpen) && (
+// //                           <span className="ml-2">{section.name}</span>
+// //                         )}
+// //                       </div>
+// //                       {(isExpanded || isHovered || isMobileOpen) && (
+// //                         <FaChevronDown 
+// //                           className={`h-3 w-3 transition-transform duration-200 ${
+// //                             openSections[section.key] ? 'rotate-0' : 'rotate-90'
+// //                           }`} 
+// //                         />
+// //                       )}
+// //                     </button>
 
-//                     {/* Sub-items */}
-//                     {openSections[section.key] && (isExpanded || isHovered || isMobileOpen) && (
-//                       <div className="ml-6 mt-1 space-y-1 overflow-hidden">
-//                         {section.subItems.map((subItem, idx) => {
-//                           const resolvedPath = typeof subItem.path === 'function' ? subItem.path(currentParams) : subItem.path;
-//                           return (
-//                             <Link
-//                               key={idx}
-//                               href={resolvedPath}
-//                               className={`block px-2 py-1.5 text-sm text-gray-700 hover:bg-[#5EA68E]/20 rounded transition-colors ${
-//                                 isActive(subItem.path as any) ? 'bg-[#5EA68E]/20 text-[#5EA68E] font-medium' : ''
-//                               }`}
-//                             >
-//                               {subItem.name}
-//                             </Link>
-//                           );
-//                         })}
-//                       </div>
-//                     )}
-//                   </div>
-//                 );
-//               })}
-//             </div>
-//           </nav>
-//         </div>
+// //                     {/* Sub-items */}
+// //                     {openSections[section.key] && (isExpanded || isHovered || isMobileOpen) && (
+// //                       <div className="ml-6 mt-1 space-y-1 overflow-hidden">
+// //                         {section.subItems.map((subItem, idx) => {
+// //                           const resolvedPath = typeof subItem.path === 'function' ? subItem.path(currentParams) : subItem.path;
+// //                           return (
+// //                             <Link
+// //                               key={idx}
+// //                               href={resolvedPath}
+// //                               className={`block px-2 py-1.5 text-sm text-gray-700 hover:bg-[#5EA68E]/20 rounded transition-colors ${
+// //                                 isActive(subItem.path as any) ? 'bg-[#5EA68E]/20 text-[#5EA68E] font-medium' : ''
+// //                               }`}
+// //                             >
+// //                               {subItem.name}
+// //                             </Link>
+// //                           );
+// //                         })}
+// //                       </div>
+// //                     )}
+// //                   </div>
+// //                 );
+// //               })}
+// //             </div>
+// //           </nav>
+// //         </div>
 
-//         {/* Mobile Close Button */}
-//         {isMobileOpen && (
-//           <button
-//             onClick={() => setIsMobileOpen(false)}
-//             className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 md:hidden"
-//           >
-//             <FaTimes className="h-5 w-5" />
-//           </button>
-//         )}
-//       </aside>
-//     </>
-//   );
-// };
+// //         {/* Mobile Close Button */}
+// //         {isMobileOpen && (
+// //           <button
+// //             onClick={() => setIsMobileOpen(false)}
+// //             className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 md:hidden"
+// //           >
+// //             <FaTimes className="h-5 w-5" />
+// //           </button>
+// //         )}
+// //       </aside>
+// //     </>
+// //   );
+// // };
 
-// export default AppSidebar;
+// // export default AppSidebar;
 
 
 
@@ -457,13 +457,13 @@ import { useShopifyStore } from "@/lib/utils/useShopifyStore";
 type NavSubItem = {
   name: string;
   path:
-    | string
-    | ((params: {
-        ranged: string;
-        countryName: string;
-        month: string;
-        year: string;
-      }) => string);
+  | string
+  | ((params: {
+    ranged: string;
+    countryName: string;
+    month: string;
+    year: string;
+  }) => string);
 };
 
 type NavSection = {
@@ -484,6 +484,30 @@ const AppSidebar: React.FC = () => {
   const pathname = usePathname();
   const router = useRouter();
 
+  useEffect(() => {
+    setIsMobileOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+
+    const originalOverflow = document.body.style.overflow;
+
+    if (isMobileOpen) {
+      // 🔒 Sidebar open → background scroll band
+      document.body.style.overflow = "hidden";
+    } else {
+      // 🔓 Sidebar band → normal scroll
+      document.body.style.overflow = originalOverflow || "";
+    }
+
+    // safety cleanup (agar component unmount ho jaye)
+    return () => {
+      document.body.style.overflow = originalOverflow || "";
+    };
+  }, [isMobileOpen]);
+
+
   // Shopify store info (shop, token, email)
   const { shopifyStore } = useShopifyStore();
 
@@ -495,6 +519,10 @@ const AppSidebar: React.FC = () => {
   // ===== Platform data (Shopify + future Amazon) =====
   const connectedPlatforms = useConnectedPlatforms();
   const regionOptions: RegionOption[] = buildPlatformOptions(connectedPlatforms);
+
+  // console.log("Sidebar connectedPlatforms:", connectedPlatforms);
+  // console.log("Sidebar regionOptions:", regionOptions);
+
 
   // ===== Selected platform =====
   const [selectedPlatform, setSelectedPlatform] = useState<string>(() => {
@@ -522,7 +550,7 @@ const AppSidebar: React.FC = () => {
 
     // Shopify → redirect with query params if available
     if (platform === "shopify") {
-      console.log("Shopify selected, store:", shopifyStore);
+      // console.log("Shopify selected, store:", shopifyStore);
 
       if (shopifyStore?.shop && shopifyStore?.token && shopifyStore?.email) {
         const params = new URLSearchParams({
@@ -600,8 +628,7 @@ const AppSidebar: React.FC = () => {
             month: string;
             year: string;
           }) =>
-            `/productwiseperformance/${
-              params.productname ?? "Classic"
+            `/productwiseperformance/${params.productname || " "
             }/${params.countryName}/${params.month}/${params.year}`,
         },
         {
@@ -624,7 +651,7 @@ const AppSidebar: React.FC = () => {
     {
       key: "business-intelligence",
       name: "Business Intelligence",
-      icon: <FaBrain className="h-4 w-4" />,
+      icon: <FaBrain className="h-6 w-6" />,
       subItems: [
         {
           name: "Business Insights",
@@ -670,7 +697,7 @@ const AppSidebar: React.FC = () => {
     {
       key: "recon",
       name: "Recon",
-      icon: <FaBalanceScale className="h-4 w-4" />,
+      icon: <FaBalanceScale className="h-6 w-6" />,
       subItems: [
         {
           name: "Referral Fees",
@@ -723,90 +750,66 @@ const AppSidebar: React.FC = () => {
   return (
     <>
       {/* Overlay for mobile */}
-      {isMobileOpen && (
+      {/* {isMobileOpen && (
         <div
           className="fixed inset-0 bg-black/30 z-[1000] md:hidden"
           onClick={() => setIsMobileOpen(false)}
         />
-      )}
+      )} */}
 
       <aside
-        className={`fixed mt-16 flex flex-col lg:mt-0 top-0 px-4 left-0 bg-white text-gray-900 h-screen transition-all duration-300 ease-in-out 
-          ${isExpanded || isMobileOpen ? "w-[290px]" : isHovered ? "w-[290px]" : "w-[90px]"}
-          ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
-          lg:translate-x-0 font-lato`}
+        className={`fixed mt-16 flex flex-col lg:mt-0 top-0 px-4 left-0 bg-white text-gray-900 h-screen overflow-y-auto transition-all duration-300 ease-in-out z-[1100]
+    ${isMobileOpen
+            ? "w-full" // 📱 mobile pe full width
+            : isExpanded || isHovered
+              ? "w-[290px]" // 🖥️ desktop expanded
+              : "w-[90px]"} // 🖥️ desktop collapsed
+    ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
+    lg:translate-x-0 font-lato`}
         onMouseEnter={() => !isExpanded && setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
         {/* Logo */}
-        <div
-          className={`py-8 flex ${
-            !isExpanded && !isHovered ? "lg:justify-center" : "justify-start"
-          }`}
-        >
+        <div className={`py-8 flex ${!isExpanded && !isHovered ? "lg:justify-center" : "justify-start"}`}>
           <Link href="/">
             {isExpanded || isHovered || isMobileOpen ? (
               <>
-                <Image
-                  className="dark:hidden"
-                  src="/images/logo/Logo_Phormula.png"
-                  alt="Logo"
-                  width={240}
-                  height={40}
-                />
-                <Image
-                  className="hidden dark:block"
-                  src="/images/logo/logo-dark.svg"
-                  alt="Logo"
-                  width={150}
-                  height={40}
-                />
+                <Image className="dark:hidden hidden lg:block" src="/images/logo/Logo_Phormula.png" alt="Logo" width={240} height={40} />
+                <Image className="hidden dark:block" src="/images/logo/logo-dark.svg" alt="Logo" width={150} height={40} />
               </>
             ) : (
-              <Image
-                src="/images/logo/Logo_small.png"
-                alt="Logo"
-                width={50}
-                height={50}
-              />
+              <Image src="/images/logo/Logo_small.png" alt="Logo" width={50} height={50} />
             )}
           </Link>
         </div>
-
         {/* Platform Select */}
-        {(isExpanded || isHovered || isMobileOpen) &&
-          regionOptions.length > 0 && (
-            <RegionSelect
-              label="PLATFORM"
-              selectedCountry={selectedPlatform} // actually platform
-              options={regionOptions} // built from tokens
-              onChange={onRegionChange}
-              className="mb-2 px-2 py-1 border border-gray-300 rounded text-sm bg-transparent text-gray-800 focus:outline-none focus:ring-1 focus:ring-[#5EA68E]"
-            />
-          )}
+        {(isExpanded || isHovered || isMobileOpen) && regionOptions.length > 0 && (
+          <RegionSelect
+            label="PLATFORM"
+            selectedCountry={selectedPlatform}
+            options={regionOptions}
+            onChange={onRegionChange}
+            className="mb-2 px-2 py-1 rounded text-sm bg-transparent text-gray-800 focus:outline-none focus:ring-1 focus:ring-[#5EA68E]"
+          />
+        )}
 
         {/* Navigation Sections */}
         <div className="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar px-2">
           <nav className="mb-6">
             <div className="flex flex-col gap-1">
               {sections.map((section) => {
-                const resolvedSubPaths = section.subItems.map((sub) =>
-                  typeof sub.path === "function"
-                    ? sub.path(currentParams)
-                    : sub.path
+                const resolvedSubPaths = section.subItems.map(sub =>
+                  typeof sub.path === 'function' ? sub.path(currentParams) : sub.path
                 );
-                const isSectionActive = resolvedSubPaths.some((path) =>
-                  isActive(path as any)
-                );
+                const isSectionActive = resolvedSubPaths.some(path => isActive(path as any));
 
                 return (
                   <div key={section.key} className="flex flex-col">
                     {/* Section Header */}
                     <button
                       onClick={() => toggleSection(section.key)}
-                      className={`flex items-center justify-between w-full px-2 py-2 text-sm text-left text-[#5EA68E] font-semibold rounded hover:bg-[#5EA68E]/20 transition-colors cursor-pointer group ${
-                        isSectionActive ? "bg-[#5EA68E]/10" : ""
-                      }`}
+                      className={`flex items-center justify-between w-full px-2 py-2 text-sm text-left text-[#5EA68E] font-semibold rounded hover:bg-[#5EA68E]/20 transition-colors cursor-pointer group ${isSectionActive ? 'bg-[#5EA68E]/10' : ''
+                        }`}
                     >
                       <div className="flex items-center">
                         {section.icon}
@@ -816,40 +819,30 @@ const AppSidebar: React.FC = () => {
                       </div>
                       {(isExpanded || isHovered || isMobileOpen) && (
                         <FaChevronDown
-                          className={`h-3 w-3 transition-transform duration-200 ${
-                            openSections[section.key]
-                              ? "rotate-0"
-                              : "rotate-90"
-                          }`}
+                          className={`h-3 w-3 transition-transform duration-200 ${openSections[section.key] ? 'rotate-0' : 'rotate-90'
+                            }`}
                         />
                       )}
                     </button>
 
                     {/* Sub-items */}
-                    {openSections[section.key] &&
-                      (isExpanded || isHovered || isMobileOpen) && (
-                        <div className="ml-6 mt-1 space-y-1 overflow-hidden">
-                          {section.subItems.map((subItem, idx) => {
-                            const resolvedPath =
-                              typeof subItem.path === "function"
-                                ? subItem.path(currentParams)
-                                : subItem.path;
-                            return (
-                              <Link
-                                key={idx}
-                                href={resolvedPath}
-                                className={`block px-2 py-1.5 text-sm text-gray-700 hover:bg-[#5EA68E]/20 rounded transition-colors ${
-                                  isActive(subItem.path as any)
-                                    ? "bg-[#5EA68E]/20 text-[#5EA68E] font-medium"
-                                    : ""
+                    {openSections[section.key] && (isExpanded || isHovered || isMobileOpen) && (
+                      <div className="ml-6 mt-1 space-y-1 overflow-hidden">
+                        {section.subItems.map((subItem, idx) => {
+                          const resolvedPath = typeof subItem.path === 'function' ? subItem.path(currentParams) : subItem.path;
+                          return (
+                            <Link
+                              key={idx}
+                              href={resolvedPath}
+                              className={`block px-2 py-1.5 text-sm text-gray-700 hover:bg-[#5EA68E]/20 rounded transition-colors ${isActive(subItem.path as any) ? 'bg-[#5EA68E]/20 text-[#5EA68E] font-medium' : ''
                                 }`}
-                              >
-                                {subItem.name}
-                              </Link>
-                            );
-                          })}
-                        </div>
-                      )}
+                            >
+                              {subItem.name}
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -872,3 +865,544 @@ const AppSidebar: React.FC = () => {
 };
 
 export default AppSidebar;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// // src/components/sidebar/AppSidebar.tsx
+// "use client";
+
+// import React, { useState, useEffect, useCallback } from "react";
+// import Link from "next/link";
+// import Image from "next/image";
+// import { useParams, usePathname, useRouter } from "next/navigation";
+// import { useSidebar } from "../context/SidebarContext";
+// import { FaChevronDown, FaTimes, FaBrain, FaBalanceScale } from "react-icons/fa";
+// import RegionSelect, { RegionOption } from "@/components/sidebar/RegionSelect";
+// import { LuLayoutDashboard } from "react-icons/lu";
+// import { BsBoxes } from "react-icons/bs";
+// import {
+//   useGetProfileCountriesQuery,
+//   useGetUploadHistoryQuery,
+// } from "@/lib/api/feePreviewApi";
+
+// import {
+//   buildPlatformOptions,
+//   platformToCountryName,
+//   PlatformId,
+// } from "@/lib/utils/platforms";
+// import { useConnectedPlatforms } from "@/lib/utils/useConnectedPlatforms";
+// import { useShopifyStore } from "@/lib/utils/useShopifyStore";
+// import { handleRegionChangeNext } from "@/lib/utils/handleRegionChange-next";
+
+// type NavSubItem = {
+//   name: string;
+//   path:
+//     | string
+//     | ((params: {
+//         ranged: string;
+//         countryName: string;
+//         month: string;
+//         year: string;
+//       }) => string);
+// };
+
+// type NavSection = {
+//   key: string;
+//   name: string;
+//   icon: React.ReactNode;
+//   subItems: NavSubItem[];
+// };
+
+// const AppSidebar: React.FC = () => {
+//   const {
+//     isExpanded,
+//     isMobileOpen,
+//     isHovered,
+//     setIsHovered,
+//     setIsMobileOpen,
+//   } = useSidebar();
+
+//   const pathname = usePathname();
+//   const router = useRouter();
+
+//   const { shopifyStore } = useShopifyStore();
+
+//   useGetProfileCountriesQuery(); // unused in this snippet, but okay
+//   const { data: uploadsData } = useGetUploadHistoryQuery();
+//   const uploadHistory = uploadsData?.uploads ?? [];
+
+//   const connectedPlatforms = useConnectedPlatforms();
+//   const regionOptions: RegionOption[] = buildPlatformOptions(connectedPlatforms);
+
+//   const [selectedPlatform, setSelectedPlatform] = useState<string>(() => {
+//     if (typeof window !== "undefined") {
+//       const saved = localStorage.getItem("selectedPlatform");
+//       if (saved) return saved;
+//     }
+//     return "global";
+//   });
+
+//   useEffect(() => {
+//     if (!regionOptions.length) return;
+//     if (
+//       !selectedPlatform ||
+//       !regionOptions.find((o) => o.value === selectedPlatform)
+//     ) {
+//       setSelectedPlatform(regionOptions[0].value);
+//     }
+//   }, [regionOptions, selectedPlatform]);
+
+//   // ========= Handle PLATFORM change =========
+//   // const onRegionChange = (val: string) => {
+//   //   const platform = val as PlatformId;
+//   //   setSelectedPlatform(val);
+
+//   //   if (typeof window !== "undefined") {
+//   //     localStorage.setItem("selectedPlatform", val);
+//   //     localStorage.removeItem("chatHistory");
+//   //   }
+
+//   //   // --- Shopify: go to Orders page with query params ---
+//   //   if (platform === "shopify") {
+//   //     if (shopifyStore?.shop && shopifyStore?.token && shopifyStore?.email) {
+//   //       const params = new URLSearchParams({
+//   //         shop: shopifyStore.shop,
+//   //         token: shopifyStore.token,
+//   //         email: shopifyStore.email,
+//   //       });
+//   //       router.push(`/orders?${params.toString()}`);
+//   //     } else {
+//   //       router.push("/orders");
+//   //     }
+//   //     return;
+//   //   }
+
+//   //   // --- Amazon marketplaces: DO NOT go to login; just route ---
+//   //   if (platform === "amazon-uk") {
+//   //     // TODO: replace with your actual Amazon UK dashboard route
+//   //     router.push("/amazon/uk/dashboard");
+//   //     return;
+//   //   }
+//   //   if (platform === "amazon-us") {
+//   //     // TODO: replace with your actual Amazon US dashboard route
+//   //     router.push("/amazon/us/dashboard");
+//   //     return;
+//   //   }
+//   //   if (platform === "amazon-ca") {
+//   //     // TODO: replace with your actual Amazon CA dashboard route
+//   //     router.push("/amazon/ca/dashboard");
+//   //     return;
+//   //   }
+
+//   //   // --- Global or anything else: keep old behavior ---
+//   //   const countryNameForRoutes = platformToCountryName(platform);
+
+//   //   handleRegionChangeNext({
+//   //     value: countryNameForRoutes,
+//   //     ranged: undefined,
+//   //     uploadHistory,
+//   //     push: router.push,
+//   //     onAddMore: () => router.push("/settings/countries"),
+//   //     onBeforeNavigate: () => localStorage.removeItem("chatHistory"),
+//   //   });
+//   // };
+
+//   const onRegionChange = (val: string) => {
+//   const platform = val as PlatformId;
+
+//   // --- Shopify ---
+//   if (platform === "shopify") {
+//     if (shopifyStore?.shop && shopifyStore?.token && shopifyStore?.email) {
+//       const params = new URLSearchParams({
+//         shop: shopifyStore.shop,
+//         token: shopifyStore.token,
+//         email: shopifyStore.email,
+//       });
+//       router.push(`/orders?${params.toString()}`);
+//     } else {
+//       router.push("/orders");
+//     }
+//     return;
+//   }
+
+//   // --- Amazon Platforms (NO login, NO OAuth) ---
+//   if (platform === "amazon-uk") {
+//     setSelectedPlatform("amazon-uk");
+
+//     const ranged = currentParams.ranged ?? "QTD";
+//     const month = currentParams.month ?? "NA";
+//     const year = currentParams.year ?? "NA";
+
+//     router.push(`/country/${ranged}/uk/${month}/${year}`);
+//     return;
+//   }
+
+//   if (platform === "amazon-us") {
+//     setSelectedPlatform("amazon-us");
+
+//     const ranged = currentParams.ranged ?? "QTD";
+//     const month = currentParams.month ?? "NA";
+//     const year = currentParams.year ?? "NA";
+
+//     router.push(`/country/${ranged}/us/${month}/${year}`);
+//     return;
+//   }
+
+//   if (platform === "amazon-ca") {
+//     setSelectedPlatform("amazon-ca");
+
+//     const ranged = currentParams.ranged ?? "QTD";
+//     const month = currentParams.month ?? "NA";
+//     const year = currentParams.year ?? "NA";
+
+//     router.push(`/country/${ranged}/ca/${month}/${year}`);
+//     return;
+//   }
+
+//   // --- Global Snapshot ---
+//   if (platform === "global") {
+//     setSelectedPlatform("global");
+//     router.push(`/country/QTD/global/NA/NA`);
+//     return;
+//   }
+// };
+
+
+//   // ===== Route params for sub-navs =====
+//   const routeParams = useParams();
+//   const defaultRanged = "QTD";
+//   const defaultMonth = "NA";
+//   const defaultYear = "NA";
+
+//   const currentPlatform =
+//     (routeParams?.platform as string) || selectedPlatform || "global";
+//   const currentCountryName = platformToCountryName(
+//     currentPlatform as PlatformId
+//   );
+
+//   const currentParams = {
+//     ranged: (routeParams?.ranged as string) || defaultRanged,
+//     countryName: currentCountryName,
+//     month: (routeParams?.month as string) || defaultMonth,
+//     year: (routeParams?.year as string) || defaultYear,
+//   };
+
+//   const sections: NavSection[] = [
+//     {
+//       key: "dashboard",
+//       name: "Dashboard",
+//       icon: <LuLayoutDashboard className="h-6 w-6" />,
+//       subItems: [
+//         {
+//           name: "Profits",
+//           path: ({ ranged, countryName, month, year }) =>
+//             `/country/${ranged}/${countryName}/${month}/${year}`,
+//         },
+//         {
+//           name: "SKU-Wise Profit",
+//           path: (params: {
+//             productname?: string;
+//             countryName: string;
+//             month: string;
+//             year: string;
+//           }) =>
+//             `/productwiseperformance/${
+//               params.productname ?? "Classic"
+//             }/${params.countryName}/${params.month}/${params.year}`,
+//         },
+//         {
+//           name: "Cash Flow",
+//           path: ({
+//             countryName,
+//             month,
+//             year,
+//           }: {
+//             countryName: string;
+//             month: string;
+//             year: string;
+//           }) =>
+//             `/cashflow/${encodeURIComponent(
+//               countryName
+//             )}/${encodeURIComponent(month)}/${encodeURIComponent(year)}`,
+//         },
+//       ],
+//     },
+//     {
+//       key: "business-intelligence",
+//       name: "Business Intelligence",
+//       icon: <FaBrain className="h-4 w-4" />,
+//       subItems: [
+//         {
+//           name: "Business Insights",
+//           path: `/improvements/${currentParams.ranged}/${currentParams.countryName}/${currentParams.month}/${currentParams.year}`,
+//         },
+//         {
+//           name: "Chatbot",
+//           path: `/chatbot/${currentParams.ranged}/${currentParams.countryName}/${currentParams.month}/${currentParams.year}`,
+//         },
+//         {
+//           name: "Inventory Forecast",
+//           path: `/inventoryChoice/${currentParams.countryName}/${currentParams.month}/${currentParams.year}`,
+//         },
+//         {
+//           name: "P/L Forecast",
+//           path: `/pnlforecast/${currentParams.countryName}/${currentParams.month}/${currentParams.year}`,
+//         },
+//       ],
+//     },
+//     {
+//       key: "inventory",
+//       name: "Inventory",
+//       icon: <BsBoxes className="h-6 w-6" />,
+//       subItems: [
+//         {
+//           name: "Input Cost",
+//           path: `/inputCost/${currentParams.countryName}/${currentParams.month}/${currentParams.year}`,
+//         },
+//         {
+//           name: "Current Inventory",
+//           path: `/currentInventory/${currentParams.countryName}/${currentParams.month}/${currentParams.year}`,
+//         },
+//         {
+//           name: "Dispatches",
+//           path: `/dispatch/${currentParams.countryName}/${currentParams.month}/${currentParams.year}`,
+//         },
+//         {
+//           name: "PO",
+//           path: `/purchase-order/${currentParams.countryName}/${currentParams.month}/${currentParams.year}`,
+//         },
+//       ],
+//     },
+//     {
+//       key: "recon",
+//       name: "Recon",
+//       icon: <FaBalanceScale className="h-4 w-4" />,
+//       subItems: [
+//         {
+//           name: "Referral Fees",
+//           path: ({
+//             countryName,
+//             month,
+//             year,
+//           }: {
+//             countryName: string;
+//             month: string;
+//             year: string;
+//           }) =>
+//             `/referral-fees/${encodeURIComponent(
+//               countryName
+//             )}/${encodeURIComponent(month)}/${encodeURIComponent(year)}`,
+//         },
+//         {
+//           name: "FBA Fees",
+//           path: `/fba/${currentParams.countryName}/${currentParams.month}/${currentParams.year}`,
+//         },
+//       ],
+//     },
+//   ];
+
+//   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
+//     dashboard: true,
+//     "business-intelligence": true,
+//     inventory: true,
+//     recon: true,
+//     integrations: false,
+//   });
+
+//   const toggleSection = useCallback((key: string) => {
+//     setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
+//   }, []);
+
+//   const isActive = useCallback(
+//     (path: string | ((params: typeof currentParams) => string)) => {
+//       const resolvedPath =
+//         typeof path === "function" ? path(currentParams) : path;
+//       return pathname === resolvedPath;
+//     },
+//     [pathname, currentParams]
+//   );
+
+//   return (
+//     <>
+//       {isMobileOpen && (
+//         <div
+//           className="fixed inset-0 bg-black/30 z-[1000] md:hidden"
+//           onClick={() => setIsMobileOpen(false)}
+//         />
+//       )}
+
+//       <aside
+//         className={`fixed mt-16 flex flex-col lg:mt-0 top-0 px-4 left-0 bg-white text-gray-900 h-screen transition-all duration-300 ease-in-out 
+//           ${isExpanded || isMobileOpen ? "w-[290px]" : isHovered ? "w-[290px]" : "w-[90px]"}
+//           ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
+//           lg:translate-x-0 font-lato`}
+//         onMouseEnter={() => !isExpanded && setIsHovered(true)}
+//         onMouseLeave={() => setIsHovered(false)}
+//       >
+//         {/* Logo */}
+//         <div
+//           className={`py-8 flex ${
+//             !isExpanded && !isHovered ? "lg:justify-center" : "justify-start"
+//           }`}
+//         >
+//           <Link href="/">
+//             {isExpanded || isHovered || isMobileOpen ? (
+//               <>
+//                 <Image
+//                   className="dark:hidden"
+//                   src="/images/logo/Logo_Phormula.png"
+//                   alt="Logo"
+//                   width={240}
+//                   height={40}
+//                 />
+//                 <Image
+//                   className="hidden dark:block"
+//                   src="/images/logo/logo-dark.svg"
+//                   alt="Logo"
+//                   width={150}
+//                   height={40}
+//                 />
+//               </>
+//             ) : (
+//               <Image
+//                 src="/images/logo/Logo_small.png"
+//                 alt="Logo"
+//                 width={50}
+//                 height={50}
+//               />
+//             )}
+//           </Link>
+//         </div>
+
+//         {/* Platform Select */}
+//         {(isExpanded || isHovered || isMobileOpen) &&
+//           regionOptions.length > 0 && (
+//             <RegionSelect
+//               label="PLATFORM"
+//               selectedCountry={selectedPlatform}
+//               options={regionOptions}
+//               onChange={onRegionChange}
+//               className="mb-2 px-2 py-1 border border-gray-300 rounded text-sm bg-transparent text-gray-800 focus:outline-none focus:ring-1 focus:ring-[#5EA68E]"
+//             />
+//           )}
+
+//         {/* Navigation Sections */}
+//         <div className="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar px-2">
+//           <nav className="mb-6">
+//             <div className="flex flex-col gap-1">
+//               {sections.map((section) => {
+//                 const resolvedSubPaths = section.subItems.map((sub) =>
+//                   typeof sub.path === "function"
+//                     ? sub.path(currentParams)
+//                     : sub.path
+//                 );
+//                 const isSectionActive = resolvedSubPaths.some((path) =>
+//                   isActive(path as any)
+//                 );
+
+//                 return (
+//                   <div key={section.key} className="flex flex-col">
+//                     <button
+//                       onClick={() => toggleSection(section.key)}
+//                       className={`flex items-center justify-between w-full px-2 py-2 text-sm text-left text-[#5EA68E] font-semibold rounded hover:bg-[#5EA68E]/20 transition-colors cursor-pointer group ${
+//                         isSectionActive ? "bg-[#5EA68E]/10" : ""
+//                       }`}
+//                     >
+//                       <div className="flex items-center">
+//                         {section.icon}
+//                         {(isExpanded || isHovered || isMobileOpen) && (
+//                           <span className="ml-2">{section.name}</span>
+//                         )}
+//                       </div>
+//                       {(isExpanded || isHovered || isMobileOpen) && (
+//                         <FaChevronDown
+//                           className={`h-3 w-3 transition-transform duration-200 ${
+//                             openSections[section.key]
+//                               ? "rotate-0"
+//                               : "rotate-90"
+//                           }`}
+//                         />
+//                       )}
+//                     </button>
+
+//                     {openSections[section.key] &&
+//                       (isExpanded || isHovered || isMobileOpen) && (
+//                         <div className="ml-6 mt-1 space-y-1 overflow-hidden">
+//                           {section.subItems.map((subItem, idx) => {
+//                             const resolvedPath =
+//                               typeof subItem.path === "function"
+//                                 ? subItem.path(currentParams)
+//                                 : subItem.path;
+//                             return (
+//                               <Link
+//                                 key={idx}
+//                                 href={resolvedPath}
+//                                 className={`block px-2 py-1.5 text-sm text-gray-700 hover:bg-[#5EA68E]/20 rounded transition-colors ${
+//                                   isActive(subItem.path as any)
+//                                     ? "bg-[#5EA68E]/20 text-[#5EA68E] font-medium"
+//                                     : ""
+//                                 }`}
+//                               >
+//                                 {subItem.name}
+//                               </Link>
+//                             );
+//                           })}
+//                         </div>
+//                       )}
+//                   </div>
+//                 );
+//               })}
+//             </div>
+//           </nav>
+//         </div>
+
+//         {isMobileOpen && (
+//           <button
+//             onClick={() => setIsMobileOpen(false)}
+//             className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 md:hidden"
+//           >
+//             <FaTimes className="h-5 w-5" />
+//           </button>
+//         )}
+//       </aside>
+//     </>
+//   );
+// };
+
+// export default AppSidebar;

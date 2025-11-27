@@ -268,92 +268,108 @@ export default function InventoryForecastPage() {
   }
 
   // Columns detection (DisplayInventoryForecast bhi apna detect karta hai — ye optional)
-  const displayedColumns = useMemo(() => {
-    if (!excelData || excelData.length === 0) return [] as string[];
-    const all = Object.keys(excelData[0] ?? {});
-    const fixed = [
-      'Product Name', 'SKU Type', 'Last Month Sales(Units)',
-      'Projected Sales Total', 'Inventory at Month End',
-      'Dispatch', 'Current Inventory + Dispatch'
-    ];
+  // const displayedColumns = useMemo(() => {
+  //   if (!excelData || excelData.length === 0) return [] as string[];
+  //   const all = Object.keys(excelData[0] ?? {});
+  //   const fixed = [
+  //     'Product Name', 'SKU Type', 'Last Month Sales(Units)',
+  //     'Projected Sales Total', 'Inventory at Month End',
+  //     'Dispatch', 'Current Inventory + Dispatch'
+  //   ];
 
-    const monthLike = all.filter((col) =>
-      /^[A-Z][a-z]{2}'\d{2}$/.test(col) ||          // Sep'25
-      /^[A-Z][a-z]+ ?\d{4}$/.test(col) ||           // October 2025
-      (/^[A-Z][a-z]+$/.test(col) && !fixed.includes(col)) // October
-    ).filter((col) => !fixed.includes(col));
+  //   const monthLike = all.filter((col) =>
+  //     /^[A-Z][a-z]{2}'\d{2}$/.test(col) ||          // Sep'25
+  //     /^[A-Z][a-z]+ ?\d{4}$/.test(col) ||           // October 2025
+  //     (/^[A-Z][a-z]+$/.test(col) && !fixed.includes(col)) // October
+  //   ).filter((col) => !fixed.includes(col));
 
-    return [...fixed.filter((f) => all.includes(f)), ...monthLike];
-  }, [excelData]);
+  //   return [...fixed.filter((f) => all.includes(f)), ...monthLike];
+  // }, [excelData]);
 
   // -------------- Render --------------
   return (
-    <div className="p-4">
-      <style>{`
-        .alert-container {
-          display: flex; align-items: center; background-color: #f2f2f2;
-          border-top: 4px solid #ff5c5c; padding: 12px 16px; border-radius: 6px;
-          font-family: 'Lato', sans-serif; width: 50%; justify-content: space-between;
-          box-sizing: border-box; margin-top: 20px;
-        }
-        .alert-message { display: flex; align-items: center; color: #414042; font-size: 14px; }
-        .alert-icon { color: #ff5c5c; font-size: 18px; margin-right: 10px; }
-        .alert-button {
-          background: none; border: none; color: #414042; font-weight: 600; cursor: pointer;
-          font-size: 14px; text-decoration: underline; display: inline-flex; align-items: center; gap: 5px;
-          padding: 0; white-space: nowrap;
-        }
-        .forecast-heading { font-size: 18px; color: #414042; background-color: white;
-          border-radius: 7px; font-weight: bold; }
-        .country-name { color: #414042; }
-      `}</style>
+  
+  <div className="p-4">
+    <style>{`
+      .alert-container {
+        display: flex; align-items: center; background-color: #f2f2f2;
+        border-top: 4px solid #ff5c5c; padding: 12px 16px; border-radius: 6px;
+        font-family: 'Lato', sans-serif; width: 50%; justify-content: space-between;
+        box-sizing: border-box; margin-top: 20px;
+      }
+      .alert-message { display: flex; align-items: center; color: #414042; font-size: 12px; }
+      .alert-icon { color: #ff5c5c; font-size: 18px; margin-right: 10px; }
+      .alert-button {
+        background: none; border: none; color: #414042; font-weight: 600; cursor: pointer;
+        font-size: 14px; text-decoration: underline; display: inline-flex; align-items: center; gap: 5px;
+        padding: 0; white-space: nowrap;
+      }
+      .forecast-heading { font-size: 18px; color: #414042; background-color: white;
+        border-radius: 7px; font-weight: bold; }
+      .country-name { color: #414042; }
+    `}</style>
 
-      {loading ? (
-        <Loading />
-      ) : error ? (
-        <>
-          <div className="alert-container">
-            <div className="alert-message">
-              <i className="fa-solid fa-circle-exclamation alert-icon"></i>
-              <span>{error}</span>
-            </div>
-            <button
-              className="alert-button"
-              onClick={() => setShowUpload(true)}
-            >
-              Upload Now <i className="fa-solid fa-chevron-right"></i>
-            </button>
+    {loading ? (
+      // 1) sabse pehle loading
+      <Loading />
+    ) : missingMonths.length > 0 ? (
+      // 2) agar missing months hain → ye sabse high priority
+      <div>
+         <h3 className="text-2xl font-bold text-[#414042]">
+       Inventory Forecast </h3>
+         <span style={{ fontSize: '12px' }}>
+          The following Monthly files are needed to upload:&nbsp;
+          <strong style={{ color: '#60a68e' }}>
+            {missingMonths.join(', ')}
+          </strong>
+        </span>
+        <div className="alert-container">
+          <div className="alert-message">
+            <i className="fa-solid fa-circle-exclamation alert-icon"></i>
+            <span>Please upload at least 4 months' files to see for the next two months.</span>
           </div>
-          {missingMonths.length > 0 && (
-            <span style={{ fontSize: '12px' }}>
-              The following Monthly files are needed to upload:&nbsp;
-              <strong style={{ color: '#60a68e' }}>
-                {missingMonths.join(', ')}
-              </strong>
-            </span>
-          )}
-        </>
-      ) : (
-        <>
-          <DisplayInventoryForecast
-            countryName={countryName}
-            month={apiMonth}
-            year={apiYear}
-            data={excelData ?? []}
-            // agar tum DisplayInventoryForecast me columns pass karna chaho:
-            // columns={displayedColumns}
-          />
-        </>
-      )}
+          <button
+            className="alert-button"
+            onClick={() => setShowUpload(true)}
+          >
+            Upload Now <i className="fa-solid fa-chevron-right"></i>
+          </button>
+        </div>
 
-      <Modal
-        isOpen={showUpload}
-        onClose={() => setShowUpload(false)}
-        showCloseButton
-        className="max-w-4xl w-full mx-auto p-0"
-      >
-        <FileUploadForm />
-      </Modal>
-    </div>
-  );
+       
+      </div>
+    ) : error ? (
+      // 3) agar error hai, lekin missing months nahi (server error type)
+      <div className="alert-container">
+        <div className="alert-message">
+          <i className="fa-solid fa-circle-exclamation alert-icon"></i>
+          <span>{error}</span>
+        </div>
+        <button
+          className="alert-button"
+          onClick={() => setShowUpload(true)}
+        >
+          Upload Now <i className="fa-solid fa-chevron-right"></i>
+        </button>
+      </div>
+    ) : (
+      // 4) normal case → data hai to table/forecast show karo
+      <DisplayInventoryForecast
+        countryName={countryName}
+        month={apiMonth}
+        year={apiYear}
+        data={excelData ?? []}
+      />
+    )}
+
+    <Modal
+      isOpen={showUpload}
+      onClose={() => setShowUpload(false)}
+      showCloseButton
+      className="max-w-4xl w-full mx-auto p-0"
+    >
+      <FileUploadForm />
+    </Modal>
+  </div>
+);
 }

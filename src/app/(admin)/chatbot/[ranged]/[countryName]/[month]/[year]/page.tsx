@@ -1,8 +1,8 @@
 'use client'
 
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import ReactMarkdown from 'react-markdown'
 import { useParams } from 'next/navigation'
-// If your styles are global, import them in app/globals.css. Otherwise, convert to a CSS module and import here.
 import './style.css'
 import Delete from '@/components/chatbot/Delete'
 import RightArrow from '@/components/chatbot/RightArrow'
@@ -14,48 +14,49 @@ type Sender = 'user' | 'bot'
 
 type Message = {
   id: number
-  liked: 'like' | 'dislike' | null
-  timestamp: Date
-  text: string
   sender: Sender
-  serverId?: string | number
+  text: string
+  timestamp: number
+  liked?: 'like' | 'dislike'
+  serverId?: number
   promptText?: string
   error?: boolean
 }
 
-type UserData = {
-  company_name?: string
-  [key: string]: unknown
-} | null
+type ParsedDetail = {
+  label: string
+  value: string
+}
 
-type DislikeTarget = Message | null
+type ParsedWeek = {
+  week: string
+  actions: string[]
+}
 
-type ParsedDetail = { label: string; value: string }
+type ParsedAI = {
+  title: string
+  period?: string
+  details: ParsedDetail[]
+  weeks: ParsedWeek[]
+}
 
-type ParsedWeek = { week: string; actions: string[] }
+// ---------- Helpers ----------
 
-type ParsedAI = { title: string; details: ParsedDetail[]; weeks: ParsedWeek[]; period?: string }
-
-// ---------- Constants / helpers ----------
-
-const HISTORY_KEY = 'chatbot:history'
-const CHAT_CLEARED_FLAG = 'chatbot:manually-cleared'
-
-const reviveMessages = (arr: Partial<Message>[] = []): Message[] =>
-  arr.map((m) => ({
-    id: Number(m.id) || Date.now() + Math.random(),
-    liked: (m.liked as Message['liked']) ?? null,
-    timestamp: m.timestamp ? new Date(m.timestamp as unknown as string) : new Date(),
-    text: String(m.text ?? ''),
-    sender: (m.sender as Sender) ?? 'bot',
-    serverId: m.serverId,
-    promptText: m.promptText,
-    error: Boolean(m.error),
-  }))
+const HISTORY_KEY = 'chatbot_history'
+const CHAT_CLEARED_FLAG = 'chatbot_cleared_flag'
 
 const loadCache = (): Message[] => {
+  if (typeof window === 'undefined') return []
   try {
-    return reviveMessages(JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'))
+    const clearedAt = localStorage.getItem(CHAT_CLEARED_FLAG)
+    const history = localStorage.getItem(HISTORY_KEY)
+    if (!history) return []
+    const parsed: Message[] = JSON.parse(history)
+    if (clearedAt) {
+      const clearedTs = Number(clearedAt)
+      return parsed.filter((msg) => msg.timestamp > clearedTs)
+    }
+    return parsed
   } catch {
     return []
   }
@@ -115,20 +116,25 @@ function parseAIResponse(rawText: string): ParsedAI {
 
   result.title = explicitTitle || fallbackTitle || ''
 
-  // Parse Key: Value pairs
+  // Optional: try to detect a period range if present in the title line
+  const periodMatch = result.title.match(/\(([^)]+)\)/)
+  if (periodMatch) {
+    result.period = periodMatch[1]
+  }
+
+  // Extract "Key: Value" pairs from bullet or normal lines
   for (const line of lines) {
-    if (/^#{1,6}\s*Title:/i.test(line)) continue
+    // Skip the explicit or fallback title line to avoid duplication
+    if (
+      result.title &&
+      (line === result.title || line.replace(/^Title:\s*/i, '').trim() === result.title)
+    ) {
+      continue
+    }
     const kv = line.match(/^\s*(?:[-*•]\s*)?([^:]+):\s*(.+)\s*$/)
     if (kv) {
       const label = kv[1].trim()
       const value = kv[2].trim()
-
-      if (
-        result.title &&
-        (line === result.title || line.replace(/^Title:\s*/i, '').trim() === result.title)
-      ) {
-        continue
-      }
       result.details.push({ label, value })
     }
   }
@@ -159,107 +165,125 @@ export default function ChatbotPage() {
     year: string
   }>()
 
+  const scrollRef = useRef<HTMLDivElement | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [inputValue, setInputValue] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [systemHealth] = useState<unknown>(null)
-  const [availableData] = useState<unknown>(null)
   const [isTyping, setIsTyping] = useState(false)
-  const [actionMessage, setActionMessage] = useState<{ id: number; text: string } | null>(null)
-  const [dislikeInputFor, setDislikeInputFor] = useState<DislikeTarget>(null)
+  const [userData, setUserData] = useState<any>(null)
   const [aliasOfInput, setAliasOfInput] = useState('')
-  const [userData, setUserData] = useState<UserData>(null)
+  const [likeInProgress, setLikeInProgress] = useState<number | null>(null)
+  const [dislikeInProgress, setDislikeInProgress] = useState<number | null>(null)
+  const [dislikeInputFor, setDislikeInputFor] = useState<number | null>(null)
+  const [actionMessage, setActionMessage] = useState<{ id: number; text: string } | null>(null)
+  
 
-  const inputRef = useRef<HTMLTextAreaElement | null>(null)
-  const scrollRef = useRef<HTMLDivElement | null>(null)
+  useEffect(() => {
+  const fetchUserData = async () => {
+    const token = localStorage.getItem('jwtToken')
+    if (!token) return
+    try {
+      const res = await fetch(`${API_BASE_URL.replace(/\/$/, '')}/get_user_data`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      const data = await res.json()
+      setUserData(data)   // yahan data set ho jayega
+    } catch (e) {
+      console.error('Error fetching user data', e)
+    }
+  }
 
-  const scrollToBottom = (instant = false) => {
-    const el = scrollRef.current
-    if (!el) return
-    requestAnimationFrame(() => {
-      el.scrollTo({ top: el.scrollHeight, behavior: instant ? 'auto' : 'smooth' })
-    })
+  fetchUserData()
+}, [])
+
+  // Load user data from localStorage
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const storedUserData = localStorage.getItem('userdata')
+    if (storedUserData) {
+      try {
+        setUserData(JSON.parse(storedUserData))
+      } catch {}
+    }
+  }, [])
+
+  // Load chat history from localStorage
+  useEffect(() => {
+    const cached = loadCache()
+    if (cached.length > 0) {
+      setMessages(cached)
+    }
+  }, [])
+
+  // Keep chat history cached
+  useEffect(() => {
+    if (messages.length > 0) {
+      saveCache(messages)
+    }
+  }, [messages])
+
+  // Scroll to bottom whenever messages change
+  const scrollToBottom = (smooth = false) => {
+    if (!scrollRef.current) return
+    if (smooth) {
+      scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })
+    } else {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+    }
   }
 
   useLayoutEffect(() => {
-    scrollToBottom(true)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [messages.length, isTyping])
+    scrollToBottom()
+  }, [messages.length])
 
-  useEffect(() => {
-    if (!isLoading && inputRef.current) {
-      inputRef.current.focus()
-    }
-  }, [isLoading])
+  // Create message objects
+  const createMessage = (sender: Sender, text: string, extra?: Partial<Message>): Message => ({
+    id: Date.now() + Math.random(),
+    sender,
+    text,
+    timestamp: Date.now(),
+    ...extra,
+  })
 
-  useEffect(() => {
-    const initializeApp = async () => {
-      const wasManuallyCleared = localStorage.getItem(CHAT_CLEARED_FLAG) === 'true'
-      if (wasManuallyCleared) {
-        setMessages([])
-        return
-      }
+  const userMsg = (text: string, extra?: Partial<Message>) => createMessage('user', text, extra)
+  const botMsg = (text: string, extra?: Partial<Message>) => createMessage('bot', text, extra)
 
-      const cached = loadCache()
-      if (cached.length > 0) {
-        setMessages(cached)
-        return
-      }
-
-      setMessages([])
-    }
-    initializeApp()
-  }, [])
+  const addMessage = (msg: Message) => {
+    setMessages((prev) => [...prev, msg])
+  }
 
   const clearChatLocally = () => {
-    localStorage.setItem(CHAT_CLEARED_FLAG, 'true')
     setMessages([])
-    setDislikeInputFor(null)
-    setAliasOfInput('')
-    setActionMessage(null)
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(CHAT_CLEARED_FLAG, String(Date.now()))
+        localStorage.removeItem(HISTORY_KEY)
+      } catch {}
+    }
   }
 
-  useEffect(() => {
-    const handleLogoutEvent = () => {
-      setMessages([])
-      setDislikeInputFor(null)
-      setAliasOfInput('')
-      setActionMessage(null)
-      localStorage.removeItem(HISTORY_KEY)
-      localStorage.removeItem(CHAT_CLEARED_FLAG)
+  const sendMessage = async (content?: string) => {
+    const value = typeof content === 'string' ? content : inputValue.trim()
+    if (!value || isLoading) return
+
+    const ranged = params?.ranged || ''
+    const countryName = params?.countryName || ''
+    const month = params?.month || ''
+    const year = params?.year || ''
+
+    const paramsInfo = {
+      range: ranged,
+      countryName,
+      month,
+      year,
+      user_company_id: userData?.company_id,
     }
 
-    window.addEventListener('chat:clear', handleLogoutEvent)
-    return () => window.removeEventListener('chat:clear', handleLogoutEvent)
-  }, [])
+    const userMessage = value
+    const staffAlias = aliasOfInput.trim() || userData?.company_name || 'User'
+    const contentWithAlias = `${userMessage} (Alias: ${staffAlias})`
 
-  const addMessage = (msg: Omit<Message, 'id' | 'liked' | 'timestamp'> & Partial<Message>) => {
-    const m: Message = {
-      id: Date.now() + Math.random(),
-      liked: null,
-      timestamp: new Date(),
-      text: msg.text ?? '',
-      sender: msg.sender ?? 'bot',
-      serverId: msg.serverId,
-      promptText: msg.promptText,
-      error: msg.error,
-    }
-    setMessages((prev) => {
-      const next = [...prev, m]
-      saveCache(next)
-      return next
-    })
-    return m
-  }
-
-  const userMsg = (text: string): Message => ({ id: Date.now(), liked: null, timestamp: new Date(), text, sender: 'user' })
-  const botMsg = (text: string, extra: Partial<Message> = {}): Message => ({ id: Date.now() + 1, liked: null, timestamp: new Date(), text, sender: 'bot', ...extra })
-
-  const sendMessage = async (text = inputValue) => {
-    const content = text.trim()
-    if (!content || isLoading) return
-
-    addMessage(userMsg(content))
+    addMessage(userMsg(userMessage))
     setInputValue('')
     setIsLoading(true)
     setIsTyping(true)
@@ -272,14 +296,14 @@ export default function ChatbotPage() {
           Authorization: `Bearer ${getAuthToken()}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ action: 'chat', query: content, params }),
+        body: JSON.stringify({ action: 'chat', query: contentWithAlias, params: paramsInfo }),
       })
       const data = await resp.json()
       if (resp.ok && (data?.success as boolean)) {
         addMessage(
           botMsg(String(data.response ?? ''), {
             serverId: data.message_id,
-            promptText: content,
+            promptText: contentWithAlias,
           })
         )
       } else {
@@ -290,61 +314,34 @@ export default function ChatbotPage() {
     } finally {
       setIsLoading(false)
       setIsTyping(false)
-      scrollToBottom()
+      scrollToBottom(true)
     }
-  }
-
-  useEffect(() => {
-    const fetchUserData = async () => {
-      const token = localStorage.getItem('jwtToken')
-      if (!token) return
-      try {
-        const res = await fetch(`${API_BASE_URL.replace(/\/$/, '')}/get_user_data`, {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-        const data = await res.json()
-        setUserData(data)
-      } catch {
-        // no-op
-      }
-    }
-    fetchUserData()
-  }, [])
-
-  const handleKeyDown: React.KeyboardEventHandler<HTMLTextAreaElement> = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      sendMessage()
-    }
-  }
-
-  const handleCopy = async (msg: Message) => {
-    if (!msg || !msg.text) return
-    try {
-      await navigator.clipboard.writeText(msg.text)
-      setActionMessage({ id: msg.id, text: 'Copied!' })
-      setTimeout(() => setActionMessage(null), 1500)
-    } catch {}
   }
 
   const handleLike = async (msgObj: Message) => {
-    if (!msgObj || msgObj.sender !== 'bot') return
+    if (!msgObj.serverId) return
+    setLikeInProgress(msgObj.id)
+    setActionMessage(null)
+
     try {
-      const payload = {
-        kind: 'like',
-        message_id: msgObj.serverId || msgObj.id,
-        response: msgObj.text,
-      }
       const resp = await fetch(`${API_BASE_URL}/chatbot/feedback`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${getAuthToken()}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          message_id: msgObj.serverId,
+          feedback: 'like',
+          original_prompt: msgObj.promptText,
+        }),
       })
-      const data = await resp.json()
-      if (resp.ok && (data.success as boolean)) {
+
+      if (!resp.ok) {
+        setMessages((prev) => prev.map((m) => (m.id === msgObj.id ? { ...m, liked: 'like' } : m)))
+        setActionMessage({ id: msgObj.id, text: 'Liked!' })
+        setTimeout(() => setActionMessage(null), 1500)
+      } else {
         setMessages((prev) => prev.map((m) => (m.id === msgObj.id ? { ...m, liked: 'like' } : m)))
         setActionMessage({ id: msgObj.id, text: 'Liked!' })
         setTimeout(() => setActionMessage(null), 1500)
@@ -353,34 +350,44 @@ export default function ChatbotPage() {
       setMessages((prev) => prev.map((m) => (m.id === msgObj.id ? { ...m, liked: 'like' } : m)))
       setActionMessage({ id: msgObj.id, text: 'Liked!' })
       setTimeout(() => setActionMessage(null), 1500)
+    } finally {
+      setLikeInProgress(null)
     }
   }
 
-  const handleDislikeClick = (msgObj: Message) => {
-    if (!msgObj || msgObj.sender !== 'bot') return
-    setDislikeInputFor(msgObj)
-    setAliasOfInput('')
+  const handleDislike = async (msgObj: Message) => {
+    if (!msgObj.serverId) return
+    setDislikeInProgress(msgObj.id)
+    setActionMessage(null)
+    setDislikeInputFor(msgObj.id)
   }
 
-  const handleSaveDislike = async (feedbackText: string | null = null) => {
-    const msgObj = dislikeInputFor
-    if (!msgObj) return
+  const handleSaveDislike = async (feedbackText: string) => {
+    const msgObj = messages.find((m) => m.id === dislikeInputFor)
+    if (!msgObj || !msgObj.serverId) return
+
     try {
-      const payload = {
-        kind: 'dislike',
-        message_id: msgObj.serverId || msgObj.id,
-        response: feedbackText || aliasOfInput.trim() || 'User provided negative feedback without additional comments',
-      }
       const resp = await fetch(`${API_BASE_URL}/chatbot/feedback`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${getAuthToken()}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          message_id: msgObj.serverId,
+          feedback: 'dislike',
+          original_prompt: msgObj.promptText,
+          additional_feedback: feedbackText,
+        }),
       })
-      const data = await resp.json()
-      if (resp.ok && (data.success as boolean)) {
+
+      if (!resp.ok) {
+        setMessages((prev) => prev.map((m) => (m.id === msgObj.id ? { ...m, liked: 'dislike' } : m)))
+        setActionMessage({ id: msgObj.id, text: 'Disliked!' })
+        setTimeout(() => setActionMessage(null), 1500)
+        setDislikeInputFor(null)
+        setAliasOfInput('')
+      } else {
         setMessages((prev) => prev.map((m) => (m.id === msgObj.id ? { ...m, liked: 'dislike' } : m)))
         setActionMessage({ id: msgObj.id, text: 'Disliked!' })
         setTimeout(() => setActionMessage(null), 1500)
@@ -404,7 +411,8 @@ export default function ChatbotPage() {
     clearChatLocally()
   }
 
-  const getValidMessages = () => messages.filter((msg) => msg && typeof msg === 'object' && msg.text && msg.sender)
+  const getValidMessages = () =>
+    messages.filter((msg) => msg && typeof msg === 'object' && msg.text && msg.sender)
   const validMessages = getValidMessages()
 
   if (!userData) {
@@ -412,7 +420,7 @@ export default function ChatbotPage() {
   }
 
   return (
-    <div className="flex flex-col bg-white font-[Lato] chatbot-container ">
+    <div className="flex flex-col bg-white font-[Lato] chatbot-container h-full ">
       <div className="text-white bg-gradient-to-r from-[#5ea68e] to-[#37455f] rounded-t-xl message-header py-[2vw] px-[2vw] md:py-[2vw] md:px-[3.5vw] lg:py-[1vw] lg:px-[1.25vw]">
         <h1 className="text-base sm:text-lg md:text-xl lg:text-[1.625rem] font-bold">
           Hi <i>{userData?.company_name?.split(' ')[0] || 'User'}!</i>
@@ -424,14 +432,16 @@ export default function ChatbotPage() {
 
       <div className="flex-1 border border-black/25 rounded-b-xl chat-container flex flex-col">
         {/* Chat messages container */}
-        <div ref={scrollRef} className="w-full mx-auto h-[63vh] sm:h-[65vh] lg:h-[60vh] 2xl:h-[70vh] overflow-y-auto p-3">
+        <div ref={scrollRef} className="w-full mx-auto h-[63vh] sm:h-[65vh] lg:h-[60vh] 2xl:h-[65vh] overflow-y-auto p-3">
           {/* Bottom-anchoring wrapper: keeps content at the bottom until it overflows */}
           <div className="min-h-full flex flex-col justify-end space-y-3">
             {validMessages.length > 0 ? (
               <>
-                {/* Render messages in natural order */}
                 {validMessages.map((msg) => (
-                  <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div
+                    key={msg.id}
+                    className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                  >
                     <div className="flex flex-col mx-4">
                       <div
                         className={`px-4 py-2 rounded-2xl text-xs sm:text-sm md:text-[0.75] lg:text-[0.875rem] break-words max-w-full sm:max-w-[50vw] md:max-w-[50vw] lg:max-w-full ${msg.sender === 'user' ? 'bg-[#5EA68E] text-[#F8EDCE] mb-2' : 'bg-[#D9D9D9] text-gray-800 mb-1'}`}
@@ -439,17 +449,48 @@ export default function ChatbotPage() {
                         {msg.sender !== 'user' && msg.text ? (
                           (() => {
                             const parsed = parseAIResponse(msg.text)
-                            if (parsed.title || parsed.details.length > 0) {
+                            const isStructured =
+                              parsed.weeks.length > 0 ||
+                              /Title:/i.test(msg.text) ||
+                              /Week\s+\d+/i.test(msg.text)
+
+                            if (isStructured && (parsed.title || parsed.details.length > 0)) {
                               return (
                                 <div className="space-y-1">
-                                  {parsed.title && <h3 className="font-semibold text-gray-800">{parsed.title}</h3>}
-                                  {parsed.period && <p className="text-sm text-gray-500">{parsed.period}</p>}
+                                  {parsed.title && (
+                                    <h3 className="font-semibold text-gray-800">{parsed.title}</h3>
+                                  )}
+                                  {parsed.period && (
+                                    <p className="text-sm text-gray-500">{parsed.period}</p>
+                                  )}
+                                  {parsed.weeks.length > 0 && (
+                                    <div className="mt-2 space-y-2">
+                                      {parsed.weeks.map((w, idx) => (
+                                        <div key={idx} className="mt-2">
+                                          <h4 className="font-semibold text-sm text-gray-800">
+                                            {w.week}
+                                          </h4>
+                                          <ul className="list-disc pl-5 text-xs sm:text-sm text-gray-700 space-y-1">
+                                            {w.actions.map((action, i) => (
+                                              <li key={i}>{action}</li>
+                                            ))}
+                                          </ul>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+
                                   <ul className="space-y-2">
                                     {parsed.details.map((d, i) => (
-                                      <li key={i} className="flex items-start gap-2 leading-relaxed">
+                                      <li
+                                        key={i}
+                                        className="flex items-start gap-2 leading-relaxed"
+                                      >
                                         <Dot className="mt-1 shrink-0" size={18} />
                                         <div className="text-xs sm:text-sm">
-                                          <span className="font-bold text-gray-900">{d.label}:</span>{' '}
+                                          <span className="font-bold text-gray-900">
+                                            {d.label}:
+                                          </span>{' '}
                                           {d.value.split('\n').map((line, idx) => (
                                             <span key={idx}>
                                               {idx > 0 && <br />}
@@ -463,7 +504,8 @@ export default function ChatbotPage() {
                                 </div>
                               )
                             } else {
-                              return cleanMarkdown(msg.text)
+                              // Default: render as Markdown
+                              return <ReactMarkdown>{msg.text}</ReactMarkdown>
                             }
                           })()
                         ) : (
@@ -472,7 +514,9 @@ export default function ChatbotPage() {
                       </div>
 
                       {msg.sender !== 'user' && (
-                        <div className="flex flex-col ml-2 mb-2">{/* action buttons placeholder */}</div>
+                        <div className="flex flex-col ml-2 mb-2">
+                          {/* action buttons placeholder */}
+                        </div>
                       )}
                     </div>
                   </div>
@@ -482,45 +526,81 @@ export default function ChatbotPage() {
                   <div className="flex justify-start">
                     <div className="flex items-center px-4 py-2 rounded-2xl text-[#D9D9D9] rounded-bl-none">
                       {[0, 1, 2, 3, 4].map((i) => (
-                        <span key={i} className="inline-block w-3 h-3 md:w-2 md:h-2 rounded-full mr-2 last:mr-0 animate-pulse" style={{ animationDelay: `${i * 0.2}s` }} />
+                        <span
+                          key={i}
+                          className="inline-block w-1 h-1 sm:w-1.5 sm:h-1.5 md:w-2 md:h-2 rounded-full bg-gray-400 mr-1 last:mr-0 animate-pulse"
+                          style={{ animationDelay: `${i * 0.2}s` }}
+                        />
                       ))}
                     </div>
                   </div>
                 )}
               </>
             ) : (
-              <div className="flex flex-1 justify-center items-center text-gray-400 text-sm sm:text-base md:text-lg lg:text-xl px-2 sm:px-4 md:px-6 lg:px-8">
+              <div className="flex flex-1 justify-center items-center text-gray-500 text-center text-xs sm:text-base md:text-lg lg:text-xl px-2 sm:px-4 md:px-6 lg:px-8">
                 Start a new conversation 💬
               </div>
             )}
           </div>
         </div>
 
-        {/* Bottom input */}
-        <div className="bottom">
-          <div className="line bg-gray-300 h-[2px]"></div>
-          <div className="px-1 py-1 lg:px-5 lg:py-1.5">
-            <div className="bottom-bar flex justify-between items-center">
-              <div
-                className="flex items-center bg-[#ECECEC] rounded-[30px] m-[10px] w-[88%] sm:w-[77vw] md:w-[73vw] lg:w-[95%] py-1 px-3 md:py-2 cursor-text"
-                onClick={() => inputRef.current?.focus()}
-              >
-                <textarea
-                  ref={inputRef}
-                  value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder="Ask anything about your sales data…"
-                  rows={1}
-                  disabled={isLoading}
-                  autoFocus
-                  className="flex-1 bg-transparent text-black caret-black outline-none resize-none placeholder:text-xs sm:placeholder:text-sm md:placeholder:text-base lg:placeholder:text-[1rem] text-xs sm:text-sm md:text-[0.75] lg:text-[0.875rem] h-full cursor-text"
-                />
-                <RightArrow onClick={() => sendMessage()} disabled={isLoading || !inputValue.trim()} className="cursor-pointer ml-2" />
+        {/* Input area */}
+
+        <div className="border-t border-gray-200 p-2 sm:p-3 md:p-4 flex flex-col gap-2">
+          {dislikeInputFor && (
+            <div className="mb-2 p-2 border border-red-300 rounded-md bg-red-50">
+              <p className="text-xs sm:text-sm text-red-700 mb-1">
+                Please share what went wrong so we can improve:
+              </p>
+              <textarea
+                value={aliasOfInput}
+                onChange={(e) => setAliasOfInput(e.target.value)}
+                className="w-full border border-red-300 rounded-md p-1 text-xs sm:text-sm"
+                rows={2}
+              />
+              <div className="flex justify-end gap-2 mt-1">
+                <button
+                  onClick={() => handleSaveDislike(aliasOfInput)}
+                  className="px-2 py-1 text-xs sm:text-sm bg-red-600 text-white rounded-md"
+                >
+                  Submit
+                </button>
+                <button
+                  onClick={handleCancelDislike}
+                  className="px-2 py-1 text-xs sm:text-sm border border-gray-300 rounded-md"
+                >
+                  Skip
+                </button>
               </div>
-              <Delete className="cursor-pointer mr-2 mt-1" onClick={clearChat} />
             </div>
+          )}
+
+          <div className="flex items-center gap-4">
+            <div className="flex-1 flex items-center bg-[#D9D9D9] rounded-full px-3 py-3">
+              <input
+                type="text"
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault()
+                    sendMessage()
+                  }
+                }}
+                disabled={isLoading}
+                autoFocus
+                className="flex-1 bg-transparent text-black caret-black outline-none text-xs sm:text-sm md:text-[0.75rem] lg:text-[0.875rem] h-full cursor-text"
+              />
+              <RightArrow
+                onClick={() => sendMessage()}
+                disabled={isLoading || !inputValue.trim()}
+                className="cursor-pointer"
+              />
+            </div>
+            <Delete className="cursor-pointer mr-2 mt-1" onClick={clearChat} />
+           
           </div>
+         <p className='md:text-xs text-[10px] flex justify-center items-center text-center text-gray-400'>Responses are AI-generated and may contain inaccuracies.Please verify critical information before use.</p>
         </div>
       </div>
     </div>

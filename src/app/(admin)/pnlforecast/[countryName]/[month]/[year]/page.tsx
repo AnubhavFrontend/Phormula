@@ -466,7 +466,7 @@ const Pnlforecast: React.FC = () => {
 
   return (
     <div>
-      <h2 style={{ marginBottom: 10, color: '#414042' }} className='text-3xl text-[#414042] font-bold'>
+      <h2 style={{ marginBottom: 10, color: '#414042' }} className='text-2xl text-[#414042] font-bold'>
         P &amp; L Forecast -{' '}
         <span style={{ color: '#60a68e' }}>
         {countryName.toUpperCase()}  ({formatMonthYear(currentMonth, currentYear)} to {formatMonthYear(nextToNextMonth, nextToNextMonthYear)} )
@@ -492,9 +492,9 @@ const Pnlforecast: React.FC = () => {
   <div>
     <div className="overflow-x-auto">
       <table className="w-full border-collapse">
-        <thead className="bg-[#5ea68e] text-[#f8edcf]">
+        <thead className="bg-[#5ea68e] text-[#f8edcf] ">
           {/* Top header row with spans (matches JS version) */}
-          <tr>
+          <tr className='!py-3'>
             <th className="border border-black" colSpan={showamazonfee ? 3 : 2}></th>
             <th className="border border-black" colSpan={showCm1 && LosSalesUnits ? 4 : showCm1 || LosSalesUnits ? 3 : 2}>
               P&amp;L Forecast for {formatMonthYear(currentMonth, currentYear)}

@@ -186,7 +186,7 @@ export default function InventoryChoicePage() {
     <div className="flex justify-center items-center font-lato px-4 py-10 relative">
       {/* Country Profile Popup */}
       {isPopupOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+        <div className="fixed inset-0 z-99999 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-2xl shadow-lg w-full max-w-md p-6">
             <h2 className="text-xl font-semibold text-[#414042] mb-1 text-center">
               Country Profile
@@ -233,7 +233,7 @@ export default function InventoryChoicePage() {
               {/* Transit Time */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Transit Time (days) <span className="text-red-500">*</span>
+                  Transit Time (months) <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="number"
@@ -291,15 +291,15 @@ export default function InventoryChoicePage() {
       )}
 
       {/* Existing Inventory Choice UI */}
-      <div className="bg-white rounded-2xl shadow-[6px_6px_7px_0px_#00000026] w-full max-w-lg p-8 border border-gray-200">
-        <h1 className="text-2xl font-semibold text-center text-[#414042]">
+      <div className="bg-white rounded-2xl shadow-[6px_6px_7px_0px_#00000026] w-full max-w-lg md:p-8 p-4 border border-gray-200">
+        <h1 className="md:text-2xl text-xl font-semibold text-center text-[#414042]">
           Inventory Forecast
         </h1>
-        <p className="text-[#414042] text-center mt-1 mb-6">
+        <p className="text-[#414042] text-center mt-1 md:mb-6 mb-4 md:text-base text-sm">
           Choose your forecasting method to sync your sales data
         </p>
 
-        <div className="bg-[#F3F8F6] border border-[#5EA68E] rounded-xl p-6">
+        <div className="bg-[#F3F8F6] border border-[#5EA68E] rounded-xl md:p-6 p-4">
           <div className="flex justify-start items-center gap-2">
             <div className="bg-[#D9D9D9] p-2 rounded-lg">
               {/* link icon */}
@@ -320,10 +320,10 @@ export default function InventoryChoicePage() {
             </div>
             <div>
               <h2 className="text-lg font-semibold text-[#414042]">Automation</h2>
-              <p className="text-sm text-[#5EA68E]">Setup in 30 seconds</p>
+              <p className="md:text-sm text-xs text-[#5EA68E]">Setup in 30 seconds</p>
             </div>
           </div>
-          <ul className="space-y-2 text-gray-700 text-sm mt-3">
+          <ul className="space-y-2 text-gray-700 md:text-sm text-xs mt-3">
             <li className="flex items-center gap-2">
               <CheckCircle size={16} className="text-[#5EA68E]" />
               AI-powered prediction
@@ -343,13 +343,13 @@ export default function InventoryChoicePage() {
           </ul>
           <button
             onClick={handleAutomation}
-            className="mt-6 w-full bg-[#5EA68E] text-[#F8EDCE] py-2.5 rounded-lg font-bold flex items-center justify-center gap-2 shadow hover:bg-[#4e937b] transition-all"
+            className="mt-6 w-full bg-[#5EA68E] text-[#F8EDCE] py-2.5 sm:text-base text-sm rounded-lg font-bold flex items-center justify-center gap-2 shadow hover:bg-[#4e937b] transition-all"
           >
             Enable Automation
           </button>
         </div>
 
-        <div className="flex items-center my-6">
+        <div className="flex items-center md:my-6 my-4">
           <div className="flex-grow border-t border-gray-300"></div>
           <span className="mx-3 text-gray-500 text-sm">or</span>
           <div className="flex-grow border-t border-gray-300"></div>
@@ -358,7 +358,7 @@ export default function InventoryChoicePage() {
         <div className="text-center">
           <button
             onClick={handleManual}
-            className="text-[#414042] font-medium hover:underline text-sm flex items-center justify-center gap-1 mx-auto"
+            className="text-[#414042] font-medium hover:underline md:text-sm text-xs flex items-center justify-center gap-1 mx-auto"
           >
             Set up manual file uploads instead
             <svg
@@ -378,7 +378,7 @@ export default function InventoryChoicePage() {
           </button>
         </div>
 
-        <div className="flex items-center my-6">
+        <div className="flex items-center md:my-6 my-4">
           <div className="flex-grow border-t border-gray-300"></div>
           <div className="flex-grow border-t border-gray-300"></div>
         </div>

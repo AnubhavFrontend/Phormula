@@ -386,12 +386,13 @@ export default function BrandForm() {
 
   return (
     <div className="flex flex-col flex-1 lg:w-1/2 w-full">
+      
+
       <div className="flex flex-col justify-center flex-1 w-full max-w-md mx-auto">
         <div>
           <div className="mb-5 sm:mb-8">
-            <h1 className="mb-2 font-semibold text-charcoal-500 text-title-sm dark:text-white/90 sm:text-title-md">
-              What is your <span className="text-green-500">Company</span> and{" "}
-              <span className="text-green-500">Brand</span> name?
+            <h1 className="mb-2 font-semibold text-[#414042] text-title-sm dark:text-white/90 sm:text-title-md">
+              What is your <span className="text-[#5EA68E]">Company</span> and <span className="text-[#5EA68E]">Brand</span> name?
             </h1>
             <p className="text-sm text-charcoal-500 dark:text-gray-400">
               Tell us your company and brand names.
@@ -435,21 +436,29 @@ export default function BrandForm() {
             )}
 
             <div className="mt-6 flex items-center justify-end gap-3">
-              <Button type="button" onClick={onBack} variant="outline">
+              <Button
+                type="button"
+                onClick={onBack}
+                variant="outline"
+              >
                 Back
               </Button>
-              <Button type="submit" disabled={loading} variant="primary">
+              <Button
+                type="submit"
+                disabled={loading}
+                variant="primary"
+              >
                 {loading ? "Please wait…" : "Next"}
               </Button>
             </div>
           </form>
 
           <div className="mt-5">
-            <p className="text-sm font-normal text-center text-gray-700 dark:text-gray-400 sm:text-start">
+            <p className="text-sm font-normal text-center text-[#414042]  sm:text-start">
               Want to change your countries?{" "}
               <Link
                 href="/choose-country?onboard=1"
-                className="text-brand-500 hover:text-brand-600 dark:text-brand-400"
+                className="text-[#000000]"
               >
                 Go back to Choose Country
               </Link>
