@@ -197,7 +197,7 @@ export default function Loader({
         "inline-flex items-center justify-center",
         transparent ? "" : backgroundClass,
         roundedClass,
-        "shadow-sm border border-black/5 dark:border-white/5",
+        // "shadow-sm border border-black/5 dark:border-white/5",
         className,
       ].join(" ")}
       style={

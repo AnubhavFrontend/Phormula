@@ -1293,6 +1293,7 @@ import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import DataTable, { ColumnDef, Row } from "@/components/ui/table/DataTable";
 import Button from "@/components/ui/button/Button";
 import Loader from "@/components/loader/Loader"; // 👈 NEW
+import DownloadButton from "@/components/ui/button/DownloadButton";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -1917,7 +1918,7 @@ export default function ReferralFeesDashboard(): JSX.Element {
 
   /* ===================== RENDER ===================== */
   return (
-    <div className="p-4 space-y-4 font-sans text-[#414042]">
+    <div className="space-y-1.5 font-sans text-charcoal-500">
       {/* Top bar */}
       <div className="flex items-baseline gap-2">
         <PageBreadcrumb
@@ -1925,15 +1926,15 @@ export default function ReferralFeesDashboard(): JSX.Element {
           variant="page"
           align="left"
           textSize="2xl"
-          className="mb-0"
+          className="mb-0 md:mb-2"
         />
-        <span className="text-[#5EA68E] text-xl sm:text-2xl">
+        <span className="text-[#5EA68E] font-bold text-lg sm:text-2xl md:text-2xl">
           {country.toUpperCase()}
         </span>
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-[0.5vw]">
+      <div className="flex flex-col md:flex-row items-center justify-between ">
         <MonthYearPickerTable
           month={month}
           year={year}
@@ -1970,7 +1971,7 @@ export default function ReferralFeesDashboard(): JSX.Element {
         pageTitle="Summary Overview"
         variant="page"
         align="left"
-        className="mt-4"
+        className="mt-0 md:mt-4  mb-0 md:mb-2 "
       />
 
       {/* Summary tiles */}
@@ -2013,9 +2014,9 @@ export default function ReferralFeesDashboard(): JSX.Element {
       </div>
 
       {/* Summary Overview table */}
-      <div className="bg-white rounded-2xl shadow p-4 overflow-x-auto">
+      <div className="overflow-x-auto">
         {summaryTableRows.length ? (
-          <div className="[&_table]:w-full [&_th]:text-center [&_td]:text-center [&_tr:hover]:bg-transparent">
+          <div className="[&_table]:w-full [&_th]:text-center [&_td]:text-center [&_tr:hover]:bg-transparent my-8">
             <DataTable
               columns={summaryColumns}
               data={summaryTableRows}
@@ -2052,23 +2053,16 @@ export default function ReferralFeesDashboard(): JSX.Element {
       </div>
 
       {/* SKU-wise table */}
-      <div className="bg-white rounded-2xl shadow p-4 w-full overflow-x-auto">
-        <div className="flex flex-col md:flex-row items-center justify-between mb-2 gap-2 min-w-max">
+      <div className="bg-white rounded-2xl shadow px-2 md:px-4 pb-2 md:pb-4 w-full overflow-x-auto">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-2 flex-wrap w-full mb-2 md:mb-0">
           <PageBreadcrumb
             pageTitle="Product-wise Details of Overcharged Ref Fees"
             variant="page"
             align="left"
-            className="mt-4"
+            className="mt-4 mb-0 md:mb-4 text-center"
           />
 
-          <Button
-            size="sm"
-            onClick={handleDownloadExcel}
-            variant="primary"
-            endIcon={<FiDownload className="text-yellow-200" />}
-          >
-            Download (.xlsx)
-          </Button>
+          <DownloadButton onClick={handleDownloadExcel} />
         </div>
 
         <div className="[&_table]:w-full [&_th]:text-center [&_td]:text-center">

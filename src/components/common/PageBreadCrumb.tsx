@@ -47,6 +47,8 @@
 
 // export default PageBreadcrumb;
 
+
+
 import React from "react";
 
 interface BreadcrumbProps {
@@ -95,7 +97,7 @@ const PageBreadcrumb: React.FC<BreadcrumbProps> = ({
   };
 
   return (
-    <div className={`mb-4 ${alignClassMap[align]}`}>
+    <div className={`${alignClassMap[align]}`}>
       <h2
         className={`
           inline-block          /* don’t stretch full width */
