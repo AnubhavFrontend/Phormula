@@ -827,6 +827,104 @@ const AmazonFinancialDashboard: React.FC<Props> = ({ region, country, onClose })
     });
 
   // --------- 3/6/12 months via finances ----------
+  // const handleFetchFinancesRange = () =>
+  //   wrap(async () => {
+  //     const n = selectedPeriod || 0;
+  //     if (![3, 6, 12].includes(n)) {
+  //       setMessage("Please select 3, 6, or 12 months.");
+  //       return;
+  //     }
+
+  //     const now = new Date();
+  //     const months: { y: number; mIdx: number }[] = [];
+  //     for (let i = 0; i < n; i++) {
+  //       const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - i, 1));
+  //       months.push({ y: d.getUTCFullYear(), mIdx: d.getUTCMonth() });
+  //     }
+  //     months.reverse();
+
+  //     let combinedRows: any[] = [];
+  //     let combinedCols: string[] | null = null;
+  //     let okCount = 0;
+  //     let csvFallbackCount = 0;
+
+  //     for (const { y, mIdx } of months) {
+  //       // Try JSON for preview
+  //       const jsonQs = new URLSearchParams({
+  //         region: regionUsed,
+  //         marketplace_id: marketplaceIdUsed,
+  //         month: toMonthSlug(y, mIdx),
+  //         limit: "all",
+  //         country: countryUsed,
+  //         run_upload_pipeline: "true",
+  //         year: String(y),
+  //         format: "json",
+  //         store_in_db: "false",
+  //       });
+  //       try {
+  //         const data = await api(`/amazon_api/settlements_finances?${jsonQs}`);
+  //         const rows = Array.isArray((data as any)?.items) ? (data as any).items : [];
+  //         if (rows.length) {
+  //           if (!combinedCols) combinedCols = Object.keys(rows[0]);
+  //           combinedRows = combinedRows.concat(rows);
+  //         }
+  //         okCount++;
+  //         continue;
+  //       } catch {
+  //         // Fallback to CSV (no preview parsing)
+  //         const csvQs = new URLSearchParams({
+  //           region: regionUsed,
+  //           marketplace_id: marketplaceIdUsed,
+  //           month: toMonthSlug(y, mIdx),
+  //           limit: "all",
+  //           country: countryUsed,
+  //           year: String(y),
+  //           format: "csv",
+  //           store_in_db: "false",
+  //         });
+  //         try {
+  //           await apiText(`/amazon_api/settlements_finances?${csvQs}`);
+  //           okCount++;
+  //           csvFallbackCount++;
+  //         } catch (e2) {
+  //           console.error("Finances fetch failed for", y, mIdx + 1, e2);
+  //         }
+  //       }
+  //     }
+
+  //     if (combinedRows.length > 0) {
+  //       setSettlementCols(combinedCols || []);
+  //       setSettlementRows(combinedRows);
+  //     } else {
+  //       setSettlementCols([]);
+  //       setSettlementRows([]);
+  //     }
+
+  //     const details = [
+  //       `Requested: ${n} month${n > 1 ? "s" : ""}`,
+  //       `Succeeded: ${okCount}`,
+  //       csvFallbackCount ? `CSV fallback for ${csvFallbackCount} month(s)` : null,
+  //     ].filter(Boolean).join(" · ");
+
+  //     setMessage(`Finances fetch complete for ${countryUsed}. ${details}`);
+
+  //     // Navigate to latest month
+  //     const fullMonthNames = [
+  //       "January", "February", "March", "April", "May", "June",
+  //       "July", "August", "September", "October", "November", "December",
+  //     ];
+  //     const latestMonthIdx = new Date().getMonth();
+  //     const latestYear = new Date().getFullYear();
+  //     const monthSlug = fullMonthNames[latestMonthIdx].toLowerCase();
+
+  //     // Close the modal and navigate
+  //     if (onClose) {
+  //       onClose();
+  //     }
+  //     router.push(`/country/MTD/${countryUsed}/${monthSlug}/${latestYear}`);
+  //   });
+
+  // --------- 3/6/12 months: 3m via settlements, 6/12 via finances ----------
   const handleFetchFinancesRange = () =>
     wrap(async () => {
       const n = selectedPeriod || 0;
@@ -849,45 +947,75 @@ const AmazonFinancialDashboard: React.FC<Props> = ({ region, country, onClose })
       let csvFallbackCount = 0;
 
       for (const { y, mIdx } of months) {
-        // Try JSON for preview
-        const jsonQs = new URLSearchParams({
-          region: regionUsed,
-          marketplace_id: marketplaceIdUsed,
-          month: toMonthSlug(y, mIdx),
-          limit: "all",
-          country: countryUsed,
-          run_upload_pipeline: "true",
-          year: String(y),
-          format: "json",
-          store_in_db: "false",
-        });
-        try {
-          const data = await api(`/amazon_api/settlements_finances?${jsonQs}`);
-          const rows = Array.isArray((data as any)?.items) ? (data as any).items : [];
-          if (rows.length) {
-            if (!combinedCols) combinedCols = Object.keys(rows[0]);
-            combinedRows = combinedRows.concat(rows);
-          }
-          okCount++;
-          continue;
-        } catch {
-          // Fallback to CSV (no preview parsing)
-          const csvQs = new URLSearchParams({
+        if (n === 3) {
+          // -------- 3 MONTHS: USE /amazon_api/settlements --------
+          const monthParam = `${y}-${two(mIdx + 1)}`; // e.g. 2025-01
+          const qs = new URLSearchParams({
             region: regionUsed,
             marketplace_id: marketplaceIdUsed,
-            month: toMonthSlug(y, mIdx),
+            month: monthParam,
             limit: "all",
             country: countryUsed,
             year: String(y),
             format: "csv",
             store_in_db: "false",
+            run_upload_pipeline: "true",
+            allow_report_created_fallback: "true",
+          });
+
+          try {
+            const data = await api(`/amazon_api/settlements?${qs}`);
+            const rows = Array.isArray((data as any)?.items) ? (data as any).items : [];
+            if (rows.length) {
+              if (!combinedCols) combinedCols = Object.keys(rows[0]);
+              combinedRows = combinedRows.concat(rows);
+            }
+            okCount++;
+          } catch (e) {
+            console.error("Settlements fetch failed for", y, mIdx + 1, e);
+          }
+        } else {
+          // -------- 6/12 MONTHS: USE /amazon_api/settlements_finances --------
+          // Try JSON for preview
+          const jsonQs = new URLSearchParams({
+            region: regionUsed,
+            marketplace_id: marketplaceIdUsed,
+            month: toMonthSlug(y, mIdx), // e.g. 2025-january
+            limit: "all",
+            country: countryUsed,
+            run_upload_pipeline: "true",
+            year: String(y),
+            format: "json",
+            store_in_db: "false",
           });
           try {
-            await apiText(`/amazon_api/settlements_finances?${csvQs}`);
+            const data = await api(`/amazon_api/settlements_finances?${jsonQs}`);
+            const rows = Array.isArray((data as any)?.items) ? (data as any).items : [];
+            if (rows.length) {
+              if (!combinedCols) combinedCols = Object.keys(rows[0]);
+              combinedRows = combinedRows.concat(rows);
+            }
             okCount++;
-            csvFallbackCount++;
-          } catch (e2) {
-            console.error("Finances fetch failed for", y, mIdx + 1, e2);
+            continue;
+          } catch {
+            // Fallback to CSV (no preview parsing)
+            const csvQs = new URLSearchParams({
+              region: regionUsed,
+              marketplace_id: marketplaceIdUsed,
+              month: toMonthSlug(y, mIdx),
+              limit: "all",
+              country: countryUsed,
+              year: String(y),
+              format: "csv",
+              store_in_db: "false",
+            });
+            try {
+              await apiText(`/amazon_api/settlements_finances?${csvQs}`);
+              okCount++;
+              csvFallbackCount++;
+            } catch (e2) {
+              console.error("Finances fetch failed for", y, mIdx + 1, e2);
+            }
           }
         }
       }
@@ -904,9 +1032,12 @@ const AmazonFinancialDashboard: React.FC<Props> = ({ region, country, onClose })
         `Requested: ${n} month${n > 1 ? "s" : ""}`,
         `Succeeded: ${okCount}`,
         csvFallbackCount ? `CSV fallback for ${csvFallbackCount} month(s)` : null,
-      ].filter(Boolean).join(" · ");
+      ]
+        .filter(Boolean)
+        .join(" · ");
 
-      setMessage(`Finances fetch complete for ${countryUsed}. ${details}`);
+      const modeLabel = n === 3 ? "Settlements" : "Finances";
+      setMessage(`${modeLabel} fetch complete for ${countryUsed}. ${details}`);
 
       // Navigate to latest month
       const fullMonthNames = [
@@ -917,12 +1048,12 @@ const AmazonFinancialDashboard: React.FC<Props> = ({ region, country, onClose })
       const latestYear = new Date().getFullYear();
       const monthSlug = fullMonthNames[latestMonthIdx].toLowerCase();
 
-      // Close the modal and navigate
       if (onClose) {
         onClose();
       }
       router.push(`/country/MTD/${countryUsed}/${monthSlug}/${latestYear}`);
     });
+
 
   return (
     <div className="w-full">

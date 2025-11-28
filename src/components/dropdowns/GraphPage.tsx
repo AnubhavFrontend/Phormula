@@ -828,6 +828,7 @@ import Button from "../ui/button/Button";
 import PageBreadcrumb from "../common/PageBreadCrumb";
 import { FiDownload } from "react-icons/fi";
 import Loader from "@/components/loader/Loader"; // 👈 NEW
+import DownloadIconButton from "../ui/button/DownloadButton";
 
 ChartJS.register(
   CategoryScale,
@@ -1354,6 +1355,23 @@ const GraphPage: React.FC<GraphPageProps> = ({
     profit: "bg-lime-600",
   };
 
+  const toggleMetric = (name: string) => {
+    const selectedCount = Object.values(selectedGraphs).filter(Boolean).length;
+    const isChecked = !!selectedGraphs[name];
+
+    // prevent turning off the last metric
+    if (isChecked && selectedCount === 1) {
+      setShowModal(true);
+      return;
+    }
+
+    setSelectedGraphs((prev) => ({
+      ...prev,
+      [name]: !isChecked,
+    }));
+  };
+
+
   // 👇 NEW: show loader while fetchUploadHistory is in progress
   if (loading) {
     return (
@@ -1371,8 +1389,8 @@ const GraphPage: React.FC<GraphPageProps> = ({
   }
 
   return (
-    <div className="p-3 sm:p-4 md:p-6">
-      <div className="flex gap-2">
+    <div className="py-3 sm:py-4 md:y-6">
+      {/* <div className="flex gap-2">
         <PageBreadcrumb
           pageTitle="Tracking Profitability -"
           variant="page"
@@ -1384,14 +1402,36 @@ const GraphPage: React.FC<GraphPageProps> = ({
             ? "GLOBAL"
             : countryName?.toUpperCase()}
         </span>
+      </div> */}
+
+      <div className="mb-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        {/* Left: title + period */}
+        <div className="flex flex-wrap items-baseline gap-2 justify-center sm:justify-start">
+          <PageBreadcrumb
+            pageTitle="Tracking Profitability -"
+            variant="page"
+            align="left"
+            textSize="2xl"
+          />
+          <span className="text-[#5EA68E] font-bold text-lg sm:text-2xl md:text-2xl">
+            {countryName?.toLowerCase() === "global"
+              ? "GLOBAL"
+              : countryName?.toUpperCase()}
+          </span>
+        </div>
+
+        {/* Right: Download button */}
+        <div className="flex justify-center sm:justify-end">
+          <DownloadIconButton onClick={exportToExcel} />
+        </div>
       </div>
 
       {/* Metric toggles */}
       <div
         className={[
           "mt-3 sm:mt-4",
-          "flex flex-wrap lg:flex-nowrap items-center justify-start",
-          "gap-1.5 sm:gap-2 md:gap-1.5",
+          "flex flex-wrap items-center justify-center",   // ✅ CENTERED
+          "gap-3 sm:gap-4 md:gap-5",                      // ✅ MORE SPACE BETWEEN TOGGLES
           "w-full mx-auto",
           allValuesZero ? "opacity-30" : "opacity-100",
           "transition-opacity duration-300",
@@ -1403,11 +1443,7 @@ const GraphPage: React.FC<GraphPageProps> = ({
           { name: "AmazonExpense", label: "Amazon Fees", color: "#FF5C5C" },
           { name: "taxncredit", label: "Taxes & Credits", color: "#154B9B" },
           { name: "profit2", label: "CM1 Profit", color: "#5EA49B" },
-          {
-            name: "advertisingCosts",
-            label: "Advertising Costs",
-            color: "#F47A00",
-          },
+          { name: "advertisingCosts", label: "Advertising Costs", color: "#F47A00" },
           { name: "Other", label: "Other", color: "#00627D" },
           { name: "profit", label: "CM2 Profit", color: "#87AD12" },
         ].map(({ name, label, color }) => {
@@ -1419,30 +1455,50 @@ const GraphPage: React.FC<GraphPageProps> = ({
               className={[
                 "shrink-0",
                 "flex items-center gap-1 sm:gap-1.5",
-                "font-semibold cursor-pointer select-none whitespace-nowrap",
+                "font-semibold select-none whitespace-nowrap",
+                // 👇 SAME FONT-SIZES YOU ALREADY HAD
                 "text-[9px] sm:text-[10px] md:text-[11px] lg:text-xs xl:text-sm",
-                "underline decoration-2 underline-offset-[2px]",
-                isChecked ? "opacity-100" : "opacity-40", // dim when off
+                "text-[#414042]",         // text color
+                isChecked ? "opacity-100" : "opacity-40",
+                allValuesZero ? "cursor-not-allowed" : "cursor-pointer",
               ].join(" ")}
-              style={{ color }}
             >
-              <input
-                type="checkbox"
-                name={name}
-                checked={isChecked}
-                onChange={handleCheckboxChange}
-                disabled={allValuesZero}
-                className={[
-                  "h-3 w-3 sm:h-3.5 sm:w-3.5 rounded-sm cursor-pointer",
-                  accentClass[name],
-                  "disabled:cursor-not-allowed",
-                ].join(" ")}
-              />
+              {/* Colored box */}
+              <span
+                className="
+            flex items-center justify-center
+            h-3 w-3 sm:h-3.5 sm:w-3.5
+            rounded-sm border transition
+          "
+                style={{
+                  borderColor: color,
+                  backgroundColor: isChecked ? color : "white",
+                  opacity: allValuesZero ? 0.6 : 1,
+                }}
+                onClick={() => !allValuesZero && toggleMetric(name)}
+              >
+                {isChecked && (
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="14"
+                    height="14"
+                    className="text-white"
+                  >
+                    <path
+                      fill="currentColor"
+                      d="M20.285 6.709a1 1 0 0 0-1.414-1.414L9 15.168l-3.879-3.88a1 1 0 0 0-1.414 1.415l4.586 4.586a1 1 0 0 0 1.414 0l10-10Z"
+                    />
+                  </svg>
+                )}
+              </span>
+
               <span>{label.toUpperCase()}</span>
             </label>
           );
         })}
       </div>
+
+
 
       {/* Chart */}
       <div className="relative mt-2 sm:mt-3">
@@ -1569,7 +1625,7 @@ const GraphPage: React.FC<GraphPageProps> = ({
       </div>
 
       {/* Export button ABOVE chart */}
-      <div
+      {/* <div
         className={[
           "mt-2 sm:mt-3",
           "w-full mx-auto",
@@ -1587,7 +1643,7 @@ const GraphPage: React.FC<GraphPageProps> = ({
           Download (.xlsx)
           <FiDownload className="text-yellow-200" />
         </Button>
-      </div>
+      </div> */}
     </div>
   );
 };

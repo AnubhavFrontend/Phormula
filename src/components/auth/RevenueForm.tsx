@@ -101,7 +101,51 @@ export default function RevenueForm() {
   //   router.push("/");
   // };
 
-  const onSubmit = (e: React.FormEvent) => {
+//   const onSubmit = (e: React.FormEvent) => {
+//   e.preventDefault();
+
+//   if (!selectedRevenue) {
+//     setError("Please select a revenue range.");
+//     return;
+//   }
+
+//   setError(null);
+//   setLoading(true);
+
+//   // Pull values already collected in earlier steps
+//   const countries = JSON.parse(
+//     localStorage.getItem("selectedCountries") || "[]"
+//   ) as string[];
+//   const companyName = localStorage.getItem("companyName") || "";
+//   const brandName = localStorage.getItem("brandName") || "";
+//   const homeCurrency = localStorage.getItem("homeCurrency") || "";
+
+//   // Mark onboarding done on client immediately
+//   localStorage.setItem("onboardDone", "true");
+
+//   // 🔥 Fire-and-forget submit + mark complete
+//   submitSelectForm({
+//     annual_sales_range: selectedRevenue,
+//     country: countries.join(", "),
+//     company_name: companyName,
+//     brand_name: brandName,
+//     homeCurrency,
+//   })
+//     .unwrap()
+//     .then(() =>
+//       markOnboardingComplete({ onboarding_complete: true }).unwrap()
+//     )
+//     .catch((e) => {
+//       console.warn("Onboarding completion failed (non-blocking):", e);
+//     });
+
+//   // 🚀 Go to dashboard right away
+//   router.push("/");
+
+//   // ❌ No setLoading(false) – component is about to unmount
+// };
+
+const onSubmit = (e: React.FormEvent) => {
   e.preventDefault();
 
   if (!selectedRevenue) {
@@ -139,8 +183,24 @@ export default function RevenueForm() {
       console.warn("Onboarding completion failed (non-blocking):", e);
     });
 
-  // 🚀 Go to dashboard right away
-  router.push("/");
+  // 👉 Build the FIRST-TIME Profits route
+  // You can adjust these if you store them differently
+  const ranged =
+    localStorage.getItem("ranged") || "monthly"; // or "yearly", "range", etc.
+  const countryName = countries[0] || "global";
+
+  const now = new Date();
+  const month = String(now.getMonth() + 1).padStart(2, "0"); // "01".."12"
+  const year = String(now.getFullYear());
+
+  const profitPath = `/country/QTD/${countryName}/NA/NA`;
+
+  // (Optional) store that user has already seen first-time Profits
+  localStorage.setItem("hasSeenFirstTimeRoute", "true");
+  localStorage.setItem("firstProfitPath", profitPath);
+
+  // 🚀 FIRST TIME: go to Profits screen
+  router.push(profitPath);
 
   // ❌ No setLoading(false) – component is about to unmount
 };

@@ -461,14 +461,15 @@ export default function DataTable<T extends Row>({
       >
         <table
           className={clsx(
-            // responsive font + nowrap + min width so it scrolls nicely on small screens
-            "min-w-[720px] w-full border-collapse text-xs md:text-sm whitespace-nowrap",
+            // let parent control width, no forced min-width, no forced nowrap
+            "w-full border-collapse text-xs md:text-sm",
             tableClassName
           )}
         >
+
           <thead
             className={clsx(
-              "bg-green-500 text-amber-100",
+              "bg-green-500 text-amber-100 ",
               stickyHeader && "sticky top-0 z-10"
             )}
           >
@@ -477,11 +478,12 @@ export default function DataTable<T extends Row>({
                 <th
                   key={String(col.key) + i}
                   className={clsx(
-                    "border border-slate-300 px-3 py-2 md:py-3 text-left",
+                    "border border-slate-300 px-3 py-2 md:py-3",
                     col.headerClassName
                   )}
                   style={col.width ? { width: col.width } : undefined}
                 >
+
                   {col.header}
                 </th>
               ))}
@@ -527,10 +529,10 @@ export default function DataTable<T extends Row>({
                       >
                         {col.render
                           ? col.render(
-                              row,
-                              value,
-                              (page - 1) * pageSize + ri
-                            )
+                            row,
+                            value,
+                            (page - 1) * pageSize + ri
+                          )
                           : value ?? "\u00A0"}
                       </td>
                     );

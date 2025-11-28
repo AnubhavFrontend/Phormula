@@ -563,6 +563,7 @@ import PageBreadcrumb from "../common/PageBreadCrumb";
 import Loader from "@/components/loader/Loader"; // 👈 NEW
 import Button from "../ui/button/Button";
 import { FiDownload } from "react-icons/fi";
+import DownloadIconButton from "../ui/button/DownloadButton";
 
 ChartJS.register(
   CategoryScale,
@@ -963,8 +964,8 @@ const Bargraph: React.FC<BargraphProps> = ({
   ]);
 
   return (
-    <div className="relative w-full">
-      <div className="flex gap-2">
+    <div className="relative w-full py-3 sm:py-4 md:y-6">
+      {/* <div className="flex gap-2">
         <PageBreadcrumb
           pageTitle="Tracking Profitability -"
           variant="page"
@@ -976,7 +977,31 @@ const Bargraph: React.FC<BargraphProps> = ({
             ? "GLOBAL"
             : countryName?.toUpperCase()}
         </span>
+      </div> */}
+
+
+      <div className="mb-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        {/* Left: title + period */}
+        <div className="flex flex-wrap items-baseline gap-2 justify-center sm:justify-start">
+          <PageBreadcrumb
+            pageTitle="Tracking Profitability -"
+            variant="page"
+            align="left"
+            textSize="2xl"
+          />
+          <span className="text-[#5EA68E] font-bold text-lg sm:text-2xl md:text-2xl">
+            {countryName?.toLowerCase() === "global"
+              ? "GLOBAL"
+              : countryName?.toUpperCase()}
+          </span>
+        </div>
+
+        {/* Right: Download button */}
+        <div className="flex justify-center sm:justify-end">
+          <DownloadIconButton onClick={exportToExcel} />
+        </div>
       </div>
+      
 
 
 
@@ -1019,7 +1044,7 @@ const Bargraph: React.FC<BargraphProps> = ({
         </button>
       </div> */}
 
-      <div
+      {/* <div
         className={[
           "mt-2 sm:mt-3",
           "w-full mx-auto",
@@ -1037,7 +1062,7 @@ const Bargraph: React.FC<BargraphProps> = ({
           Download (.xlsx)
           <FiDownload className="text-yellow-200" />
         </Button>
-      </div>
+      </div> */}
 
       {/* No data overlay (only when NOT loading) */}
       {!loading && allValuesZero && (
