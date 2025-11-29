@@ -1293,7 +1293,7 @@ import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import DataTable, { ColumnDef, Row } from "@/components/ui/table/DataTable";
 import Button from "@/components/ui/button/Button";
 import Loader from "@/components/loader/Loader"; // 👈 NEW
-import DownloadButton from "@/components/ui/button/DownloadButton";
+import DownloadButton from "@/components/ui/button/DownloadIconButton";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 

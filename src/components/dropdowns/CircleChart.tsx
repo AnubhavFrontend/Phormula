@@ -233,7 +233,7 @@ const CircleChart: React.FC<CircleChartProps> = ({
     return (
 
       <div className="flex gap-2">
-        <PageBreadcrumb pageTitle=" Expense Breakdown - " variant="page" align="left" textSize="2xl" />
+        <PageBreadcrumb pageTitle="Expense Breakdown - " variant="page" align="left" textSize="2xl" />
         <span className="text-[#5EA68E] font-bold text-lg sm:text-2xl md:text-2xl">
           Year&apos;{y.slice(-2)}
         </span>
@@ -243,7 +243,7 @@ const CircleChart: React.FC<CircleChartProps> = ({
 
   const options: ChartOptions<"pie"> = {
     responsive: true,
-    maintainAspectRatio: true,
+    // maintainAspectRatio: true,
     plugins: {
       legend: {
         position: legendPosition,
@@ -274,11 +274,12 @@ const CircleChart: React.FC<CircleChartProps> = ({
       },
     },
     layout: {
-      padding: { top: 10, bottom: 10, left: 10, right: 10 },
+      padding: 0,
     },
     animation: {
       duration: 900,
     },
+    maintainAspectRatio: false,
   };
 
   return (
@@ -290,20 +291,24 @@ const CircleChart: React.FC<CircleChartProps> = ({
 
 
       <div className="mb-4">
-        <PageBreadcrumb
-          pageTitle={`Expense Breakdown – <span class='text-[#5EA68E] font-bold'>
-      ${range === "yearly"
-              ? `Year'${String(year).slice(-2)}`
-              : countryName?.toLowerCase() === "global"
-                ? "GLOBAL"
-                : countryName?.toUpperCase()
-            }
-    </span>`}
-          variant="page"
-          align="left"
-          textSize="2xl"
-        />
+        {/* responsive wrapper JUST for this heading */}
+        <div className="w-fit mx-auto md:mx-0">
+          <PageBreadcrumb
+            pageTitle={`Expense Breakdown – <span class='text-[#5EA68E] font-bold'>
+        ${range === "yearly"
+                ? `Year'${String(year).slice(-2)}`
+                : countryName?.toLowerCase() === "global"
+                  ? "GLOBAL"
+                  : countryName?.toUpperCase()
+              }
+      </span>`}
+            variant="page"
+            textSize="2xl"
+            align="left"
+          />
+        </div>
       </div>
+
 
       <div className="w-full">
         {displayChartData && displayChartData.labels && displayChartData.datasets?.length ? (
@@ -312,20 +317,16 @@ const CircleChart: React.FC<CircleChartProps> = ({
               "mx-auto",
               "w-full",
               "max-w-[260px] sm:max-w-[320px] md:max-w-[420px] lg:max-w-[520px]",
-              "aspect-square",
               "relative",
             ].join(" ")}
           >
-            <div
-              className={[
-                "absolute inset-0",
-                "transition-opacity duration-300",
-                allValuesZero ? "opacity-30 pointer-events-none" : "opacity-100",
-              ].join(" ")}
-            >
+
+            <div className="relative h-[260px] sm:h-[300px] md:h-[340px] lg:h-[380px]">
               <Pie data={displayChartData} options={options} />
             </div>
+
           </div>
+
         ) : (
           <p className="text-center text-sm text-gray-500">Loading chart data...</p>
         )}

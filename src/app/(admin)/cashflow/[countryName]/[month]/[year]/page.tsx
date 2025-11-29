@@ -972,7 +972,9 @@ import {
 } from "chart.js";
 import { FiDownload } from "react-icons/fi";
 import DataTable, { ColumnDef } from "@/components/ui/table/DataTable";
-import DownloadIconButton from "@/components/ui/button/DownloadButton";
+import DownloadIconButton from "@/components/ui/button/DownloadIconButton";
+import ExcelJS from "exceljs/dist/exceljs.min.js";
+import { saveAs } from "file-saver";
 
 ChartJS.register(
   BarElement,
@@ -1097,7 +1099,7 @@ const CashFlowPage: React.FC = () => {
     month?: string;
     year?: string;
   }>();
-
+  const chartRef = React.useRef<any>(null);
   const countryName = params?.countryName || "";
   const paramMonth = params?.month ? decodeURIComponent(params.month) : "";
   const paramYear = params?.year || "";
@@ -1608,10 +1610,14 @@ const CashFlowPage: React.FC = () => {
     XLSX.writeFile(wb, fileName);
   };
 
-  const downloadCombinedExcel = () => {
+const downloadCombinedExcelWithImage = async () => {
   if (!data?.summary) return;
 
-  // ---- Common meta info ----
+  // 1. Create workbook / sheet
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet("Cashflow");
+
+  // 2. Meta info (brand, company, etc.)
   const company = userData?.company_name || "N/A";
   const brand = userData?.brand_name || "N/A";
 
@@ -1625,81 +1631,76 @@ const CashFlowPage: React.FC = () => {
     [""],
   ];
 
-  // ---- TABLE SECTION (same as your current table export, just embedded here) ----
-  const tableHeader = [
-    ["S.No.", "Category", "", `Amount (${currencySymbol})`],
-  ];
+  metaRows.forEach((row) => worksheet.addRow(row));
+
+  // 3. TABLE SECTION (summary table ON TOP)
+  worksheet.addRow(["TABLE SUMMARY"]);
+  worksheet.addRow(["S.No.", "Category", "", `Amount (${currencySymbol})`]);
 
   const signs = ["(+)", "(-)", "(-)", "(-)", "(-)", "(-)", "(+)"];
 
-  const tableData = columnsToDisplay2.map((key, index) => {
+  columnsToDisplay2.forEach((key, index) => {
     const label = labelMap[key];
     const sign = signs[index] || "";
     const isLastRow = index === columnsToDisplay2.length - 1;
-    return [
+
+    const val = Number(
+      Math.abs(getSafeValue(key as keyof SummaryShape)).toFixed(2)
+    );
+
+    worksheet.addRow([
       isLastRow ? "" : index + 1,
       label,
       isLastRow ? "" : sign,
-      Number(
-        Math.abs(getSafeValue(key as keyof SummaryShape)).toFixed(2)
-      ),
-    ];
+      val,
+    ]);
   });
 
-  const tableSection: any[] = [
-    ["TABLE SUMMARY"],
-    ...tableHeader,
-    ...tableData,
-    [""],
-  ];
+  worksheet.addRow([""]); // blank row after table
 
-  // ---- CHART SECTION (based on current periodType) ----
-  // For monthly -> use bar chart data; for quarterly/yearly -> line chart data
-  const chartData =
-    periodType === "monthly"
-      ? getFilteredBarChartData()
-      : getLineChartData();
+  // 4. Capture chart as PNG from Chart.js and place it BELOW the table
+  const chartInstance: any = chartRef.current;
+  if (chartInstance) {
+    // Try to get the base64 image from the chart instance
+    let dataUrl: string | undefined;
 
-  const { labels, datasets } = chartData as {
-    labels: string[];
-    datasets: any[];
-  };
+    if (typeof chartInstance.toBase64Image === "function") {
+      dataUrl = chartInstance.toBase64Image("image/png", 1.0);
+    } else if (chartInstance.canvas?.toDataURL) {
+      // Fallback: access canvas directly
+      dataUrl = chartInstance.canvas.toDataURL("image/png", 1.0);
+    }
 
-  const chartHeader = [["CHART DATA"], ["Metric", ...(labels || [])]];
+    if (dataUrl) {
+      // Strip the "data:image/png;base64," prefix for ExcelJS
+      const base64 = dataUrl.replace(/^data:image\/\w+;base64,/, "");
 
-  const chartRows = (datasets || []).map((ds: any) => [
-    ds.label,
-    ...(ds.data || []).map((v: number) => Number(Number(v).toFixed(2))),
-  ]);
+      const imageId = workbook.addImage({
+        base64,
+        extension: "png",
+      });
 
-  const totals = (labels || []).map((_: any, i: number) =>
-    (datasets || []).reduce(
-      (sum: number, ds: any) => sum + (ds.data?.[i] || 0),
-      0
-    )
-  );
+      // First free row after table
+      const startRow = worksheet.rowCount + 1;
+      const startCol = 1;
 
-  const totalsRow = [
-    "Total",
-    ...totals.map((v: number) => Number(Number(v).toFixed(2))),
-  ];
+      // You can tweak ext.width/height to resize the chart in Excel
+      worksheet.addImage(imageId, {
+        tl: { col: startCol - 1, row: startRow - 1 },
+        ext: { width: 800, height: 400 },
+      });
+    }
+  }
 
-  const chartSection: any[] = [
-    ...chartHeader,
-    ...chartRows,
-    totalsRow,
-  ];
-
-  // ---- FINAL SHEET DATA (meta + table + chart in ONE sheet) ----
-  const finalSheetData = [...metaRows, ...tableSection, ...chartSection];
-
-  const ws = XLSX.utils.aoa_to_sheet(finalSheetData);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Cashflow");
-
-  const fileName = `Cashflow_${periodType}_${year}.xlsx`;
-  XLSX.writeFile(wb, fileName);
+  // 5. Download file in browser
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+  saveAs(blob, `Cashflow_${periodType}_${year}.xlsx`);
 };
+
+
 
 
   const metrics = columnsToDisplay2.map((key) => ({
@@ -1851,7 +1852,7 @@ const CashFlowPage: React.FC = () => {
 
             {/* Right: Download button */}
             <div className="flex justify-center sm:justify-end">
-              <DownloadIconButton onClick={downloadCombinedExcel} />
+              <DownloadIconButton onClick={downloadCombinedExcelWithImage} />
             </div>
           </div>
 
@@ -1942,16 +1943,19 @@ const CashFlowPage: React.FC = () => {
             <div className="h-[50vh] sm:h-[40vw] max-h-[560px]">
               {periodType === "monthly" ? (
                 <Bar
+                  ref={chartRef}
                   data={getFilteredBarChartData() as any}
                   options={barChartOptions as any}
                 />
               ) : (
                 <Line
+                  ref={chartRef}
                   data={getLineChartData() as any}
                   options={lineChartOptions as any}
                 />
               )}
             </div>
+
           </div>
         </div>
       )}

@@ -447,7 +447,7 @@ const Dropdowns: React.FC<DropdownsProps> = ({
             selectedYear={selectedYear}
             countryName={initialCountryName}
           />
-          <div className="flex flex-wrap justify-between gap-4">
+          <div className="flex flex-wrap justify-between gap-6 md:gap-4 mb-4">
             <div className="flex-1 min-w-[300px]">
               <CircleChart
                 range={range}
@@ -482,7 +482,7 @@ const Dropdowns: React.FC<DropdownsProps> = ({
             selectedYear={selectedYear}
             countryName={initialCountryName}
           />
-          <div className="flex flex-wrap justify-between gap-4">
+          <div className="flex flex-wrap justify-between gap-6 md:gap-4">
             <div className="flex-1 min-w-[300px]">
               <CircleChart
                 range={range}
@@ -512,7 +512,7 @@ const Dropdowns: React.FC<DropdownsProps> = ({
       {range === "yearly" && selectedYear && (
         <>
           <GraphPage range={range} selectedYear={selectedYear} countryName={initialCountryName} />
-          <div className="flex flex-wrap justify-between gap-4">
+          <div className="flex flex-wrap justify-between gap-6 md:gap-4">
             <div className="flex-1 min-w-[300px]">
               <CircleChart range={range} year={selectedYear} countryName={initialCountryName} />
             </div>

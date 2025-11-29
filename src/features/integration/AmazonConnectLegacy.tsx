@@ -128,31 +128,63 @@ export default function AmazonConnectLegacy({ onClose, onConnected }: Props) {
     console.log("Stored Amazon refresh token (masked):", masked);
   };
 
-  const handleStatusPollWinAndRoute = async () => {
-    try {
-      const qs = new URLSearchParams({ region }).toString();
-      const s = await api(`/amazon_api/status?${qs}`);
+  // const handleStatusPollWinAndRoute = async () => {
+  //   try {
+  //     const qs = new URLSearchParams({ region }).toString();
+  //     const s = await api(`/amazon_api/status?${qs}`);
 
-      if ((s as any)?.success) {
-        stopPolling();
-        closePopup();
-        setMessage("Connected to Amazon ✅");
+  //     if ((s as any)?.success) {
+  //       stopPolling();
+  //       closePopup();
+  //       setMessage("Connected to Amazon ✅");
 
-        localStorage.setItem("amazonConnected", "true");
-        if ((s as any)?.payload) {
-          localStorage.setItem(
-            "amazonParticipations",
-            JSON.stringify((s as any).payload, null, 2)
-          );
-        }
+  //       localStorage.setItem("amazonConnected", "true");
+  //       if ((s as any)?.payload) {
+  //         localStorage.setItem(
+  //           "amazonParticipations",
+  //           JSON.stringify((s as any).payload, null, 2)
+  //         );
+  //       }
 
-        setShowDashboard(true);
-        onConnected?.();
+  //       setShowDashboard(true);
+  //       onConnected?.();
+  //     }
+  //   } catch (err: any) {
+  //     console.warn("Amazon status poll failed:", err.message);
+  //   }
+  // };
+
+const handleStatusPollWinAndRoute = async () => {
+  try {
+    const qs = new URLSearchParams({ region }).toString();
+    const s = await api(`/amazon_api/status?${qs}`) as any;
+
+    const hasRefreshToken = !!s?.has_refresh_token;
+
+    if (s?.success && hasRefreshToken) {
+      stopPolling();
+      closePopup();
+      setMessage("Connected to Amazon ✅");
+
+      localStorage.setItem("amazonConnected", "true");
+      if (s?.payload) {
+        localStorage.setItem(
+          "amazonParticipations",
+          JSON.stringify(s.payload, null, 2)
+        );
       }
-    } catch (err: any) {
-      console.warn("Amazon status poll failed:", err.message);
+
+      setShowDashboard(true);
+      onConnected?.();
+    } else {
+      // s.status might be "no_record" | "pending" | "sp_api_error"
+      // You can optionally show different messages based on that.
     }
-  };
+  } catch (err: any) {
+    console.warn("Amazon status poll failed:", err.message);
+  }
+};
+
 
   const handleAmazonLogin = async () => {
     setError("");
@@ -252,20 +284,41 @@ export default function AmazonConnectLegacy({ onClose, onConnected }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [region, marketplaceId]);
 
-  if (showDashboard) {
-    const country = REGION_LABELS[region];
-    const refreshToken = getRefreshToken() || undefined;
+  // if (showDashboard) {
+  //   const country = REGION_LABELS[region];
+  //   const refreshToken = getRefreshToken() || undefined;
 
-    return (
-      <AmazonFinancialDashboard
-        country={country}
-        // @ts-expect-error keeping prop for your outer flow; safe to ignore
-        refreshToken={refreshToken}
-        isStep3Unlocked={isStep3Unlocked}
-        onClose={onClose}
-      />
-    );
+  //   return (
+  //     <AmazonFinancialDashboard
+  //       country={country}
+  //       // @ts-expect-error keeping prop for your outer flow; safe to ignore
+  //       refreshToken={refreshToken}
+  //       isStep3Unlocked={isStep3Unlocked}
+  //       onClose={onClose}
+  //     />
+  //   );
+  // }
+
+  if (showDashboard) {
+  const country = REGION_LABELS[region];
+  const refreshToken = getRefreshToken() || undefined;
+
+  if (!refreshToken) {
+    // Defensive: if somehow we toggled showDashboard but don't have a token, don't render it.
+    return null;
   }
+
+  return (
+    <AmazonFinancialDashboard
+      country={country}
+      // @ts-expect-error keeping prop for your outer flow; safe to ignore
+      refreshToken={refreshToken}
+      isStep3Unlocked={isStep3Unlocked}
+      onClose={onClose}
+    />
+  );
+}
+
 
   return (
     <div

@@ -810,6 +810,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
+import "@/lib/chartSetup";  
 import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -828,7 +829,7 @@ import Button from "../ui/button/Button";
 import PageBreadcrumb from "../common/PageBreadCrumb";
 import { FiDownload } from "react-icons/fi";
 import Loader from "@/components/loader/Loader"; // 👈 NEW
-import DownloadIconButton from "../ui/button/DownloadButton";
+import DownloadIconButton from "../ui/button/DownloadIconButton";
 
 ChartJS.register(
   CategoryScale,

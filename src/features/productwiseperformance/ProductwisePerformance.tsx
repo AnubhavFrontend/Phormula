@@ -2913,7 +2913,8 @@ const ProductwisePerformance: React.FC<ProductwisePerformanceProps> = ({
 
       <div className="flex flex-col gap-4">
         {/* Stats grid */}
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+
           <div className="rounded-lg border border-gray-300 bg-gray-200/40 p-2 sm:p-3">
             <p className="mb-1 text-[clamp(11px,0.85vw,13px)] font-semibold text-[#414042]">
               Net Sales
@@ -2969,7 +2970,7 @@ const ProductwisePerformance: React.FC<ProductwisePerformanceProps> = ({
           Best Performance Month
         </p>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {/* Sales */}
           <div
             className="rounded-lg border border-gray-300 bg-gray-200/40 p-2 sm:p-3"
@@ -3132,7 +3133,7 @@ const ProductwisePerformance: React.FC<ProductwisePerformanceProps> = ({
                     ? "Units Trend"
                     : "CM1 Profit Trend"}{" "}
                   -{" "}
-                  <b className="text-[#5ea68e]">
+                  <b className="text-green-500 capitalize">
                     {productname} ({getTitle()})
                   </b>
                 </h3>

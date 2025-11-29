@@ -563,7 +563,7 @@ import PageBreadcrumb from "../common/PageBreadCrumb";
 import Loader from "@/components/loader/Loader"; // 👈 NEW
 import Button from "../ui/button/Button";
 import { FiDownload } from "react-icons/fi";
-import DownloadIconButton from "../ui/button/DownloadButton";
+import DownloadIconButton from "../ui/button/DownloadIconButton";
 
 ChartJS.register(
   CategoryScale,
