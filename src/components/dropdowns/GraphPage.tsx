@@ -847,7 +847,9 @@ type GraphPageProps = {
   selectedQuarter?: "Q1" | "Q2" | "Q3" | "Q4";
   selectedYear: number | string;
   countryName: string;
+  onNoDataChange?: (noData: boolean) => void; // 👈 NEW
 };
+
 
 type UploadRow = {
   country: string;
@@ -888,6 +890,7 @@ const GraphPage: React.FC<GraphPageProps> = ({
   selectedQuarter,
   selectedYear,
   countryName,
+  onNoDataChange, 
 }) => {
   const router = useRouter();
   const currencySymbol = countryName ? getCurrencySymbol(countryName) : "¤";
@@ -1207,7 +1210,13 @@ const GraphPage: React.FC<GraphPageProps> = ({
     monthlyLabels,
   ]);
 
-  useEffect(() => setAllValuesZero(isAllZero), [isAllZero]);
+  // useEffect(() => setAllValuesZero(isAllZero), [isAllZero]);
+
+useEffect(() => {
+  setAllValuesZero(isAllZero);
+  onNoDataChange?.(isAllZero);   
+}, [isAllZero, onNoDataChange]);
+
 
   // X-axis tick labels like "Jan '25"
   const formattedLabels = useMemo(() => {
@@ -1585,7 +1594,7 @@ const GraphPage: React.FC<GraphPageProps> = ({
         )}
 
         {/* No data overlay */}
-        {allValuesZero && (
+        {/* {allValuesZero && (
           <div
             className={[
               "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2",
@@ -1622,7 +1631,7 @@ const GraphPage: React.FC<GraphPageProps> = ({
               Upload MTD(s)
             </button>
           </div>
-        )}
+        )} */}
       </div>
 
       {/* Export button ABOVE chart */}

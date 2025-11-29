@@ -111,6 +111,12 @@ const Dropdowns: React.FC<DropdownsProps> = ({
   const [allDropdownsSelected, setAllDropdownsSelected] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [loading, setLoading] = useState(false); // 👈 NEW
+  const [showNoDataOverlay, setShowNoDataOverlay] = useState(false);
+
+  useEffect(() => {
+    setShowNoDataOverlay(false);
+  }, [range, selectedMonth, selectedQuarter, selectedYear]);
+
 
   const yearOptions = useMemo(
     () => [new Date().getFullYear(), new Date().getFullYear() - 1].map(String),
@@ -293,6 +299,31 @@ const Dropdowns: React.FC<DropdownsProps> = ({
       />
     );
   }
+
+  // 🔹 4) TITLE HELPERS FOR THE OVERLAY
+  const capitalizeFirstLetter = (str: string) =>
+    str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+
+  const convertToAbbreviatedMonth = (m?: string) =>
+    m ? capitalizeFirstLetter(m).slice(0, 3) : "";
+
+  const getTitle = () => {
+    if (range === "quarterly" && selectedQuarter) {
+      return `${capitalizeFirstLetter(
+        range
+      )} Tracking Profitability - ${selectedQuarter}'${String(selectedYear).slice(
+        -2
+      )}`;
+    }
+    if (range === "monthly" && selectedMonth) {
+      return `${capitalizeFirstLetter(
+        range
+      )} Tracking Profitability - ${convertToAbbreviatedMonth(
+        selectedMonth
+      )} ${selectedYear}`;
+    }
+    return `${capitalizeFirstLetter(range)} Tracking Profitability - ${selectedYear}`;
+  };
 
   return (
     <div className="space-y-4">
@@ -481,6 +512,7 @@ const Dropdowns: React.FC<DropdownsProps> = ({
             selectedQuarter={selectedQuarter}
             selectedYear={selectedYear}
             countryName={initialCountryName}
+            onNoDataChange={setShowNoDataOverlay}
           />
           <div className="flex flex-wrap justify-between gap-6 md:gap-4">
             <div className="flex-1 min-w-[300px]">
@@ -511,7 +543,7 @@ const Dropdowns: React.FC<DropdownsProps> = ({
 
       {range === "yearly" && selectedYear && (
         <>
-          <GraphPage range={range} selectedYear={selectedYear} countryName={initialCountryName} />
+          <GraphPage range={range} selectedYear={selectedYear} countryName={initialCountryName} onNoDataChange={setShowNoDataOverlay} />
           <div className="flex flex-wrap justify-between gap-6 md:gap-4">
             <div className="flex-1 min-w-[300px]">
               <CircleChart range={range} year={selectedYear} countryName={initialCountryName} />
@@ -522,6 +554,47 @@ const Dropdowns: React.FC<DropdownsProps> = ({
           </div>
           <SKUtable range={range} year={selectedYear} countryName={initialCountryName} />
         </>
+      )}
+
+      {/* 🔹 5) PAGE-LEVEL NO-DATA OVERLAY */}
+      {showNoDataOverlay && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div
+            className={[
+              "bg-white/95 border-2 border-gray-200 rounded-xl",
+              "p-4 sm:p-5 md:p-6 text-center shadow-lg backdrop-blur",
+              "w-[92%] max-w-[480px]",
+            ].join(" ")}
+          >
+            <div className="mb-3">
+              <img
+                src="/lock.png"
+                alt="No Data Icon"
+                className="mx-auto h-12 w-12 opacity-70"
+              />
+            </div>
+            <h3 className="text-[#414042] mb-2 text-base sm:text-lg font-semibold">
+              No Data Available
+            </h3>
+            <p className="text-gray-600 text-xs sm:text-sm leading-relaxed">
+              To see performance metrics, you need to upload more files for{" "}
+              <strong>{getTitle()}</strong>
+            </p>
+            <div className="mt-3 px-3 py-2 bg-gray-50 rounded text-[11px] sm:text-xs text-gray-500">
+              Sample data shown for preview
+            </div>
+            <button
+              className="mt-4 inline-flex items-center justify-center rounded-md bg-[#5EA68E] px-3 py-2 text-white text-xs sm:text-sm font-medium hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-[#5EA68E]/50"
+              onClick={() =>
+                router.push(
+                  `/Upload/${countryName === "global" ? "uk" : countryName}`
+                )
+              }
+            >
+              Upload MTD(s)
+            </button>
+          </div>
+        </div>
       )}
 
       <Modal
