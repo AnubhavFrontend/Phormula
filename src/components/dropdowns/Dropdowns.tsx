@@ -113,6 +113,9 @@ const Dropdowns: React.FC<DropdownsProps> = ({
   const [loading, setLoading] = useState(false); // 👈 NEW
   const [showNoDataOverlay, setShowNoDataOverlay] = useState(false);
 
+
+  
+
   useEffect(() => {
     setShowNoDataOverlay(false);
   }, [range, selectedMonth, selectedQuarter, selectedYear]);
@@ -326,7 +329,7 @@ const Dropdowns: React.FC<DropdownsProps> = ({
   };
 
   return (
-    <div className="space-y-4">
+    <div className={`space-y-4 relative ${showNoDataOverlay ? "overflow-hidden" : ""}`}>
       {/* Back / Title */}
       <div className="flex gap-2">
         <PageBreadcrumb pageTitle="Financial Metrics -" variant="page" align="left" textSize="2xl" />
@@ -508,12 +511,15 @@ const Dropdowns: React.FC<DropdownsProps> = ({
       {range === "quarterly" && isQuarter(selectedQuarter) && selectedYear && (
         <>
           <GraphPage
-            range={range}
-            selectedQuarter={selectedQuarter}
-            selectedYear={selectedYear}
-            countryName={initialCountryName}
-            onNoDataChange={setShowNoDataOverlay}
-          />
+      range={range}
+      selectedQuarter={selectedQuarter}
+      selectedYear={selectedYear}
+      countryName={initialCountryName}
+      onNoDataChange={(noData) => {
+        console.log("🔥 [Quarterly] GraphPage → onNoDataChange:", noData);
+        setShowNoDataOverlay(noData);
+      }}
+    />
           <div className="flex flex-wrap justify-between gap-6 md:gap-4">
             <div className="flex-1 min-w-[300px]">
               <CircleChart
@@ -543,7 +549,15 @@ const Dropdowns: React.FC<DropdownsProps> = ({
 
       {range === "yearly" && selectedYear && (
         <>
-          <GraphPage range={range} selectedYear={selectedYear} countryName={initialCountryName} onNoDataChange={setShowNoDataOverlay} />
+         <GraphPage
+      range={range}
+      selectedYear={selectedYear}
+      countryName={initialCountryName}
+      onNoDataChange={(noData) => {
+        console.log("🔥 [Yearly] GraphPage → onNoDataChange:", noData);
+        setShowNoDataOverlay(noData);
+      }}
+    />
           <div className="flex flex-wrap justify-between gap-6 md:gap-4">
             <div className="flex-1 min-w-[300px]">
               <CircleChart range={range} year={selectedYear} countryName={initialCountryName} />
@@ -556,46 +570,44 @@ const Dropdowns: React.FC<DropdownsProps> = ({
         </>
       )}
 
-      {/* 🔹 5) PAGE-LEVEL NO-DATA OVERLAY */}
-      {showNoDataOverlay && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div
-            className={[
-              "bg-white/95 border-2 border-gray-200 rounded-xl",
-              "p-4 sm:p-5 md:p-6 text-center shadow-lg backdrop-blur",
-              "w-[92%] max-w-[480px]",
-            ].join(" ")}
-          >
-            <div className="mb-3">
-              <img
-                src="/lock.png"
-                alt="No Data Icon"
-                className="mx-auto h-12 w-12 opacity-70"
-              />
-            </div>
-            <h3 className="text-[#414042] mb-2 text-base sm:text-lg font-semibold">
-              No Data Available
-            </h3>
-            <p className="text-gray-600 text-xs sm:text-sm leading-relaxed">
-              To see performance metrics, you need to upload more files for{" "}
-              <strong>{getTitle()}</strong>
-            </p>
-            <div className="mt-3 px-3 py-2 bg-gray-50 rounded text-[11px] sm:text-xs text-gray-500">
-              Sample data shown for preview
-            </div>
-            <button
-              className="mt-4 inline-flex items-center justify-center rounded-md bg-[#5EA68E] px-3 py-2 text-white text-xs sm:text-sm font-medium hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-[#5EA68E]/50"
-              onClick={() =>
-                router.push(
-                  `/Upload/${countryName === "global" ? "uk" : countryName}`
-                )
-              }
-            >
-              Upload MTD(s)
-            </button>
-          </div>
-        </div>
-      )}
+{showNoDataOverlay && (
+  <div className="absolute top-0 left-0 w-full z-[999] flex justify-center">
+    <div className="bg-white border border-gray-200 shadow-lg rounded-lg p-5 mt-4 max-w-lg w-[90%] text-center">
+      <div className="mb-2">
+        <img
+          src="/lock.png"
+          alt="No Data Icon"
+          className="h-8 w-8 mx-auto opacity-70"
+        />
+      </div>
+
+      <h3 className="text-gray-700 font-semibold text-lg mb-1">
+        No Data Available
+      </h3>
+
+      <p className="text-gray-600 text-sm mb-3">
+        To see performance metrics, you need to upload more files for{" "}
+        <strong>{getTitle()}</strong>
+      </p>
+
+      <div className="text-xs text-gray-500 bg-gray-100 py-2 rounded-md mb-3">
+        Sample data shown for preview
+      </div>
+
+      <button
+        className="bg-[#5EA68E] text-white text-sm px-4 py-2 rounded-md hover:brightness-95"
+        onClick={() =>
+          router.push(`/Upload/${countryName === "global" ? "uk" : countryName}`)
+        }
+      >
+        Upload MTD(s)
+      </button>
+    </div>
+  </div>
+)}
+
+
+    
 
       <Modal
         isOpen={showUploadModal}

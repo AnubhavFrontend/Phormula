@@ -1214,6 +1214,7 @@ const GraphPage: React.FC<GraphPageProps> = ({
 
 useEffect(() => {
   setAllValuesZero(isAllZero);
+  console.log("GraphPage isAllZero:", isAllZero);
   onNoDataChange?.(isAllZero);   
 }, [isAllZero, onNoDataChange]);
 
