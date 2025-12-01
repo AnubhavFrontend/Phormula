@@ -327,7 +327,7 @@ const IntegrationsModal: React.FC<Props> = ({ open, onClose }) => {
       />
 
       {/* Modal box */}
-      <div className="relative z-10 w-full max-w-lg rounded-xl border border-gray-200 bg-white px-5 py-8 shadow-2xl dark:border-gray-800 dark:bg-gray-900">
+      <div className="relative z-10 w-full max-w-md rounded-xl border border-gray-200 bg-white px-1 py-7 shadow-2xl dark:border-gray-800 dark:bg-gray-900">
         <PageBreadcrumb
           pageTitle="Select Your Integration"
           variant="table"
@@ -335,7 +335,7 @@ const IntegrationsModal: React.FC<Props> = ({ open, onClose }) => {
         />
 
         {/* Integration selection block */}
-        <div className="flex flex-wrap justify-center gap-6 sm:gap-10">
+        <div className="flex flex-col sm:flex-row justify-center items-center gap-6 sm:gap-10 mt-6">
           {options.map((opt) => (
             <button
               key={opt.key}

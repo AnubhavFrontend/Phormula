@@ -23,7 +23,7 @@ ChartJS.register(
 );
 
 // ✅ Global tooltip styles
-ChartJS.defaults.plugins.tooltip.backgroundColor = "#f8edce";
+ChartJS.defaults.plugins.tooltip.backgroundColor = "#ffffff";
 ChartJS.defaults.plugins.tooltip.titleColor = "#414042";
 ChartJS.defaults.plugins.tooltip.bodyColor = "#414042";
 ChartJS.defaults.plugins.tooltip.borderColor = "#e5e7eb";

@@ -8,7 +8,7 @@ const API_BASE =
 
 const ICONS = {
   back: "/BackArrow.png",
-  shopify: "/shopify_small.png",
+  shopify: "/shopify.png",
   shield: "/secure.png",
   link: "/link.png",
 };
@@ -77,19 +77,8 @@ const ShopifyIntroModal: React.FC<Props> = ({ onClose, onManual }) => {
         className="relative w-11/12 sm:w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-xl rounded-xl bg-white shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Back / Close
-        <button
-          type="button"
-          onClick={onClose}
-          className="absolute left-2 top-2 sm:left-3 sm:top-3 inline-flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full hover:bg-gray-100 focus:outline-none"
-          aria-label="Close"
-          title="Close"
-        >
-          <img src={ICONS.back} alt="Back" className="h-6 w-6 sm:h-8 sm:w-8" />
-        </button> */}
-
         {/* Body */}
-        <div className="max-h-[90vh] overflow-y-auto px-6 sm:px-8 pb-6 pt-12 sm:pt-14">
+        <div className="max-h-[90vh] overflow-y-auto px-4 sm:px-6 md:px-8 pb-6 pt-5 sm:pt-8">
           {/* Logo */}
           <div className="mx-auto mb-3 sm:mb-4 flex h-10 w-10 items-center justify-center">
             <img

@@ -188,8 +188,8 @@ const IntegrationToggleButton: React.FC = () => {
       <button
         onClick={() => setOpen(true)}
         aria-label="Integrations"
-        className="flex items-center justify-center rounded-full bg-[#5EA68E] p-2.5 shadow hover:bg-[#4F937D] active:scale-95 transition
-                   dark:bg-[#5EA68E] dark:hover:bg-[#4F937D]"
+        className="flex items-center justify-center rounded-full bg-blue-700 p-2.5 shadow active:scale-95 transition
+              "
       >
         <GrIntegration className="text-yellow-200" />
       </button>

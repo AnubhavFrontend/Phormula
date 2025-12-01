@@ -810,7 +810,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import "@/lib/chartSetup";  
+import "@/lib/chartSetup";
 import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -890,7 +890,7 @@ const GraphPage: React.FC<GraphPageProps> = ({
   selectedQuarter,
   selectedYear,
   countryName,
-  onNoDataChange, 
+  onNoDataChange,
 }) => {
   const router = useRouter();
   const currencySymbol = countryName ? getCurrencySymbol(countryName) : "¤";
@@ -1212,11 +1212,11 @@ const GraphPage: React.FC<GraphPageProps> = ({
 
   // useEffect(() => setAllValuesZero(isAllZero), [isAllZero]);
 
-useEffect(() => {
-  setAllValuesZero(isAllZero);
-  console.log("GraphPage isAllZero:", isAllZero);
-  onNoDataChange?.(isAllZero);   
-}, [isAllZero, onNoDataChange]);
+  useEffect(() => {
+    setAllValuesZero(isAllZero);
+    console.log("GraphPage isAllZero:", isAllZero);
+    onNoDataChange?.(isAllZero);
+  }, [isAllZero, onNoDataChange]);
 
 
   // X-axis tick labels like "Jan '25"
@@ -1400,202 +1400,192 @@ useEffect(() => {
   }
 
   return (
-    <div className="py-3 sm:py-4 md:y-6">
-      {/* <div className="flex gap-2">
-        <PageBreadcrumb
-          pageTitle="Tracking Profitability -"
-          variant="page"
-          align="left"
-          textSize="2xl"
-        />
-        <span className="text-[#5EA68E] text-2xl">
-          {countryName?.toLowerCase() === "global"
-            ? "GLOBAL"
-            : countryName?.toUpperCase()}
-        </span>
-      </div> */}
+    <div className="py-3 sm:py-4 md:y-6 relative">
 
-      <div className="mb-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        {/* Left: title + period */}
-        <div className="flex flex-wrap items-baseline gap-2 justify-center sm:justify-start">
-          <PageBreadcrumb
-            pageTitle="Tracking Profitability -"
-            variant="page"
-            align="left"
-            textSize="2xl"
-          />
-          <span className="text-[#5EA68E] font-bold text-lg sm:text-2xl md:text-2xl">
-            {countryName?.toLowerCase() === "global"
-              ? "GLOBAL"
-              : countryName?.toUpperCase()}
-          </span>
+      {/* 🔹 everything fades when no data */}
+      <div className={allValuesZero ? "opacity-30 pointer-events-none" : "opacity-100"}>
+
+        <div className="mb-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          {/* Left: title + period */}
+          <div className="flex flex-wrap items-baseline gap-2 justify-center sm:justify-start">
+            <PageBreadcrumb
+              pageTitle="Tracking Profitability -"
+              variant="page"
+              align="left"
+              textSize="2xl"
+            />
+            <span className="text-[#5EA68E] font-bold text-lg sm:text-2xl md:text-2xl">
+              {countryName?.toLowerCase() === "global"
+                ? "GLOBAL"
+                : countryName?.toUpperCase()}
+            </span>
+          </div>
+
+          {/* Right: Download button */}
+          <div className="flex justify-center sm:justify-end">
+            <DownloadIconButton onClick={exportToExcel} />
+          </div>
         </div>
 
-        {/* Right: Download button */}
-        <div className="flex justify-center sm:justify-end">
-          <DownloadIconButton onClick={exportToExcel} />
-        </div>
-      </div>
+        {/* Metric toggles */}
+        <div
+          className={[
+            "mt-3 sm:mt-4",
+            "flex flex-wrap items-center justify-center",   // ✅ CENTERED
+            "gap-3 sm:gap-4 md:gap-5",                      // ✅ MORE SPACE BETWEEN TOGGLES
+            "w-full mx-auto",
+            allValuesZero ? "opacity-30" : "opacity-100",
+            "transition-opacity duration-300",
+          ].join(" ")}
+        >
+          {[
+            { name: "sales", label: "Sales", color: "#2CA9E0" },
+            { name: "total_cous", label: "COGS", color: "#AB64B5" },
+            { name: "AmazonExpense", label: "Amazon Fees", color: "#FF5C5C" },
+            { name: "taxncredit", label: "Taxes & Credits", color: "#154B9B" },
+            { name: "profit2", label: "CM1 Profit", color: "#5EA49B" },
+            { name: "advertisingCosts", label: "Advertising Costs", color: "#F47A00" },
+            { name: "Other", label: "Other", color: "#00627D" },
+            { name: "profit", label: "CM2 Profit", color: "#87AD12" },
+          ].map(({ name, label, color }) => {
+            const isChecked = !!selectedGraphs[name];
 
-      {/* Metric toggles */}
-      <div
-        className={[
-          "mt-3 sm:mt-4",
-          "flex flex-wrap items-center justify-center",   // ✅ CENTERED
-          "gap-3 sm:gap-4 md:gap-5",                      // ✅ MORE SPACE BETWEEN TOGGLES
-          "w-full mx-auto",
-          allValuesZero ? "opacity-30" : "opacity-100",
-          "transition-opacity duration-300",
-        ].join(" ")}
-      >
-        {[
-          { name: "sales", label: "Sales", color: "#2CA9E0" },
-          { name: "total_cous", label: "COGS", color: "#AB64B5" },
-          { name: "AmazonExpense", label: "Amazon Fees", color: "#FF5C5C" },
-          { name: "taxncredit", label: "Taxes & Credits", color: "#154B9B" },
-          { name: "profit2", label: "CM1 Profit", color: "#5EA49B" },
-          { name: "advertisingCosts", label: "Advertising Costs", color: "#F47A00" },
-          { name: "Other", label: "Other", color: "#00627D" },
-          { name: "profit", label: "CM2 Profit", color: "#87AD12" },
-        ].map(({ name, label, color }) => {
-          const isChecked = !!selectedGraphs[name];
-
-          return (
-            <label
-              key={name}
-              className={[
-                "shrink-0",
-                "flex items-center gap-1 sm:gap-1.5",
-                "font-semibold select-none whitespace-nowrap",
-                // 👇 SAME FONT-SIZES YOU ALREADY HAD
-                "text-[9px] sm:text-[10px] md:text-[11px] lg:text-xs xl:text-sm",
-                "text-[#414042]",         // text color
-                isChecked ? "opacity-100" : "opacity-40",
-                allValuesZero ? "cursor-not-allowed" : "cursor-pointer",
-              ].join(" ")}
-            >
-              {/* Colored box */}
-              <span
-                className="
+            return (
+              <label
+                key={name}
+                className={[
+                  "shrink-0",
+                  "flex items-center gap-1 sm:gap-1.5",
+                  "font-semibold select-none whitespace-nowrap",
+                  // 👇 SAME FONT-SIZES YOU ALREADY HAD
+                  "text-[9px] sm:text-[10px] md:text-[11px] lg:text-xs xl:text-sm",
+                  "text-[#414042]",         // text color
+                  isChecked ? "opacity-100" : "opacity-40",
+                  allValuesZero ? "cursor-not-allowed" : "cursor-pointer",
+                ].join(" ")}
+              >
+                {/* Colored box */}
+                <span
+                  className="
             flex items-center justify-center
             h-3 w-3 sm:h-3.5 sm:w-3.5
             rounded-sm border transition
           "
-                style={{
-                  borderColor: color,
-                  backgroundColor: isChecked ? color : "white",
-                  opacity: allValuesZero ? 0.6 : 1,
-                }}
-                onClick={() => !allValuesZero && toggleMetric(name)}
-              >
-                {isChecked && (
-                  <svg
-                    viewBox="0 0 24 24"
-                    width="14"
-                    height="14"
-                    className="text-white"
-                  >
-                    <path
-                      fill="currentColor"
-                      d="M20.285 6.709a1 1 0 0 0-1.414-1.414L9 15.168l-3.879-3.88a1 1 0 0 0-1.414 1.415l4.586 4.586a1 1 0 0 0 1.414 0l10-10Z"
-                    />
-                  </svg>
-                )}
-              </span>
+                  style={{
+                    borderColor: color,
+                    backgroundColor: isChecked ? color : "white",
+                    opacity: allValuesZero ? 0.6 : 1,
+                  }}
+                  onClick={() => !allValuesZero && toggleMetric(name)}
+                >
+                  {isChecked && (
+                    <svg
+                      viewBox="0 0 24 24"
+                      width="14"
+                      height="14"
+                      className="text-white"
+                    >
+                      <path
+                        fill="currentColor"
+                        d="M20.285 6.709a1 1 0 0 0-1.414-1.414L9 15.168l-3.879-3.88a1 1 0 0 0-1.414 1.415l4.586 4.586a1 1 0 0 0 1.414 0l10-10Z"
+                      />
+                    </svg>
+                  )}
+                </span>
 
-              <span>{label.toUpperCase()}</span>
-            </label>
-          );
-        })}
-      </div>
-
-
-
-      {/* Chart */}
-      <div className="relative mt-2 sm:mt-3">
-        <div
-          className={[
-            "flex items-center justify-center",
-            "h-[55vh] sm:h-[50vh] md:h-[45vh] lg:h-[40vh]",
-            allValuesZero ? "opacity-30" : "opacity-100",
-            "transition-opacity duration-300",
-            "w-full",
-          ].join(" ")}
-        >
-          {datasets.length > 0 && (
-            <Line
-              data={{ labels: formattedLabels, datasets }}
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                interaction: {
-                  intersect: false,
-                  mode: allValuesZero ? "nearest" : "index",
-                },
-                plugins: {
-                  tooltip: {
-                    enabled: !allValuesZero,
-                    mode: "index",
-                    intersect: false,
-                    callbacks: {
-                      label: (tooltipItem: any) => {
-                        // dataset.label already contains pretty label (e.g. "Sales")
-                        const displayLabel =
-                          (tooltipItem.dataset.label as string) || "";
-                        const value = tooltipItem.raw as number;
-                        return `${displayLabel}: ${currencySymbol} ${value.toLocaleString(
-                          undefined,
-                          {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          }
-                        )}`;
-                      },
-                    },
-                  },
-                  legend: { display: false },
-                },
-                scales: {
-                  x: {
-                    title: { display: true, text: "Month" },
-                    ticks: {
-                      minRotation: 0,
-                      maxRotation: 0,
-                      // IMPORTANT: always show the tick if there's only 1 label (monthly case)
-                      autoSkip: formattedLabels.length > 6,
-                      maxTicksLimit:
-                        formattedLabels.length > 0
-                          ? formattedLabels.length
-                          : 12,
-                      callback: (_v, idx) =>
-                        String(formattedLabels[idx] ?? ""),
-                    },
-                  },
-                  y: {
-                    title: {
-                      display: true,
-                      text: `Amount (${currencySymbol})`,
-                    },
-                    min: minY,
-                    ticks: { padding: 0 },
-                  },
-                },
-              }}
-            />
-          )}
+                <span>{label.toUpperCase()}</span>
+              </label>
+            );
+          })}
         </div>
 
-        {/* Must select >= 1 metric */}
-        {noMetricSelected && (
-          <ModalMsg
-            show={showModal}
-            onClose={() => setShowModal(false)}
-            message="At least one metric must be selected to display the graph."
-          />
-        )}
 
-        {/* No data overlay */}
-        {/* {allValuesZero && (
+
+        {/* Chart */}
+        <div className="relative mt-2 sm:mt-3">
+          <div
+            className={[
+              "flex items-center justify-center",
+              "h-[55vh] sm:h-[50vh] md:h-[45vh] lg:h-[40vh]",
+              allValuesZero ? "opacity-30" : "opacity-100",
+              "transition-opacity duration-300",
+              "w-full",
+            ].join(" ")}
+          >
+            {datasets.length > 0 && (
+              <Line
+                data={{ labels: formattedLabels, datasets }}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  interaction: {
+                    intersect: false,
+                    mode: allValuesZero ? "nearest" : "index",
+                  },
+                  plugins: {
+                    tooltip: {
+                      enabled: !allValuesZero,
+                      mode: "index",
+                      intersect: false,
+                      callbacks: {
+                        label: (tooltipItem: any) => {
+                          // dataset.label already contains pretty label (e.g. "Sales")
+                          const displayLabel =
+                            (tooltipItem.dataset.label as string) || "";
+                          const value = tooltipItem.raw as number;
+                          return `${displayLabel}: ${currencySymbol} ${value.toLocaleString(
+                            undefined,
+                            {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            }
+                          )}`;
+                        },
+                      },
+                    },
+                    legend: { display: false },
+                  },
+                  scales: {
+                    x: {
+                      title: { display: true, text: "Month" },
+                      ticks: {
+                        minRotation: 0,
+                        maxRotation: 0,
+                        // IMPORTANT: always show the tick if there's only 1 label (monthly case)
+                        autoSkip: formattedLabels.length > 6,
+                        maxTicksLimit:
+                          formattedLabels.length > 0
+                            ? formattedLabels.length
+                            : 12,
+                        callback: (_v, idx) =>
+                          String(formattedLabels[idx] ?? ""),
+                      },
+                    },
+                    y: {
+                      title: {
+                        display: true,
+                        text: `Amount (${currencySymbol})`,
+                      },
+                      min: minY,
+                      ticks: { padding: 0 },
+                    },
+                  },
+                }}
+              />
+            )}
+          </div>
+
+          {/* Must select >= 1 metric */}
+          {noMetricSelected && (
+            <ModalMsg
+              show={showModal}
+              onClose={() => setShowModal(false)}
+              message="At least one metric must be selected to display the graph."
+            />
+          )}
+
+          {/* No data overlay */}
+          {/* {allValuesZero && (
           <div
             className={[
               "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2",
@@ -1633,10 +1623,10 @@ useEffect(() => {
             </button>
           </div>
         )} */}
-      </div>
+        </div>
 
-      {/* Export button ABOVE chart */}
-      {/* <div
+        {/* Export button ABOVE chart */}
+        {/* <div
         className={[
           "mt-2 sm:mt-3",
           "w-full mx-auto",
@@ -1655,6 +1645,7 @@ useEffect(() => {
           <FiDownload className="text-yellow-200" />
         </Button>
       </div> */}
+      </div>
     </div>
   );
 };

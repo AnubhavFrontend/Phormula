@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Bargraph from "./BarGraph";
 import GraphPage from "./GraphPage";
@@ -113,13 +113,33 @@ const Dropdowns: React.FC<DropdownsProps> = ({
   const [loading, setLoading] = useState(false); // 👈 NEW
   const [showNoDataOverlay, setShowNoDataOverlay] = useState(false);
 
+  const layoutRef = useRef<HTMLDivElement | null>(null);
+  const [overlayBounds, setOverlayBounds] = useState<{ left: number; width: number }>({
+    left: 0,
+    width: 0,
+  });
 
-  
 
   useEffect(() => {
     setShowNoDataOverlay(false);
   }, [range, selectedMonth, selectedQuarter, selectedYear]);
 
+  useEffect(() => {
+    if (!showNoDataOverlay) return;
+
+    const updateBounds = () => {
+      if (!layoutRef.current) return;
+      const rect = layoutRef.current.getBoundingClientRect();
+      setOverlayBounds({
+        left: rect.left,
+        width: rect.width,
+      });
+    };
+
+    updateBounds();
+    window.addEventListener("resize", updateBounds);
+    return () => window.removeEventListener("resize", updateBounds);
+  }, [showNoDataOverlay]);
 
   const yearOptions = useMemo(
     () => [new Date().getFullYear(), new Date().getFullYear() - 1].map(String),
@@ -279,6 +299,23 @@ const Dropdowns: React.FC<DropdownsProps> = ({
     }
   }, [range, selectedMonth, selectedQuarter, selectedYear]);
 
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+
+    const body = document.body;
+
+    if (showNoDataOverlay) {
+      body.style.overflow = "hidden";   // lock both X/Y scroll
+    } else {
+      body.style.overflow = "";         // restore default
+    }
+
+    return () => {
+      body.style.overflow = "";         // cleanup on unmount
+    };
+  }, [showNoDataOverlay]);
+
+
   const goBack = () => router.push("/country/QTD/global/NA/NA");
 
   if (month === "NA" || year === "NA") {
@@ -329,7 +366,7 @@ const Dropdowns: React.FC<DropdownsProps> = ({
   };
 
   return (
-    <div className={`space-y-4 relative ${showNoDataOverlay ? "overflow-hidden" : ""}`}>
+    <div ref={layoutRef} className="space-y-4 relative">
       {/* Back / Title */}
       <div className="flex gap-2">
         <PageBreadcrumb pageTitle="Financial Metrics -" variant="page" align="left" textSize="2xl" />
@@ -480,6 +517,10 @@ const Dropdowns: React.FC<DropdownsProps> = ({
             selectedMonth={selectedMonth}
             selectedYear={selectedYear}
             countryName={initialCountryName}
+            onNoDataChange={(noData) => {
+              console.log("🔥 [Monthly] Bargraph → onNoDataChange:", noData);
+              setShowNoDataOverlay(noData);
+            }}
           />
           <div className="flex flex-wrap justify-between gap-6 md:gap-4 mb-4">
             <div className="flex-1 min-w-[300px]">
@@ -511,15 +552,15 @@ const Dropdowns: React.FC<DropdownsProps> = ({
       {range === "quarterly" && isQuarter(selectedQuarter) && selectedYear && (
         <>
           <GraphPage
-      range={range}
-      selectedQuarter={selectedQuarter}
-      selectedYear={selectedYear}
-      countryName={initialCountryName}
-      onNoDataChange={(noData) => {
-        console.log("🔥 [Quarterly] GraphPage → onNoDataChange:", noData);
-        setShowNoDataOverlay(noData);
-      }}
-    />
+            range={range}
+            selectedQuarter={selectedQuarter}
+            selectedYear={selectedYear}
+            countryName={initialCountryName}
+            onNoDataChange={(noData) => {
+              console.log("🔥 [Quarterly] GraphPage → onNoDataChange:", noData);
+              setShowNoDataOverlay(noData);
+            }}
+          />
           <div className="flex flex-wrap justify-between gap-6 md:gap-4">
             <div className="flex-1 min-w-[300px]">
               <CircleChart
@@ -549,15 +590,15 @@ const Dropdowns: React.FC<DropdownsProps> = ({
 
       {range === "yearly" && selectedYear && (
         <>
-         <GraphPage
-      range={range}
-      selectedYear={selectedYear}
-      countryName={initialCountryName}
-      onNoDataChange={(noData) => {
-        console.log("🔥 [Yearly] GraphPage → onNoDataChange:", noData);
-        setShowNoDataOverlay(noData);
-      }}
-    />
+          <GraphPage
+            range={range}
+            selectedYear={selectedYear}
+            countryName={initialCountryName}
+            onNoDataChange={(noData) => {
+              console.log("🔥 [Yearly] GraphPage → onNoDataChange:", noData);
+              setShowNoDataOverlay(noData);
+            }}
+          />
           <div className="flex flex-wrap justify-between gap-6 md:gap-4">
             <div className="flex-1 min-w-[300px]">
               <CircleChart range={range} year={selectedYear} countryName={initialCountryName} />
@@ -570,44 +611,65 @@ const Dropdowns: React.FC<DropdownsProps> = ({
         </>
       )}
 
-{showNoDataOverlay && (
-  <div className="absolute top-0 left-0 w-full z-[999] flex justify-center">
-    <div className="bg-white border border-gray-200 shadow-lg rounded-lg p-5 mt-4 max-w-lg w-[90%] text-center">
-      <div className="mb-2">
-        <img
-          src="/lock.png"
-          alt="No Data Icon"
-          className="h-8 w-8 mx-auto opacity-70"
-        />
-      </div>
+      {showNoDataOverlay && (
+        <div
+          className="
+      fixed inset-y-0
+      z-[99999]
+      flex items-center justify-center
+      pointer-events-none
+    "
+          style={{
+            left: overlayBounds.left,
+            width: overlayBounds.width || "100%",
+          }}
+        >
+          <div
+            className="
+        bg-white
+        rounded-xl
+        shadow-xl
+        p-6
+        max-w-lg
+        w-[90%]
+        text-center
+        pointer-events-auto
+      "
+          >
+            <div className="mb-3">
+              <img
+                src="/lock.png"
+                alt="No Data Icon"
+                className="h-8 w-8 mx-auto opacity-70"
+              />
+            </div>
 
-      <h3 className="text-gray-700 font-semibold text-lg mb-1">
-        No Data Available
-      </h3>
+            <h3 className="text-gray-800 font-semibold text-lg mb-2">
+              No Data Available
+            </h3>
 
-      <p className="text-gray-600 text-sm mb-3">
-        To see performance metrics, you need to upload more files for{" "}
-        <strong>{getTitle()}</strong>
-      </p>
+            <p className="text-gray-600 text-sm mb-3 leading-relaxed">
+              To see performance metrics, you need to upload more files for{" "}
+              <strong>{getTitle()}</strong>
+            </p>
 
-      <div className="text-xs text-gray-500 bg-gray-100 py-2 rounded-md mb-3">
-        Sample data shown for preview
-      </div>
+            <div className="mb-4 text-xs text-gray-500 bg-gray-100 py-2 rounded-md">
+              Sample data shown for preview
+            </div>
 
-      <button
-        className="bg-[#5EA68E] text-white text-sm px-4 py-2 rounded-md hover:brightness-95"
-        onClick={() =>
-          router.push(`/Upload/${countryName === "global" ? "uk" : countryName}`)
-        }
-      >
-        Upload MTD(s)
-      </button>
-    </div>
-  </div>
-)}
-
-
-    
+           {countryName !== "global" && (
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => setShowUploadModal(true)}
+              className="ml-4"
+            >
+              Upload MTD &nbsp; <AiOutlinePlus className="text-yellow-200" />
+            </Button>
+          )}
+          </div>
+        </div>
+      )}
 
       <Modal
         isOpen={showUploadModal}

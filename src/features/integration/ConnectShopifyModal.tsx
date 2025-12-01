@@ -11,7 +11,7 @@ const API_BASE =
 
 const ICONS = {
   back: "/BackArrow.png",
-  shopify: "/shopify_small.png",
+  shopify: "/shopify.png",
   shield: "/secure.png",
   link: "/link.png",
   info: "/info.png",
@@ -110,7 +110,7 @@ export default function ConnectShopifyModal({ onClose }: Props) {
         </button> */}
 
         {/* Body */}
-        <div className="max-h-[90vh] overflow-y-auto px-4 sm:px-6 md:px-8 pb-6 pt-12 sm:pt-14">
+        <div className="max-h-[90vh] overflow-y-auto px-4 sm:px-6 md:px-8 pb-6 pt-5 sm:pt-8">
           {/* Logo */}
           <div className="mx-auto mb-3 sm:mb-4 flex h-10 w-10 items-center justify-center">
             <img

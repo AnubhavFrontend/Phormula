@@ -10,6 +10,7 @@
 //   FaArrowLeft as ArrowLeft,
 // } from "react-icons/fa";
 // import PageBreadcrumb from "@/components/common/PageBreadCrumb";
+// import Button from "@/components/ui/button/Button";
 
 // const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:5000";
 // const getAuthToken = () => (typeof window !== "undefined" ? localStorage.getItem("jwtToken") : null);
@@ -107,7 +108,6 @@
 //     marketplaceIdUsed = FORCE.marketplaceId || marketplaceForCountry(FORCE.country);
 //   }
 
-//   const [account, setAccount] = useState<any>(null);
 //   const [skus, setSkus] = useState<any[]>([]);
 //   const [orders, setOrders] = useState<any[]>([]);
 //   const [status, setStatus] = useState<any>(null);
@@ -120,8 +120,9 @@
 //   const [selYear, setSelYear] = useState(String(new Date().getFullYear()));
 //   const [busy, setBusy] = useState(false);
 
+
 //   // 1 / 3 / 6 / 12 months
-//   const [selectedPeriod, setSelectedPeriod] = useState<number | null>(null);
+//   const [selectedPeriod, setSelectedPeriod] = useState<number | null>(12);
 
 //   const daysBetween = (a: Date, b: Date) => Math.floor((+a - +b) / (24 * 3600 * 1000));
 //   const isOlderThan90Days = (year: number, month01: string) => {
@@ -154,47 +155,6 @@
 //       setBusy(false);
 //     }
 //   };
-
-//   // --------- Optional helpers ----------
-//   const handleFetchAccount = () =>
-//     wrap(async () => {
-//       const qs = new URLSearchParams({ region: regionUsed, marketplace_id: marketplaceIdUsed });
-//       const data = await api(`/amazon_api/account?${qs}`);
-//       setAccount(data.accounts || []);
-//       setMessage("Fetched account info.");
-//     });
-
-//   const handleFetchSkus = () =>
-//     wrap(async () => {
-//       const qs = new URLSearchParams({ region: regionUsed, marketplace_id: marketplaceIdUsed });
-//       const data = await api(`/amazon_api/skus?${qs}`);
-//       setSkus(data.skus || []);
-//       setMessage(`Fetched ${data.count || 0} SKUs.`);
-//     });
-
-//   const handleFetchOrders = () =>
-//     wrap(async () => {
-//       const now = new Date();
-//       const start = new Date(now.getTime() - 30 * 24 * 3600 * 1000).toISOString().slice(0, 19) + "Z";
-//       const qs = new URLSearchParams({
-//         region: regionUsed,
-//         marketplace_id: marketplaceIdUsed,
-//         include: "pricing",
-//         start_date: start,
-//       });
-//       const data = await api(`/amazon_api/orders?${qs}`);
-//       setOrders(data.orders?.items || []);
-//       setMessage(`Fetched ${data.orders?.count || 0} orders.`);
-//       if (data.debug) setDebugResp(data.debug);
-//     });
-
-//   const handleCheckStatus = () =>
-//     wrap(async () => {
-//       const qs = new URLSearchParams({ region: regionUsed, marketplace_id: marketplaceIdUsed });
-//       const data = await api(`/amazon_api/status?${qs}`);
-//       setStatus(data.payload || []);
-//       setMessage("Fetched marketplace participations.");
-//     });
 
 //   // --------- 1 month: settlements if within 90d; finances if older ----------
 //   const handleFetchSettlementsByMonth = () =>
@@ -278,10 +238,112 @@
 //       const idxForNav = Math.max(0, Math.min(11, parseInt(selMonth, 10) - 1));
 //       const monthSlug = fullMonthNames[idxForNav].toLowerCase();
 
+//       // Close the modal and navigate
+//       if (onClose) {
+//         onClose();
+//       }
 //       router.push(`/country/MTD/${countryUsed}/${monthSlug}/${selYear}`);
 //     });
 
 //   // --------- 3/6/12 months via finances ----------
+//   // const handleFetchFinancesRange = () =>
+//   //   wrap(async () => {
+//   //     const n = selectedPeriod || 0;
+//   //     if (![3, 6, 12].includes(n)) {
+//   //       setMessage("Please select 3, 6, or 12 months.");
+//   //       return;
+//   //     }
+
+//   //     const now = new Date();
+//   //     const months: { y: number; mIdx: number }[] = [];
+//   //     for (let i = 0; i < n; i++) {
+//   //       const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - i, 1));
+//   //       months.push({ y: d.getUTCFullYear(), mIdx: d.getUTCMonth() });
+//   //     }
+//   //     months.reverse();
+
+//   //     let combinedRows: any[] = [];
+//   //     let combinedCols: string[] | null = null;
+//   //     let okCount = 0;
+//   //     let csvFallbackCount = 0;
+
+//   //     for (const { y, mIdx } of months) {
+//   //       // Try JSON for preview
+//   //       const jsonQs = new URLSearchParams({
+//   //         region: regionUsed,
+//   //         marketplace_id: marketplaceIdUsed,
+//   //         month: toMonthSlug(y, mIdx),
+//   //         limit: "all",
+//   //         country: countryUsed,
+//   //         run_upload_pipeline: "true",
+//   //         year: String(y),
+//   //         format: "json",
+//   //         store_in_db: "false",
+//   //       });
+//   //       try {
+//   //         const data = await api(`/amazon_api/settlements_finances?${jsonQs}`);
+//   //         const rows = Array.isArray((data as any)?.items) ? (data as any).items : [];
+//   //         if (rows.length) {
+//   //           if (!combinedCols) combinedCols = Object.keys(rows[0]);
+//   //           combinedRows = combinedRows.concat(rows);
+//   //         }
+//   //         okCount++;
+//   //         continue;
+//   //       } catch {
+//   //         // Fallback to CSV (no preview parsing)
+//   //         const csvQs = new URLSearchParams({
+//   //           region: regionUsed,
+//   //           marketplace_id: marketplaceIdUsed,
+//   //           month: toMonthSlug(y, mIdx),
+//   //           limit: "all",
+//   //           country: countryUsed,
+//   //           year: String(y),
+//   //           format: "csv",
+//   //           store_in_db: "false",
+//   //         });
+//   //         try {
+//   //           await apiText(`/amazon_api/settlements_finances?${csvQs}`);
+//   //           okCount++;
+//   //           csvFallbackCount++;
+//   //         } catch (e2) {
+//   //           console.error("Finances fetch failed for", y, mIdx + 1, e2);
+//   //         }
+//   //       }
+//   //     }
+
+//   //     if (combinedRows.length > 0) {
+//   //       setSettlementCols(combinedCols || []);
+//   //       setSettlementRows(combinedRows);
+//   //     } else {
+//   //       setSettlementCols([]);
+//   //       setSettlementRows([]);
+//   //     }
+
+//   //     const details = [
+//   //       `Requested: ${n} month${n > 1 ? "s" : ""}`,
+//   //       `Succeeded: ${okCount}`,
+//   //       csvFallbackCount ? `CSV fallback for ${csvFallbackCount} month(s)` : null,
+//   //     ].filter(Boolean).join(" · ");
+
+//   //     setMessage(`Finances fetch complete for ${countryUsed}. ${details}`);
+
+//   //     // Navigate to latest month
+//   //     const fullMonthNames = [
+//   //       "January", "February", "March", "April", "May", "June",
+//   //       "July", "August", "September", "October", "November", "December",
+//   //     ];
+//   //     const latestMonthIdx = new Date().getMonth();
+//   //     const latestYear = new Date().getFullYear();
+//   //     const monthSlug = fullMonthNames[latestMonthIdx].toLowerCase();
+
+//   //     // Close the modal and navigate
+//   //     if (onClose) {
+//   //       onClose();
+//   //     }
+//   //     router.push(`/country/MTD/${countryUsed}/${monthSlug}/${latestYear}`);
+//   //   });
+
+//   // --------- 3/6/12 months: 3m via settlements, 6/12 via finances ----------
 //   const handleFetchFinancesRange = () =>
 //     wrap(async () => {
 //       const n = selectedPeriod || 0;
@@ -304,45 +366,75 @@
 //       let csvFallbackCount = 0;
 
 //       for (const { y, mIdx } of months) {
-//         // Try JSON for preview
-//         const jsonQs = new URLSearchParams({
-//           region: regionUsed,
-//           marketplace_id: marketplaceIdUsed,
-//           month: toMonthSlug(y, mIdx),
-//           limit: "all",
-//           country: countryUsed,
-//           run_upload_pipeline: "true",
-//           year: String(y),
-//           format: "json",
-//           store_in_db: "false",
-//         });
-//         try {
-//           const data = await api(`/amazon_api/settlements_finances?${jsonQs}`);
-//           const rows = Array.isArray((data as any)?.items) ? (data as any).items : [];
-//           if (rows.length) {
-//             if (!combinedCols) combinedCols = Object.keys(rows[0]);
-//             combinedRows = combinedRows.concat(rows);
-//           }
-//           okCount++;
-//           continue;
-//         } catch {
-//           // Fallback to CSV (no preview parsing)
-//           const csvQs = new URLSearchParams({
+//         if (n === 3) {
+//           // -------- 3 MONTHS: USE /amazon_api/settlements --------
+//           const monthParam = `${y}-${two(mIdx + 1)}`; // e.g. 2025-01
+//           const qs = new URLSearchParams({
 //             region: regionUsed,
 //             marketplace_id: marketplaceIdUsed,
-//             month: toMonthSlug(y, mIdx),
+//             month: monthParam,
 //             limit: "all",
 //             country: countryUsed,
 //             year: String(y),
 //             format: "csv",
 //             store_in_db: "false",
+//             run_upload_pipeline: "true",
+//             allow_report_created_fallback: "true",
+//           });
+
+//           try {
+//             const data = await api(`/amazon_api/settlements?${qs}`);
+//             const rows = Array.isArray((data as any)?.items) ? (data as any).items : [];
+//             if (rows.length) {
+//               if (!combinedCols) combinedCols = Object.keys(rows[0]);
+//               combinedRows = combinedRows.concat(rows);
+//             }
+//             okCount++;
+//           } catch (e) {
+//             console.error("Settlements fetch failed for", y, mIdx + 1, e);
+//           }
+//         } else {
+//           // -------- 6/12 MONTHS: USE /amazon_api/settlements_finances --------
+//           // Try JSON for preview
+//           const jsonQs = new URLSearchParams({
+//             region: regionUsed,
+//             marketplace_id: marketplaceIdUsed,
+//             month: toMonthSlug(y, mIdx), // e.g. 2025-january
+//             limit: "all",
+//             country: countryUsed,
+//             run_upload_pipeline: "true",
+//             year: String(y),
+//             format: "json",
+//             store_in_db: "false",
 //           });
 //           try {
-//             await apiText(`/amazon_api/settlements_finances?${csvQs}`);
+//             const data = await api(`/amazon_api/settlements_finances?${jsonQs}`);
+//             const rows = Array.isArray((data as any)?.items) ? (data as any).items : [];
+//             if (rows.length) {
+//               if (!combinedCols) combinedCols = Object.keys(rows[0]);
+//               combinedRows = combinedRows.concat(rows);
+//             }
 //             okCount++;
-//             csvFallbackCount++;
-//           } catch (e2) {
-//             console.error("Finances fetch failed for", y, mIdx + 1, e2);
+//             continue;
+//           } catch {
+//             // Fallback to CSV (no preview parsing)
+//             const csvQs = new URLSearchParams({
+//               region: regionUsed,
+//               marketplace_id: marketplaceIdUsed,
+//               month: toMonthSlug(y, mIdx),
+//               limit: "all",
+//               country: countryUsed,
+//               year: String(y),
+//               format: "csv",
+//               store_in_db: "false",
+//             });
+//             try {
+//               await apiText(`/amazon_api/settlements_finances?${csvQs}`);
+//               okCount++;
+//               csvFallbackCount++;
+//             } catch (e2) {
+//               console.error("Finances fetch failed for", y, mIdx + 1, e2);
+//             }
 //           }
 //         }
 //       }
@@ -359,9 +451,12 @@
 //         `Requested: ${n} month${n > 1 ? "s" : ""}`,
 //         `Succeeded: ${okCount}`,
 //         csvFallbackCount ? `CSV fallback for ${csvFallbackCount} month(s)` : null,
-//       ].filter(Boolean).join(" · ");
+//       ]
+//         .filter(Boolean)
+//         .join(" · ");
 
-//       setMessage(`Finances fetch complete for ${countryUsed}. ${details}`);
+//       const modeLabel = n === 3 ? "Settlements" : "Finances";
+//       setMessage(`${modeLabel} fetch complete for ${countryUsed}. ${details}`);
 
 //       // Navigate to latest month
 //       const fullMonthNames = [
@@ -372,61 +467,90 @@
 //       const latestYear = new Date().getFullYear();
 //       const monthSlug = fullMonthNames[latestMonthIdx].toLowerCase();
 
+//       if (onClose) {
+//         onClose();
+//       }
 //       router.push(`/country/MTD/${countryUsed}/${monthSlug}/${latestYear}`);
 //     });
 
+
 //   return (
 //     <div className="w-full">
-//       <div className="rounded-xl bg-white p-4">
+//       <div className="rounded-xl bg-white">
 //         {/* Header */}
-//         <div className="items-center mb-2">
+//         <div className="items-center mb-2 p-4">
 //           <div className="text-center">
-//             {/* <h2 className="text-xl sm:text-2xl font-bold text-emerald-700">
-//               Select Data Fetch Period
-//             </h2> */}
 //             <PageBreadcrumb pageTitle="Select Data Fetch Period" textSize="2xl" variant="table" />
-//             <p className="font-bold text-charcoal-500 mt-1">
+//             <p className="text-charcoal-500 text-sm mt-1">
 //               Link your Amazon Seller Central to sync your sales data
 //             </p>
 //           </div>
-//           <div className="invisible inline-flex items-center gap-2 rounded-md border border-emerald-200 px-2 py-1">
-//             <ArrowLeft size={16} />
-//             <span className="hidden sm:inline text-sm font-medium">Back</span>
-//           </div>
+
 //         </div>
 
-//         {/* Period Options */}
-//         <div className="mt-2 grid grid-cols-2 sm:flex sm:justify-center gap-3">
+//         <p className="text-charcoal-500 text-center font-bold text-md mt-1">
+//           Data Fetch Period
+//         </p>
+
+//         {/* Period Buttons */}
+//         <div
+//           className="
+//     mt-2 
+//     grid grid-cols-4 gap-2               /* Mobile */
+//     sm:grid-cols-4 sm:gap-3              /* Small screens */
+//     max-w-xl mx-auto                     /* Keep centered + consistent width */
+//   "
+//         >
 //           {[1, 3, 6, 12].map((m) => {
 //             const isActive = selectedPeriod === m;
+
 //             return (
-//               <button
-//                 key={m}
-//                 type="button"
-//                 onClick={() => setSelectedPeriod(m)}
-//                 className={[
-//                   "w-full sm:w-48 rounded-lg border px-6 py-4 text-center transition",
-//                   isActive
-//                     ? "border-emerald-600 ring-2 ring-emerald-200 bg-white"
-//                     : "border-slate-200 bg-slate-50 hover:bg-white",
-//                 ].join(" ")}
-//               >
-//                 <div className="text-lg font-semibold text-slate-800">{m}</div>
-//                 <div className="text-xs uppercase tracking-wide text-slate-500 mt-1">
-//                   {m === 1 ? "Month" : "Months"}
-//                 </div>
-//               </button>
+//               <div key={m} className="relative w-full sm:w-48">
+
+//                 {/* RECOMMENDED BADGE */}
+//                 {m === 12 && (
+//                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gray-200 text-[10px] px-2 py-0.5 rounded-full shadow-sm text-gray-700">
+//                     Recommended
+//                   </div>
+//                 )}
+
+//                 <button
+//                   type="button"
+//                   onClick={() => setSelectedPeriod(m)}
+//                   className={[
+//                     `
+//             w-full rounded-lg border p-2 sm:p-3 text-center transition
+//           `,
+//                     isActive
+//                       ? "border-green-500 bg-green-500 text-yellow-200"
+//                       : "border-slate-200 bg-slate-50 hover:bg-white text-charcoal-500",
+//                   ].join(" ")}
+//                 >
+//                   <div className="text-base sm:text-lg font-semibold">{m}</div>
+//                   <div className="text-[10px] sm:text-xs uppercase tracking-wide mt-1">
+//                     {m === 1 ? "Month" : "Months"}
+//                   </div>
+//                 </button>
+//               </div>
 //             );
 //           })}
+
 //         </div>
 
-//         {/* Note */}
+//         {/* Note Section */}
 //         <div
-//           className="mt-4 rounded-lg bg-[#D9D9D9E5] p-3 text-charcoal-500 border border-[#D9D9D9] text-sm"
-//           style={{ borderLeft: "6px solid #5EA68E" }} // Tailwind's green-500
+//           className="
+//             mt-4
+//             max-w-xl mx-auto                      /* match width of button grid */
+//             rounded-lg 
+//             bg-[#D9D9D9E5]
+//             p-2 text-[12px]                       /* compact mobile size */
+//             sm:p-3 sm:text-sm                     /* normal on sm+ */
+//             border border-[#D9D9D9]
+//           "
+//           style={{ borderLeft: "6px solid #5EA68E" }}
 //         >
-//           <span className="font-medium">Note:&nbsp;</span>
-//           Selecting a longer time period will provide more comprehensive historical data for better trend analysis and forecasting.
+//           Note:&nbsp; A longer time range gives better trend and forecast.
 //           However, it may take longer to complete the initial data fetch.
 //         </div>
 
@@ -434,7 +558,9 @@
 //         {/* 1 month controls */}
 //         {selectedPeriod === 1 && (
 //           <div className="mt-6">
+//             {/* Month + Year Row */}
 //             <div className="flex flex-wrap items-center gap-3 justify-center">
+
 //               {/* Month */}
 //               <div className="flex items-center gap-2">
 //                 <label className="text-xs text-slate-500">Month</label>
@@ -460,46 +586,69 @@
 //                   onChange={(e) => setSelYear(e.target.value)}
 //                   className="rounded-lg border-2 border-slate-200 bg-white px-2 py-2 text-sm outline-none focus:border-[#5EA68E] focus:ring-4 focus:ring-[#5EA68E]/20"
 //                 >
-//                   {Array.from({ length: 6 }, (_, i) => String(new Date().getFullYear() - i)).map((y) => (
-//                     <option key={y} value={y}>{y}</option>
+//                   {Array.from(
+//                     { length: new Date().getFullYear() - 2024 + 1 },
+//                     (_, i) => 2024 + i
+//                   ).map((year) => (
+//                     <option key={year} value={year}>
+//                       {year}
+//                     </option>
 //                   ))}
 //                 </select>
 //               </div>
 
-//               {/* Save */}
-//               <button
-//                 onClick={handleFetchSettlementsByMonth}
-//                 disabled={busy}
-//                 className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#5EA68E] to-[#1f5274] px-4 py-2 text-sm font-semibold text-white shadow hover:opacity-95 disabled:opacity-60"
-//               >
-//                 <Database size={16} />
-//                 Save for {selMonth}/{selYear}
-//               </button>
 //             </div>
+
+//             {/* Continue button in separate row */}
+//             <div className="w-full flex justify-center gap-3 mt-4">
+
+//               {/* Cancel Button */}
+//               <Button
+//                 onClick={onClose}                 // <-- closes modal/page
+//                 variant="outline"
+//                 size="sm"
+//               >
+//                 Cancel
+//               </Button>
+
+//               {/* Continue Button */}
+//               <Button
+//                 onClick={handleFetchFinancesRange}
+//                 variant="primary"
+//                 size="sm"
+//               >
+//                 Continue
+//               </Button>
+
+//             </div>
+
 //           </div>
 //         )}
+
 
 //         {/* >1 month controls */}
 //         {selectedPeriod && selectedPeriod > 1 && (
 //           <div className="mt-6 flex flex-col items-center gap-3">
-//             <div className="text-sm text-slate-600">
+//             {/* <div className="text-sm text-slate-600">
 //               Fetching <span className="font-semibold">{selectedPeriod} months</span> via
 //               <span className="font-semibold"> /amazon_api/settlements_finances</span> for{" "}
 //               <b>{countryUsed.toUpperCase()}</b> (region <code>{regionUsed}</code>).
-//             </div>
-//             <button
+//             </div> */}
+//             {/* <button
 //               onClick={handleFetchFinancesRange}
 //               disabled={busy}
 //               className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-2 text-sm font-semibold text-white shadow hover:opacity-95 disabled:opacity-60"
 //             >
 //               <Database size={16} />
 //               Fetch last {selectedPeriod} months (Finances)
-//             </button>
+//             </button> */}
+
+//             <Button onClick={handleFetchFinancesRange} variant="primary" size="sm">Continue</Button>
 //           </div>
 //         )}
 //       </div>
 
-//       {/* Data cards / preview / messages (optional UI kept minimal) */}
+//       {/* Data cards / preview / messages */}
 //       <div className="mt-4 space-y-4">
 //         {message && (
 //           <div className="flex items-center gap-2 rounded-md bg-emerald-50 border border-emerald-200 p-3 text-emerald-800 text-sm">
@@ -513,53 +662,12 @@
 //             <span>{error}</span>
 //           </div>
 //         )}
-//         {/* You can render previews using settlementCols/settlementRows if desired */}
 //       </div>
 //     </div>
 //   );
 // };
 
 // export default AmazonFinancialDashboard;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -593,6 +701,7 @@ import {
   FaArrowLeft as ArrowLeft,
 } from "react-icons/fa";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
+import Button from "@/components/ui/button/Button";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:5000";
 const getAuthToken = () => (typeof window !== "undefined" ? localStorage.getItem("jwtToken") : null);
@@ -1057,24 +1166,32 @@ const AmazonFinancialDashboard: React.FC<Props> = ({ region, country, onClose })
 
   return (
     <div className="w-full">
-      <div className="rounded-xl bg-white p-4">
+      <div className="rounded-xl bg-white">
         {/* Header */}
-        <div className="items-center mb-2">
+        <div className="items-center mb-2 p-4">
           <div className="text-center">
             <PageBreadcrumb pageTitle="Select Data Fetch Period" textSize="2xl" variant="table" />
-            <p className="font-bold text-charcoal-500 mt-1">
+            <p className="text-charcoal-500 text-sm mt-1">
               Link your Amazon Seller Central to sync your sales data
             </p>
           </div>
-          <div className="invisible inline-flex items-center gap-2 rounded-md border border-emerald-200 px-2 py-1">
-            <ArrowLeft size={16} />
-            <span className="hidden sm:inline text-sm font-medium">Back</span>
-          </div>
+
         </div>
 
-        {/* Period Options */}
-        <div className="mt-2 grid grid-cols-2 sm:flex sm:justify-center gap-3">
-          {[1, 3, 6, 12].map((m) => {
+        <p className="text-charcoal-500 text-center font-bold text-md mt-1">
+          Data Fetch Period
+        </p>
+
+        {/* Period Buttons */}
+        <div
+          className="
+    mt-2 
+    grid grid-cols-4 gap-2               /* Mobile */
+    sm:grid-cols-4 sm:gap-3              /* Small screens */
+    max-w-xl mx-auto                     /* Keep centered + consistent width */
+  "
+        >
+          {/* {[1, 3, 6, 12].map((m) => {
             const isActive = selectedPeriod === m;
             return (
               <button
@@ -1082,35 +1199,99 @@ const AmazonFinancialDashboard: React.FC<Props> = ({ region, country, onClose })
                 type="button"
                 onClick={() => setSelectedPeriod(m)}
                 className={[
-                  "w-full sm:w-48 rounded-lg border px-6 py-4 text-center transition",
+                  `
+            w-full
+            rounded-lg border 
+            p-2                      
+            sm:p-3 
+            text-center transition
+          `,
                   isActive
-                    ? "border-emerald-600 ring-2 ring-emerald-200 bg-white"
-                    : "border-slate-200 bg-slate-50 hover:bg-white",
+                    ? "border-green-500 bg-green-500 text-yellow-200"
+                    : "border-slate-200 bg-slate-50 hover:bg-white text-charcoal-500",
                 ].join(" ")}
               >
-                <div className="text-lg font-semibold text-slate-800">{m}</div>
-                <div className="text-xs uppercase tracking-wide text-slate-500 mt-1">
+                <div className="text-base sm:text-lg font-semibold ">
+                  {m}
+                </div>
+                <div className="text-[10px] sm:text-xs uppercase tracking-wide mt-1">
                   {m === 1 ? "Month" : "Months"}
                 </div>
               </button>
             );
+          })} */}
+          {[1, 3, 6, 12].map((m) => {
+            const isActive = selectedPeriod === m;
+
+            return (
+              <div key={m} className="relative w-full">
+
+                {/* Recommended Badge */}
+                {m === 12 && (
+                  <div className="
+          absolute 
+          -top-2                     /* same as -8px */
+          left-1/2 -translate-x-1/2 
+          bg-gray-200 text-[10px]
+          px-2 py-0.5 
+          rounded-full 
+          text-gray-700 
+          z-10
+        ">
+                    Recommended
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => setSelectedPeriod(m)}
+                  className={[
+                    `
+            w-full
+            rounded-lg border 
+            p-2 sm:p-3 
+            text-center transition
+          `,
+                    isActive
+                      ? "border-green-500 bg-green-500 text-yellow-200"
+                      : "border-slate-200 bg-slate-50 hover:bg-white text-charcoal-500",
+                  ].join(" ")}
+                >
+                  <div className="text-base sm:text-lg font-semibold">{m}</div>
+                  <div className="text-[10px] sm:text-xs uppercase tracking-wide mt-1">
+                    {m === 1 ? "Month" : "Months"}
+                  </div>
+                </button>
+              </div>
+            );
           })}
+
         </div>
 
-        {/* Note */}
+        {/* Note Section */}
         <div
-          className="mt-4 rounded-lg bg-[#D9D9D9E5] p-3 text-charcoal-500 border border-[#D9D9D9] text-sm"
+          className="
+            mt-4
+            max-w-xl mx-auto                      /* match width of button grid */
+            rounded-lg 
+            bg-[#D9D9D9E5]
+            p-2 text-[12px]                       /* compact mobile size */
+            sm:p-3 sm:text-sm                     /* normal on sm+ */
+            border border-[#D9D9D9]
+          "
           style={{ borderLeft: "6px solid #5EA68E" }}
         >
-          <span className="font-medium">Note:&nbsp;</span>
-          Selecting a longer time period will provide more comprehensive historical data for better trend analysis and forecasting.
+          Note:&nbsp; A longer time range gives better trend and forecast.
           However, it may take longer to complete the initial data fetch.
         </div>
+
 
         {/* 1 month controls */}
         {selectedPeriod === 1 && (
           <div className="mt-6">
+            {/* Month + Year Row */}
             <div className="flex flex-wrap items-center gap-3 justify-center">
+
               {/* Month */}
               <div className="flex items-center gap-2">
                 <label className="text-xs text-slate-500">Month</label>
@@ -1136,41 +1317,69 @@ const AmazonFinancialDashboard: React.FC<Props> = ({ region, country, onClose })
                   onChange={(e) => setSelYear(e.target.value)}
                   className="rounded-lg border-2 border-slate-200 bg-white px-2 py-2 text-sm outline-none focus:border-[#5EA68E] focus:ring-4 focus:ring-[#5EA68E]/20"
                 >
-                  {Array.from({ length: 6 }, (_, i) => String(new Date().getFullYear() - i)).map((y) => (
-                    <option key={y} value={y}>{y}</option>
+                  {Array.from(
+                    { length: new Date().getFullYear() - 2024 + 1 },
+                    (_, i) => 2024 + i
+                  ).map((year) => (
+                    <option key={year} value={year}>
+                      {year}
+                    </option>
                   ))}
                 </select>
               </div>
 
-              {/* Save */}
-              <button
-                onClick={handleFetchSettlementsByMonth}
-                disabled={busy}
-                className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#5EA68E] to-[#1f5274] px-4 py-2 text-sm font-semibold text-white shadow hover:opacity-95 disabled:opacity-60"
+            </div>
+
+            {/* Continue button in separate row */}
+            <div className="w-full flex justify-center gap-3 mt-4">
+              <Button
+                onClick={onClose}                
+                variant="outline"
+                size="sm"
+                className="bg-gray-200 text-charcoal-500 hover:bg-gray-300"
               >
-                <Database size={16} />
-                Save for {selMonth}/{selYear}
-              </button>
+                Cancel
+              </Button>
+             <Button
+  onClick={handleFetchSettlementsByMonth}
+  variant="primary"
+  size="sm"
+  disabled={busy}
+>
+  {busy ? "Fetching..." : "Continue"}
+</Button>
+
             </div>
           </div>
         )}
 
+
         {/* >1 month controls */}
         {selectedPeriod && selectedPeriod > 1 && (
-          <div className="mt-6 flex flex-col items-center gap-3">
-            <div className="text-sm text-slate-600">
+          <div className="w-full flex justify-center gap-3 mt-4">
+            {/* <div className="text-sm text-slate-600">
               Fetching <span className="font-semibold">{selectedPeriod} months</span> via
               <span className="font-semibold"> /amazon_api/settlements_finances</span> for{" "}
               <b>{countryUsed.toUpperCase()}</b> (region <code>{regionUsed}</code>).
-            </div>
-            <button
+            </div> */}
+            {/* <button
               onClick={handleFetchFinancesRange}
               disabled={busy}
               className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-2 text-sm font-semibold text-white shadow hover:opacity-95 disabled:opacity-60"
             >
               <Database size={16} />
               Fetch last {selectedPeriod} months (Finances)
-            </button>
+            </button> */}
+
+             <Button
+                onClick={onClose}                
+                variant="outline"
+                size="sm"
+              >
+                Cancel
+              </Button>
+
+            <Button onClick={handleFetchFinancesRange} variant="primary" size="sm">{busy ? "Fetching..." : "Continue"}</Button>
           </div>
         )}
       </div>

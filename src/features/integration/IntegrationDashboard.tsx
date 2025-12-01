@@ -243,7 +243,7 @@ const chooseIntegration = (key: Provider, origin: Origin = "page") => {
   
   return (
     <div className="font-lato bg-white box-border">
-      <PageBreadcrumb pageTitle="Start your Journey with Phormula!" variant="page" textSize="2xl" align="left"/>
+      <PageBreadcrumb pageTitle="Start your Journey with Phormula!" variant="page" textSize="2xl" align="left" className="mb-4"/>
 
       {/* Step 1 */}
       <Step1ProductList
@@ -421,7 +421,7 @@ const chooseIntegration = (key: Provider, origin: Origin = "page") => {
               className="absolute inset-0 bg-black/40 backdrop-blur-sm"
               onClick={() => setOpenAmazonFinance(false)}
             />
-            <div className="relative w-full max-w-4xl rounded-xl bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+            <div className="relative w-full max-w-xl rounded-xl bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
               <div className="mt-3">
                 <AmazonFinancialDashboard
                   onClose={() => setOpenAmazonFinance(false)}

@@ -341,7 +341,7 @@ const handleStatusPollWinAndRoute = async () => {
           <img src={ICONS.back} alt="Back" className="h-6 w-6 sm:h-8 sm:w-8" />
         </button> */}
 
-        <div className="max-h-[90vh] overflow-y-auto px-4 sm:px-6 md:px-8 pb-6 pt-12 sm:pt-14">
+        <div className="max-h-[90vh] overflow-y-auto px-4 sm:px-6 md:px-8 pb-6 pt-5 sm:pt-8">
           <div className="mx-auto mb-3 sm:mb-4 flex h-10 w-10 items-center justify-center">
             <img src={ICONS.amazonLogo} alt="Amazon" className="h-10 w-10 sm:h-12 sm:w-12 mx-auto" />
           </div>
@@ -380,7 +380,7 @@ const handleStatusPollWinAndRoute = async () => {
             </p>
           </div>
 
-          <label className="mb-1 block text-xs sm:text-sm font-medium text-gray-700">
+          <label className="mb-1 block text-xs sm:text-sm font-semibold text-charcoal-500">
             Select your marketplace <span className="text-rose-500">*</span>
           </label>
           <div className="relative">

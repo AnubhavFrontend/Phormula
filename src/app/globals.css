@@ -759,3 +759,16 @@ span.flatpickr-weekday,
   opacity: 0.8;
   cursor: grabbing; /* Changes the cursor to indicate dragging */
 }
+
+
+
+
+select option {
+  background-color: white;
+  color: #333;
+}
+
+select option:hover {
+  background-color: red !important; /* light green */
+  color: #0f5132 !important; /* dark green */
+}

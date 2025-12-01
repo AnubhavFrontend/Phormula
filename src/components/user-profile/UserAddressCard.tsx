@@ -9,6 +9,7 @@ import { useGetCountriesQuery } from "@/lib/api/profileApi";
 import FeepreviewUpload from "../ui/modal/FeepreviewUpload";
 import SkuMultiCountryUpload from "../ui/modal/SkuMultiCountryUpload";
 import { useSelector } from "react-redux";
+import PageBreadcrumb from "../common/PageBreadCrumb";
 
 export default function UserAddressCard() {
   // Fee Preview modal state
@@ -45,9 +46,10 @@ useEffect(() => {
       <div className="rounded-2xl border border-gray-200 p-5 dark:border-gray-800 lg:p-6">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <h4 className="lg:mb-6 text-lg font-semibold text-gray-800 dark:text-white/90">
+            {/* <h4 className="lg:mb-6 text-lg font-semibold text-gray-800 dark:text-white/90">
               Product Information
-            </h4>
+            </h4> */}
+             <PageBreadcrumb pageTitle="Product Information" align="left" textSize="2xl" className="lg:mb-4"/>
 
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-7 2xl:gap-x-32">
               {/* Update SKU Information */}

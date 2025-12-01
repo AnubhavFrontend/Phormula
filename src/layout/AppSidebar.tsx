@@ -874,7 +874,7 @@ const AppSidebar: React.FC = () => {
           <button
             type="button"
             onClick={handleToggle}
-            className=" flex items-center justify-center w-8 h-8 rounded-lg border border-gray-200 bg-[#5EA68E] text-white lg:w-9 lg:h-9"
+            className=" flex items-center justify-center w-8 h-8 rounded-lg border border-gray-200 bg-blue-700 text-white lg:w-9 lg:h-9"
             aria-label={isExpanded || isMobileOpen ? "Collapse sidebar" : "Expand sidebar"}
           >
             {isExpanded || isMobileOpen ? (
@@ -915,7 +915,7 @@ const AppSidebar: React.FC = () => {
         {/* Platform Select */}
         {(isExpanded || isHovered || isMobileOpen) && regionOptions.length > 0 && (
           <RegionSelect
-           label="PLATFORM"
+           label="Platform"
 selectedCountry={selectedPlatform}
             options={regionOptions}
             onChange={onRegionChange}
