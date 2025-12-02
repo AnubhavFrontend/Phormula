@@ -1610,95 +1610,95 @@ const CashFlowPage: React.FC = () => {
     XLSX.writeFile(wb, fileName);
   };
 
-const downloadCombinedExcelWithImage = async () => {
-  if (!data?.summary) return;
+  const downloadCombinedExcelWithImage = async () => {
+    if (!data?.summary) return;
 
-  // 1. Create workbook / sheet
-  const workbook = new ExcelJS.Workbook();
-  const worksheet = workbook.addWorksheet("Cashflow");
+    // 1. Create workbook / sheet
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Cashflow");
 
-  // 2. Meta info (brand, company, etc.)
-  const company = userData?.company_name || "N/A";
-  const brand = userData?.brand_name || "N/A";
+    // 2. Meta info (brand, company, etc.)
+    const company = userData?.company_name || "N/A";
+    const brand = userData?.brand_name || "N/A";
 
-  const metaRows = [
-    [`Brand: ${brand}`],
-    [`Company: ${company}`],
-    [`Period Type: ${capitalize(periodType)}`],
-    [`Time Frame: ${xAxisTitle}`],
-    [`Currency: ${currencySymbol}`],
-    [`Country: ${capitalize(countryName || "")}`],
-    [""],
-  ];
+    const metaRows = [
+      [`Brand: ${brand}`],
+      [`Company: ${company}`],
+      [`Period Type: ${capitalize(periodType)}`],
+      [`Time Frame: ${xAxisTitle}`],
+      [`Currency: ${currencySymbol}`],
+      [`Country: ${capitalize(countryName || "")}`],
+      [""],
+    ];
 
-  metaRows.forEach((row) => worksheet.addRow(row));
+    metaRows.forEach((row) => worksheet.addRow(row));
 
-  // 3. TABLE SECTION (summary table ON TOP)
-  worksheet.addRow(["TABLE SUMMARY"]);
-  worksheet.addRow(["S.No.", "Category", "", `Amount (${currencySymbol})`]);
+    // 3. TABLE SECTION (summary table ON TOP)
+    worksheet.addRow(["TABLE SUMMARY"]);
+    worksheet.addRow(["S.No.", "Category", "", `Amount (${currencySymbol})`]);
 
-  const signs = ["(+)", "(-)", "(-)", "(-)", "(-)", "(-)", "(+)"];
+    const signs = ["(+)", "(-)", "(-)", "(-)", "(-)", "(-)", "(+)"];
 
-  columnsToDisplay2.forEach((key, index) => {
-    const label = labelMap[key];
-    const sign = signs[index] || "";
-    const isLastRow = index === columnsToDisplay2.length - 1;
+    columnsToDisplay2.forEach((key, index) => {
+      const label = labelMap[key];
+      const sign = signs[index] || "";
+      const isLastRow = index === columnsToDisplay2.length - 1;
 
-    const val = Number(
-      Math.abs(getSafeValue(key as keyof SummaryShape)).toFixed(2)
-    );
+      const val = Number(
+        Math.abs(getSafeValue(key as keyof SummaryShape)).toFixed(2)
+      );
 
-    worksheet.addRow([
-      isLastRow ? "" : index + 1,
-      label,
-      isLastRow ? "" : sign,
-      val,
-    ]);
-  });
+      worksheet.addRow([
+        isLastRow ? "" : index + 1,
+        label,
+        isLastRow ? "" : sign,
+        val,
+      ]);
+    });
 
-  worksheet.addRow([""]); // blank row after table
+    worksheet.addRow([""]); // blank row after table
 
-  // 4. Capture chart as PNG from Chart.js and place it BELOW the table
-  const chartInstance: any = chartRef.current;
-  if (chartInstance) {
-    // Try to get the base64 image from the chart instance
-    let dataUrl: string | undefined;
+    // 4. Capture chart as PNG from Chart.js and place it BELOW the table
+    const chartInstance: any = chartRef.current;
+    if (chartInstance) {
+      // Try to get the base64 image from the chart instance
+      let dataUrl: string | undefined;
 
-    if (typeof chartInstance.toBase64Image === "function") {
-      dataUrl = chartInstance.toBase64Image("image/png", 1.0);
-    } else if (chartInstance.canvas?.toDataURL) {
-      // Fallback: access canvas directly
-      dataUrl = chartInstance.canvas.toDataURL("image/png", 1.0);
+      if (typeof chartInstance.toBase64Image === "function") {
+        dataUrl = chartInstance.toBase64Image("image/png", 1.0);
+      } else if (chartInstance.canvas?.toDataURL) {
+        // Fallback: access canvas directly
+        dataUrl = chartInstance.canvas.toDataURL("image/png", 1.0);
+      }
+
+      if (dataUrl) {
+        // Strip the "data:image/png;base64," prefix for ExcelJS
+        const base64 = dataUrl.replace(/^data:image\/\w+;base64,/, "");
+
+        const imageId = workbook.addImage({
+          base64,
+          extension: "png",
+        });
+
+        // First free row after table
+        const startRow = worksheet.rowCount + 1;
+        const startCol = 1;
+
+        // You can tweak ext.width/height to resize the chart in Excel
+        worksheet.addImage(imageId, {
+          tl: { col: startCol - 1, row: startRow - 1 },
+          ext: { width: 800, height: 400 },
+        });
+      }
     }
 
-    if (dataUrl) {
-      // Strip the "data:image/png;base64," prefix for ExcelJS
-      const base64 = dataUrl.replace(/^data:image\/\w+;base64,/, "");
-
-      const imageId = workbook.addImage({
-        base64,
-        extension: "png",
-      });
-
-      // First free row after table
-      const startRow = worksheet.rowCount + 1;
-      const startCol = 1;
-
-      // You can tweak ext.width/height to resize the chart in Excel
-      worksheet.addImage(imageId, {
-        tl: { col: startCol - 1, row: startRow - 1 },
-        ext: { width: 800, height: 400 },
-      });
-    }
-  }
-
-  // 5. Download file in browser
-  const buffer = await workbook.xlsx.writeBuffer();
-  const blob = new Blob([buffer], {
-    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-  });
-  saveAs(blob, `Cashflow_${periodType}_${year}.xlsx`);
-};
+    // 5. Download file in browser
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+    saveAs(blob, `Cashflow_${periodType}_${year}.xlsx`);
+  };
 
 
 
@@ -1778,6 +1778,15 @@ const downloadCombinedExcelWithImage = async () => {
         };
       });
   }, [data?.summary, currencySymbol]);
+
+  const toggleMetric = (name: string) => {
+  if (allValuesZero) return;
+  setSelectedGraphs((prev) => ({
+    ...prev,
+    [name]: !prev[name],
+  }));
+};
+
 
   return (
     <div className="w-full">
@@ -1873,7 +1882,7 @@ const downloadCombinedExcelWithImage = async () => {
 
           {/* Chart Section */}
           <div className="mt-6 rounded-xl bg-white p-4 shadow border">
-            <div
+            {/* <div
               className="flex flex-wrap items-center gap-2 md:gap-3 mb-4"
               style={{
                 opacity: allValuesZero ? 0.3 : 1,
@@ -1938,7 +1947,69 @@ const downloadCombinedExcelWithImage = async () => {
 
                 );
               })}
-            </div>
+            </div> */}
+
+            <div
+  className={[
+    "my-3 sm:my-4",
+    "flex flex-wrap items-center justify-center",
+    "gap-3 sm:gap-4 md:gap-5",
+    "w-full mx-auto",
+    allValuesZero ? "opacity-30" : "opacity-100",
+    "transition-opacity duration-300",
+  ].join(" ")}
+>
+  {metrics.map(({ name, label, color }) => {
+    const isChecked = !!selectedGraphs[name];
+
+    return (
+      <label
+        key={name}
+        className={[
+          "shrink-0",
+          "flex items-center gap-1 sm:gap-1.5",
+          "font-semibold select-none whitespace-nowrap",
+          "text-[9px] sm:text-[10px] md:text-[11px] lg:text-xs xl:text-sm",
+          "text-charcoal-500",
+          isChecked ? "opacity-100" : "opacity-40",
+          allValuesZero ? "cursor-not-allowed" : "cursor-pointer",
+        ].join(" ")}
+      >
+        <span
+          className="
+            flex items-center justify-center
+            h-3 w-3 sm:h-3.5 sm:w-3.5
+            rounded-sm border transition
+          "
+          style={{
+            borderColor: color,
+            backgroundColor: isChecked ? color : "white",
+            opacity: allValuesZero ? 0.6 : 1,
+          }}
+          onClick={() => !allValuesZero && toggleMetric(name)}
+        >
+          {isChecked && (
+            <svg
+              viewBox="0 0 24 24"
+              width="14"
+              height="14"
+              className="text-white"
+            >
+              <path
+                fill="currentColor"
+                d="M20.285 6.709a1 1 0 0 0-1.414-1.414L9 15.168l-3.879-3.88a1 1 0 0 0-1.414 1.415l4.586 4.586a1 1 0 0 0 1.414 0l10-10Z"
+              />
+            </svg>
+          )}
+        </span>
+
+        {/* same as GraphPage: capitalized label, not all-caps */}
+        <span className="capitalize">{label}</span>
+      </label>
+    );
+  })}
+</div>
+
 
             <div className="h-[50vh] sm:h-[40vw] max-h-[560px]">
               {periodType === "monthly" ? (

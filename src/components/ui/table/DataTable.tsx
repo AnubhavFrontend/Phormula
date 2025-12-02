@@ -498,6 +498,18 @@ export default function DataTable<T extends Row>({
 
   const pageItems = getPageItems(page, totalPages);
 
+  const formatHeader = (header: string) => {
+    const words = header.split(" ");
+
+    return words
+      .map((w, idx) => {
+        if (w.toLowerCase() === "sku") return "SKU";       // Always SKU
+        return w.charAt(0).toUpperCase() + w.slice(1);     // Capitalize others
+      })
+      .join(" ");
+  };
+
+
   return (
     <div
       className={clsx(
@@ -522,7 +534,7 @@ export default function DataTable<T extends Row>({
           {/* HEADER like your green example */}
           <thead
             className={clsx(
-              "bg-[#5EA68E] text-white",
+              "bg-[#5EA68E] text-yellow-200",
               "text-xs sm:text-sm font-semibold",
               stickyHeader && "sticky top-0 z-10"
             )}
@@ -532,12 +544,14 @@ export default function DataTable<T extends Row>({
                 <th
                   key={String(col.key) + i}
                   className={clsx(
-                    "border border-[#e1e5ea] px-3 py-2.5 text-left align-middle",
+                    "border border-[#e1e5ea] px-3 py-2.5 text-left align-middle whitespace-nowrap",
                     col.headerClassName
                   )}
+
                   style={col.width ? { width: col.width } : undefined}
                 >
-                  {col.header}
+                  {formatHeader(col.header)}
+
                 </th>
               ))}
             </tr>
@@ -573,7 +587,7 @@ export default function DataTable<T extends Row>({
                       <td
                         key={String(col.key) + ci}
                         className={clsx(
-                          "max-w-[260px] truncate border border-[#e1e5ea] px-3 py-2.5 align-middle text-xs sm:text-sm",
+                          "max-w-[260px] truncate border border-[#e1e5ea] px-3 py-2.5 align-middle text-center text-xs sm:text-sm",
                           col.cellClassName
                         )}
                         title={
@@ -582,10 +596,10 @@ export default function DataTable<T extends Row>({
                       >
                         {col.render
                           ? col.render(
-                              row,
-                              value,
-                              (page - 1) * pageSize + ri
-                            )
+                            row,
+                            value,
+                            (page - 1) * pageSize + ri
+                          )
                           : value ?? "\u00A0"}
                       </td>
                     );
@@ -625,7 +639,7 @@ export default function DataTable<T extends Row>({
                 "disabled:cursor-not-allowed disabled:opacity-50"
               )}
             >
-             <FaChevronLeft />
+              <FaChevronLeft />
             </button>
 
             {/* Center page numbers */}
