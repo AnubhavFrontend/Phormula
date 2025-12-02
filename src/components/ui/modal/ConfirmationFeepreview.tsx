@@ -242,24 +242,25 @@ const onBack = () => {
         {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
 
         <div className="mx-auto mt-6 flex w-full max-w-md items-center justify-center gap-3">
-          <Button
-            onClick={onUpload}
-            disabled={isUploading}
-            type="submit"
-            variant="primary"
-            size="sm"
-          >
-            {isUploading ? "Uploading…" : "Upload"}
-          </Button>
-
-          <Button
-            onClick={onBack}
-            disabled={isUploading}
-            variant="outline"
-            size="sm"
-          >
-            Back
-          </Button>
+         
+           <div className=" flex items-center justify-end gap-3 ">
+    <button
+      type="button"
+      onClick={onBack}
+      disabled={isUploading}
+      className="inline-flex justify-center rounded-lg bg-gray-200 px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-300 dark:bg-white/10 dark:text-gray-200 dark:hover:bg-white/15"
+    >
+      Back
+    </button>
+    <button
+      type="button"
+      onClick={onUpload}
+       disabled={isUploading}
+      className="inline-flex justify-center rounded-lg bg-[#2c3854] px-4 py-2 text-sm font-semibold text-[#f8edcf] hover:opacity-95 disabled:opacity-60"
+    >
+     {isUploading ? "Uploading…" : "Upload"}
+    </button>
+  </div>
         </div>
       </div>
 

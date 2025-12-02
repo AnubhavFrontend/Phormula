@@ -1,6 +1,7 @@
 // "use client";
 
 // import React, { useEffect, useMemo, useState } from "react";
+// import "@/lib/chartSetup";
 // import { Line } from "react-chartjs-2";
 // import {
 //   Chart as ChartJS,
@@ -18,6 +19,8 @@
 // import Button from "../ui/button/Button";
 // import PageBreadcrumb from "../common/PageBreadCrumb";
 // import { FiDownload } from "react-icons/fi";
+// import Loader from "@/components/loader/Loader"; // 👈 NEW
+// import DownloadIconButton from "../ui/button/DownloadIconButton";
 
 // ChartJS.register(
 //   CategoryScale,
@@ -35,7 +38,9 @@
 //   selectedQuarter?: "Q1" | "Q2" | "Q3" | "Q4";
 //   selectedYear: number | string;
 //   countryName: string;
+//   onNoDataChange?: (noData: boolean) => void; // 👈 NEW
 // };
+
 
 // type UploadRow = {
 //   country: string;
@@ -76,6 +81,7 @@
 //   selectedQuarter,
 //   selectedYear,
 //   countryName,
+//   onNoDataChange,
 // }) => {
 //   const router = useRouter();
 //   const currencySymbol = countryName ? getCurrencySymbol(countryName) : "¤";
@@ -83,6 +89,7 @@
 //   const [data, setData] = useState<UploadRow[]>([]);
 //   const [allValuesZero, setAllValuesZero] = useState(false);
 //   const [showModal, setShowModal] = useState(false);
+//   const [loading, setLoading] = useState<boolean>(true); // 👈 NEW
 
 //   const [selectedGraphs, setSelectedGraphs] = useState<Record<string, boolean>>({
 //     sales: true,
@@ -183,7 +190,11 @@
 //   useEffect(() => {
 //     const fetchUploadHistory = async () => {
 //       try {
-//         if (!token) return;
+//         if (!token) {
+//           setLoading(false);
+//           return;
+//         }
+//         setLoading(true); // 👈 start loader
 //         const resp = await fetch(`http://127.0.0.1:5000/upload_history`, {
 //           method: "GET",
 //           headers: { Authorization: `Bearer ${token}` },
@@ -197,6 +208,8 @@
 //         }
 //       } catch (e) {
 //         console.error("Failed to fetch upload history:", e);
+//       } finally {
+//         setLoading(false); // 👈 stop loader
 //       }
 //     };
 //     fetchUploadHistory();
@@ -388,7 +401,14 @@
 //     monthlyLabels,
 //   ]);
 
-//   useEffect(() => setAllValuesZero(isAllZero), [isAllZero]);
+//   // useEffect(() => setAllValuesZero(isAllZero), [isAllZero]);
+
+//   useEffect(() => {
+//     setAllValuesZero(isAllZero);
+//     console.log("GraphPage isAllZero:", isAllZero);
+//     onNoDataChange?.(isAllZero);
+//   }, [isAllZero, onNoDataChange]);
+
 
 //   // X-axis tick labels like "Jan '25"
 //   const formattedLabels = useMemo(() => {
@@ -537,236 +557,233 @@
 //     profit: "bg-lime-600",
 //   };
 
-//   return (
-//     <div className="p-3 sm:p-4 md:p-6">
-//       <div className="flex gap-2">
-//         <PageBreadcrumb
-//           pageTitle="Tracking Profitability -"
-//           variant="page"
-//           align="left"
-//           textSize="2xl"
+//   const toggleMetric = (name: string) => {
+//     const selectedCount = Object.values(selectedGraphs).filter(Boolean).length;
+//     const isChecked = !!selectedGraphs[name];
+
+//     // prevent turning off the last metric
+//     if (isChecked && selectedCount === 1) {
+//       setShowModal(true);
+//       return;
+//     }
+
+//     setSelectedGraphs((prev) => ({
+//       ...prev,
+//       [name]: !isChecked,
+//     }));
+//   };
+
+
+//   // 👇 NEW: show loader while fetchUploadHistory is in progress
+//   if (loading) {
+//     return (
+//       <div className="flex h-[260px] md:h-[320px] items-center justify-center">
+//         <Loader
+//           src="/infinity-unscreen.gif"
+//           size={150}
+//           transparent
+//           roundedClass="rounded-full"
+//           backgroundClass="bg-transparent"
+//           respectReducedMotion
 //         />
-//         <span className="text-[#5EA68E] text-2xl">
-//           {countryName?.toLowerCase() === "global"
-//             ? "GLOBAL"
-//             : countryName?.toUpperCase()}
-//         </span>
 //       </div>
-
-//       {/* Metric toggles */}
-//       <div
-//         className={[
-//           "mt-3 sm:mt-4",
-//           "flex flex-wrap lg:flex-nowrap items-center justify-start",
-//           "gap-1.5 sm:gap-2 md:gap-1.5",
-//           "w-full mx-auto",
-//           allValuesZero ? "opacity-30" : "opacity-100",
-//           "transition-opacity duration-300",
-//         ].join(" ")}
-//       >
-//         {[
-//   { name: "sales", label: "Sales", color: "#2CA9E0" },
-//   { name: "total_cous", label: "COGS", color: "#AB64B5" },
-//   { name: "AmazonExpense", label: "Amazon Fees", color: "#FF5C5C" },
-//   { name: "taxncredit", label: "Taxes & Credits", color: "#154B9B" },
-//   { name: "profit2", label: "CM1 Profit", color: "#5EA49B" },
-//   { name: "advertisingCosts", label: "Advertising Costs", color: "#F47A00" },
-//   { name: "Other", label: "Other", color: "#00627D" },
-//   { name: "profit", label: "CM2 Profit", color: "#87AD12" },
-// ].map(({ name, label, color }) => {
-//   const isChecked = !!selectedGraphs[name];
+//     );
+//   }
 
 //   return (
-//     <label
-//       key={name}
-//       className={[
-//         "shrink-0",
-//         "flex items-center gap-1 sm:gap-1.5",
-//         "font-semibold cursor-pointer select-none whitespace-nowrap",
-//         "text-[9px] sm:text-[10px] md:text-[11px] lg:text-xs xl:text-sm",
-//         "underline decoration-2 underline-offset-[2px]",
-//         isChecked ? "opacity-100" : "opacity-40", // dim when off
-//       ].join(" ")}
-//       style={{ color }}
-//     >
-//       <input
-//         type="checkbox"
-//         name={name}
-//         checked={isChecked}
-//         onChange={handleCheckboxChange}
-//         disabled={allValuesZero}
-//         className={[
-//           "h-3 w-3 sm:h-3.5 sm:w-3.5 rounded-sm cursor-pointer",
-//           accentClass[name],
-//           "disabled:cursor-not-allowed",
-//         ].join(" ")}
-//       />
-//       {/* <span
-//         className={[
-//           "inline-block h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-sm",
-//           isChecked ? swatchClass[name] : "bg-gray-300", // grey swatch when off
-//         ].join(" ")}
-//       /> */}
-//       <span>{label.toUpperCase()}</span>
-//     </label>
-//   );
-// })}
+//     <div className="py-3 sm:py-4 md:y-6 relative">
 
-//       </div>
+//       {/* 🔹 everything fades when no data */}
+//       <div className={allValuesZero ? "opacity-30 pointer-events-none" : "opacity-100"}>
 
-
-
-//       {/* Chart */}
-//       <div className="relative mt-2 sm:mt-3">
-//         <div
-//           className={[
-//             "flex items-center justify-center",
-//             "h-[55vh] sm:h-[50vh] md:h-[45vh] lg:h-[40vh]",
-//             allValuesZero ? "opacity-30" : "opacity-100",
-//             "transition-opacity duration-300",
-//             "w-full",
-//           ].join(" ")}
-//         >
-//           {datasets.length > 0 && (
-//             <Line
-//               data={{ labels: formattedLabels, datasets }}
-//               options={{
-//                 responsive: true,
-//                 maintainAspectRatio: false,
-//                 interaction: {
-//                   intersect: false,
-//                   mode: allValuesZero ? "nearest" : "index",
-//                 },
-//                 plugins: {
-//                   tooltip: {
-//                     enabled: !allValuesZero,
-//                     mode: "index",
-//                     intersect: false,
-//                     callbacks: {
-//                       label: (tooltipItem: any) => {
-//                         // dataset.label already contains pretty label (e.g. "Sales")
-//                         const displayLabel =
-//                           (tooltipItem.dataset.label as string) || "";
-//                         const value = tooltipItem.raw as number;
-//                         return `${displayLabel}: ${currencySymbol} ${value.toLocaleString(
-//                           undefined,
-//                           {
-//                             minimumFractionDigits: 2,
-//                             maximumFractionDigits: 2,
-//                           }
-//                         )}`;
-//                       },
-//                     },
-//                   },
-//                   legend: { display: false },
-//                 },
-//                 scales: {
-//                   x: {
-//                     title: { display: true, text: "Month" },
-//                     ticks: {
-//                       minRotation: 0,
-//                       maxRotation: 0,
-//                       // IMPORTANT: always show the tick if there's only 1 label (monthly case)
-//                       autoSkip: formattedLabels.length > 6,
-//                       maxTicksLimit:
-//                         formattedLabels.length > 0
-//                           ? formattedLabels.length
-//                           : 12,
-//                       callback: (_v, idx) =>
-//                         String(formattedLabels[idx] ?? ""),
-//                     },
-//                   },
-//                   y: {
-//                     title: {
-//                       display: true,
-//                       text: `Amount (${currencySymbol})`,
-//                     },
-//                     min: minY,
-//                     ticks: { padding: 0 },
-//                   },
-//                 },
-//               }}
+//         <div className="mb-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+//           {/* Left: title + period */}
+//           <div className="flex flex-wrap items-baseline gap-2 justify-center sm:justify-start">
+//             <PageBreadcrumb
+//               pageTitle="Tracking Profitability -"
+//               variant="page"
+//               align="left"
+//               textSize="2xl"
 //             />
-//           )}
+//             <span className="text-[#5EA68E] font-bold text-lg sm:text-2xl md:text-2xl">
+//               {countryName?.toLowerCase() === "global"
+//                 ? "GLOBAL"
+//                 : countryName?.toUpperCase()}
+//             </span>
+//           </div>
+
+//           {/* Right: Download button */}
+//           <div className="flex justify-center sm:justify-end">
+//             <DownloadIconButton onClick={exportToExcel} />
+//           </div>
 //         </div>
 
-//         {/* Must select >= 1 metric */}
-//         {noMetricSelected && (
-//           <ModalMsg
-//             show={showModal}
-//             onClose={() => setShowModal(false)}
-//             message="At least one metric must be selected to display the graph."
-//           />
-//         )}
-
-//         {/* No data overlay */}
-//         {allValuesZero && (
-//           <div
-//             className={[
-//               "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2",
-//               "bg-white/95 border-2 border-gray-200 rounded-xl",
-//               "p-4 sm:p-5 md:p-6 text-center shadow-lg backdrop-blur",
-//               "z-50 w-[92%] max-w-[480px]",
-//             ].join(" ")}
-//           >
-//             <div className="mb-3">
-//               <img
-//                 src="/lock.png"
-//                 alt="No Data Icon"
-//                 className="mx-auto h-12 w-12 opacity-70"
-//               />
-//             </div>
-//             <h3 className="text-[#414042] mb-2 text-base sm:text-lg font-semibold">
-//               No Data Available
-//             </h3>
-//             <p className="text-gray-600 text-xs sm:text-sm leading-relaxed">
-//               To see performance metrics, you need to upload more files for{" "}
-//               <strong>{getTitle()}</strong>
-//             </p>
-//             <div className="mt-3 px-3 py-2 bg-gray-50 rounded text-[11px] sm:text-xs text-gray-500">
-//               Sample data shown for preview
-//             </div>
-//             <button
-//               className="mt-4 inline-flex items-center justify-center rounded-md bg-[#5EA68E] px-3 py-2 text-white text-xs sm:text-sm font-medium hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-[#5EA68E]/50"
-//               onClick={() =>
-//                 router.push(
-//                   `/Upload/${countryName === "global" ? "uk" : countryName}`
-//                 )
-//               }
-//             >
-//               Upload MTD(s)
-//             </button>
-//           </div>
-//         )}
-//       </div>
-
-//       {/* Export button ABOVE chart */}
-//       <div
-//         className={[
-//           "mt-2 sm:mt-3",
-//           "w-full mx-auto",
-//           "flex justify-end",
-//           allValuesZero ? "opacity-30" : "opacity-100",
-//           "transition-opacity duration-300",
-//         ].join(" ")}
-//       >
-//         <Button
-//           onClick={exportToExcel}
-//           size="sm"
-//           disabled={allValuesZero}
-//           className={allValuesZero ? "cursor-not-allowed" : "cursor-pointer"}
+//         {/* Metric toggles */}
+//         <div
+//           className={[
+//             "mt-3 sm:mt-4",
+//             "flex flex-wrap items-center justify-center",   // ✅ CENTERED
+//             "gap-3 sm:gap-4 md:gap-5",                      // ✅ MORE SPACE BETWEEN TOGGLES
+//             "w-full mx-auto",
+//             allValuesZero ? "opacity-30" : "opacity-100",
+//             "transition-opacity duration-300",
+//           ].join(" ")}
 //         >
-//           Download (.xlsx)
-//           <FiDownload className="text-yellow-200" />
-//         </Button>
-//       </div>
+//           {[
+//             { name: "sales", label: "Sales", color: "#2CA9E0" },
+//             { name: "total_cous", label: "COGS", color: "#AB64B5" },
+//             { name: "AmazonExpense", label: "Amazon Fees", color: "#FF5C5C" },
+//             { name: "taxncredit", label: "Taxes & Credits", color: "#154B9B" },
+//             { name: "profit2", label: "CM1 Profit", color: "#5EA49B" },
+//             { name: "advertisingCosts", label: "Advertising Costs", color: "#F47A00" },
+//             { name: "Other", label: "Other", color: "#00627D" },
+//             { name: "profit", label: "CM2 Profit", color: "#87AD12" },
+//           ].map(({ name, label, color }) => {
+//             const isChecked = !!selectedGraphs[name];
 
+//             return (
+//               <label
+//                 key={name}
+//                 className={[
+//                   "shrink-0",
+//                   "flex items-center gap-1 sm:gap-1.5",
+//                   "font-semibold select-none whitespace-nowrap",
+//                   // 👇 SAME FONT-SIZES YOU ALREADY HAD
+//                   "text-[9px] sm:text-[10px] md:text-[11px] lg:text-xs xl:text-sm",
+//                   "text-charcoal-500 ",         // text color
+//                   isChecked ? "opacity-100" : "opacity-40",
+//                   allValuesZero ? "cursor-not-allowed" : "cursor-pointer",
+//                 ].join(" ")}
+//               >
+//                 {/* Colored box */}
+//                 <span
+//                   className="
+//             flex items-center justify-center
+//             h-3 w-3 sm:h-3.5 sm:w-3.5
+//             rounded-sm border transition
+//           "
+//                   style={{
+//                     borderColor: color,
+//                     backgroundColor: isChecked ? color : "white",
+//                     opacity: allValuesZero ? 0.6 : 1,
+//                   }}
+//                   onClick={() => !allValuesZero && toggleMetric(name)}
+//                 >
+//                   {isChecked && (
+//                     <svg
+//                       viewBox="0 0 24 24"
+//                       width="14"
+//                       height="14"
+//                       className="text-white"
+//                     >
+//                       <path
+//                         fill="currentColor"
+//                         d="M20.285 6.709a1 1 0 0 0-1.414-1.414L9 15.168l-3.879-3.88a1 1 0 0 0-1.414 1.415l4.586 4.586a1 1 0 0 0 1.414 0l10-10Z"
+//                       />
+//                     </svg>
+//                   )}
+//                 </span>
+
+//                 <span className="capitalize">{label}</span>
+
+
+//               </label>
+//             );
+//           })}
+//         </div>
+
+
+
+//         {/* Chart */}
+//         <div className="relative mt-2 sm:mt-3">
+//          <div
+//     className={`flex w-full items-center justify-center
+//       h-[320px] sm:h-[360px] md:h-[400px] lg:h-[420px]
+//       transition-opacity duration-300
+//       ${allValuesZero ? "opacity-30" : "opacity-100"}`}
+//   >
+
+//             {datasets.length > 0 && (
+//               <Line
+//                 data={{ labels: formattedLabels, datasets }}
+//                 options={{
+//                   responsive: true,
+//                   maintainAspectRatio: false,
+//                   interaction: {
+//                     intersect: false,
+//                     mode: allValuesZero ? "nearest" : "index",
+//                   },
+//                   plugins: {
+//                     tooltip: {
+//                       enabled: !allValuesZero,
+//                       mode: "index",
+//                       intersect: false,
+//                       callbacks: {
+//                         label: (tooltipItem: any) => {
+//                           // dataset.label already contains pretty label (e.g. "Sales")
+//                           const displayLabel =
+//                             (tooltipItem.dataset.label as string) || "";
+//                           const value = tooltipItem.raw as number;
+//                           return `${displayLabel}: ${currencySymbol} ${value.toLocaleString(
+//                             undefined,
+//                             {
+//                               minimumFractionDigits: 2,
+//                               maximumFractionDigits: 2,
+//                             }
+//                           )}`;
+//                         },
+//                       },
+//                     },
+//                     legend: { display: false },
+//                   },
+//                   scales: {
+//                     x: {
+//                       title: { display: true, text: "Month" },
+//                       ticks: {
+//                         minRotation: 0,
+//                         maxRotation: 0,
+//                         // IMPORTANT: always show the tick if there's only 1 label (monthly case)
+//                         autoSkip: formattedLabels.length > 6,
+//                         maxTicksLimit:
+//                           formattedLabels.length > 0
+//                             ? formattedLabels.length
+//                             : 12,
+//                         callback: (_v, idx) =>
+//                           String(formattedLabels[idx] ?? ""),
+//                       },
+//                     },
+//                     y: {
+//                       title: {
+//                         display: true,
+//                         text: `Amount (${currencySymbol})`,
+//                       },
+//                       min: minY,
+//                       ticks: { padding: 0 },
+//                     },
+//                   },
+//                 }}
+//               />
+//             )}
+//           </div>
+
+//           {/* Must select >= 1 metric */}
+//           {noMetricSelected && (
+//             <ModalMsg
+//               show={showModal}
+//               onClose={() => setShowModal(false)}
+//               message="At least one metric must be selected to display the graph."
+//             />
+//           )}
+
+         
+//         </div>
+
+//       </div>
 //     </div>
 //   );
 // };
 
 // export default GraphPage;
-
 
 
 
@@ -828,7 +845,7 @@ import ModalMsg from "@/components/common/ModalMsg";
 import Button from "../ui/button/Button";
 import PageBreadcrumb from "../common/PageBreadCrumb";
 import { FiDownload } from "react-icons/fi";
-import Loader from "@/components/loader/Loader"; // 👈 NEW
+import Loader from "@/components/loader/Loader";
 import DownloadIconButton from "../ui/button/DownloadIconButton";
 
 ChartJS.register(
@@ -847,9 +864,8 @@ type GraphPageProps = {
   selectedQuarter?: "Q1" | "Q2" | "Q3" | "Q4";
   selectedYear: number | string;
   countryName: string;
-  onNoDataChange?: (noData: boolean) => void; // 👈 NEW
+  onNoDataChange?: (noData: boolean) => void;
 };
-
 
 type UploadRow = {
   country: string;
@@ -898,7 +914,7 @@ const GraphPage: React.FC<GraphPageProps> = ({
   const [data, setData] = useState<UploadRow[]>([]);
   const [allValuesZero, setAllValuesZero] = useState(false);
   const [showModal, setShowModal] = useState(false);
-  const [loading, setLoading] = useState<boolean>(true); // 👈 NEW
+  const [loading, setLoading] = useState<boolean>(true);
 
   const [selectedGraphs, setSelectedGraphs] = useState<Record<string, boolean>>({
     sales: true,
@@ -1003,7 +1019,7 @@ const GraphPage: React.FC<GraphPageProps> = ({
           setLoading(false);
           return;
         }
-        setLoading(true); // 👈 start loader
+        setLoading(true);
         const resp = await fetch(`http://127.0.0.1:5000/upload_history`, {
           method: "GET",
           headers: { Authorization: `Bearer ${token}` },
@@ -1018,7 +1034,7 @@ const GraphPage: React.FC<GraphPageProps> = ({
       } catch (e) {
         console.error("Failed to fetch upload history:", e);
       } finally {
-        setLoading(false); // 👈 stop loader
+        setLoading(false);
       }
     };
     fetchUploadHistory();
@@ -1178,7 +1194,6 @@ const GraphPage: React.FC<GraphPageProps> = ({
       const datasets = Object.entries(selectedGraphs)
         .filter(([, checked]) => checked)
         .map(([metric]) => ({
-          // use human-friendly labels for lines
           label: labelMap[metric] ?? metric,
           data: labels.map(
             (l) =>
@@ -1210,16 +1225,11 @@ const GraphPage: React.FC<GraphPageProps> = ({
     monthlyLabels,
   ]);
 
-  // useEffect(() => setAllValuesZero(isAllZero), [isAllZero]);
-
   useEffect(() => {
     setAllValuesZero(isAllZero);
-    console.log("GraphPage isAllZero:", isAllZero);
     onNoDataChange?.(isAllZero);
   }, [isAllZero, onNoDataChange]);
 
-
-  // X-axis tick labels like "Jan '25"
   const formattedLabels = useMemo(() => {
     return rawLabels.map((label) => {
       const [m, y] = label.trim().split(" ");
@@ -1344,33 +1354,10 @@ const GraphPage: React.FC<GraphPageProps> = ({
     (v) => v === false
   );
 
-  const accentClass: Record<string, string> = {
-    sales: "accent-sky-500",
-    total_cous: "accent-purple-500",
-    AmazonExpense: "accent-red-500",
-    taxncredit: "accent-blue-800",
-    profit2: "accent-teal-500",
-    advertisingCosts: "accent-orange-500",
-    Other: "accent-teal-700",
-    profit: "accent-lime-600",
-  };
-
-  const swatchClass: Record<string, string> = {
-    sales: "bg-sky-500",
-    total_cous: "bg-purple-500",
-    AmazonExpense: "bg-red-500",
-    taxncredit: "bg-blue-800",
-    profit2: "bg-teal-500",
-    advertisingCosts: "bg-orange-500",
-    Other: "bg-teal-700",
-    profit: "bg-lime-600",
-  };
-
   const toggleMetric = (name: string) => {
     const selectedCount = Object.values(selectedGraphs).filter(Boolean).length;
     const isChecked = !!selectedGraphs[name];
 
-    // prevent turning off the last metric
     if (isChecked && selectedCount === 1) {
       setShowModal(true);
       return;
@@ -1382,270 +1369,199 @@ const GraphPage: React.FC<GraphPageProps> = ({
     }));
   };
 
-
-  // 👇 NEW: show loader while fetchUploadHistory is in progress
-  if (loading) {
-    return (
-      <div className="flex h-[260px] md:h-[320px] items-center justify-center">
-        <Loader
-          src="/infinity-unscreen.gif"
-          size={150}
-          transparent
-          roundedClass="rounded-full"
-          backgroundClass="bg-transparent"
-          respectReducedMotion
-        />
-      </div>
-    );
-  }
-
   return (
-    <div className="py-3 sm:py-4 md:y-6 relative">
-
-      {/* 🔹 everything fades when no data */}
-      <div className={allValuesZero ? "opacity-30 pointer-events-none" : "opacity-100"}>
-
-        <div className="mb-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          {/* Left: title + period */}
-          <div className="flex flex-wrap items-baseline gap-2 justify-center sm:justify-start">
-            <PageBreadcrumb
-              pageTitle="Tracking Profitability -"
-              variant="page"
-              align="left"
-              textSize="2xl"
-            />
-            <span className="text-[#5EA68E] font-bold text-lg sm:text-2xl md:text-2xl">
-              {countryName?.toLowerCase() === "global"
-                ? "GLOBAL"
-                : countryName?.toUpperCase()}
-            </span>
-          </div>
-
-          {/* Right: Download button */}
-          <div className="flex justify-center sm:justify-end">
-            <DownloadIconButton onClick={exportToExcel} />
-          </div>
+    <div className="relative w-full rounded-xl border border-slate-200 bg-white shadow-sm p-4 sm:p-5">
+      {loading ? (
+        <div className="flex h-[260px] md:h-[320px] items-center justify-center">
+          <Loader
+            src="/infinity-unscreen.gif"
+            size={150}
+            transparent
+            roundedClass="rounded-full"
+            backgroundClass="bg-transparent"
+            respectReducedMotion
+          />
         </div>
-
-        {/* Metric toggles */}
+      ) : (
         <div
-          className={[
-            "mt-3 sm:mt-4",
-            "flex flex-wrap items-center justify-center",   // ✅ CENTERED
-            "gap-3 sm:gap-4 md:gap-5",                      // ✅ MORE SPACE BETWEEN TOGGLES
-            "w-full mx-auto",
-            allValuesZero ? "opacity-30" : "opacity-100",
-            "transition-opacity duration-300",
-          ].join(" ")}
+          className={
+            allValuesZero ? "opacity-30 pointer-events-none" : "opacity-100"
+          }
         >
-          {[
-            { name: "sales", label: "Sales", color: "#2CA9E0" },
-            { name: "total_cous", label: "COGS", color: "#AB64B5" },
-            { name: "AmazonExpense", label: "Amazon Fees", color: "#FF5C5C" },
-            { name: "taxncredit", label: "Taxes & Credits", color: "#154B9B" },
-            { name: "profit2", label: "CM1 Profit", color: "#5EA49B" },
-            { name: "advertisingCosts", label: "Advertising Costs", color: "#F47A00" },
-            { name: "Other", label: "Other", color: "#00627D" },
-            { name: "profit", label: "CM2 Profit", color: "#87AD12" },
-          ].map(({ name, label, color }) => {
-            const isChecked = !!selectedGraphs[name];
+          {/* Header row */}
+          <div className="mb-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap items-baseline gap-2 justify-center sm:justify-start">
+              <PageBreadcrumb
+                pageTitle="Tracking Profitability -"
+                variant="page"
+                align="left"
+                textSize="2xl"
+              />
+              <span className="text-[#5EA68E] font-bold text-lg sm:text-2xl md:text-2xl">
+                {countryName?.toLowerCase() === "global"
+                  ? "GLOBAL"
+                  : countryName?.toUpperCase()}
+              </span>
+            </div>
 
-            return (
-              <label
-                key={name}
-                className={[
-                  "shrink-0",
-                  "flex items-center gap-1 sm:gap-1.5",
-                  "font-semibold select-none whitespace-nowrap",
-                  // 👇 SAME FONT-SIZES YOU ALREADY HAD
-                  "text-[9px] sm:text-[10px] md:text-[11px] lg:text-xs xl:text-sm",
-                  "text-[#414042]",         // text color
-                  isChecked ? "opacity-100" : "opacity-40",
-                  allValuesZero ? "cursor-not-allowed" : "cursor-pointer",
-                ].join(" ")}
-              >
-                {/* Colored box */}
-                <span
-                  className="
-            flex items-center justify-center
-            h-3 w-3 sm:h-3.5 sm:w-3.5
-            rounded-sm border transition
-          "
-                  style={{
-                    borderColor: color,
-                    backgroundColor: isChecked ? color : "white",
-                    opacity: allValuesZero ? 0.6 : 1,
-                  }}
-                  onClick={() => !allValuesZero && toggleMetric(name)}
-                >
-                  {isChecked && (
-                    <svg
-                      viewBox="0 0 24 24"
-                      width="14"
-                      height="14"
-                      className="text-white"
-                    >
-                      <path
-                        fill="currentColor"
-                        d="M20.285 6.709a1 1 0 0 0-1.414-1.414L9 15.168l-3.879-3.88a1 1 0 0 0-1.414 1.415l4.586 4.586a1 1 0 0 0 1.414 0l10-10Z"
-                      />
-                    </svg>
-                  )}
-                </span>
+            <div className="flex justify-center sm:justify-end">
+              <DownloadIconButton onClick={exportToExcel} />
+            </div>
+          </div>
 
-                <span>{label.toUpperCase()}</span>
-              </label>
-            );
-          })}
-        </div>
-
-
-
-        {/* Chart */}
-        <div className="relative mt-2 sm:mt-3">
+          {/* Metric toggles */}
           <div
             className={[
-              "flex items-center justify-center",
-              "h-[55vh] sm:h-[50vh] md:h-[45vh] lg:h-[40vh]",
+              "mt-3 sm:mt-4",
+              "flex flex-wrap items-center justify-center",
+              "gap-3 sm:gap-4 md:gap-5",
+              "w-full mx-auto",
               allValuesZero ? "opacity-30" : "opacity-100",
               "transition-opacity duration-300",
-              "w-full",
             ].join(" ")}
           >
-            {datasets.length > 0 && (
-              <Line
-                data={{ labels: formattedLabels, datasets }}
-                options={{
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  interaction: {
-                    intersect: false,
-                    mode: allValuesZero ? "nearest" : "index",
-                  },
-                  plugins: {
-                    tooltip: {
-                      enabled: !allValuesZero,
-                      mode: "index",
+            {[
+              { name: "sales", label: "Sales", color: "#2CA9E0" },
+              { name: "total_cous", label: "COGS", color: "#AB64B5" },
+              { name: "AmazonExpense", label: "Amazon Fees", color: "#FF5C5C" },
+              { name: "taxncredit", label: "Taxes & Credits", color: "#154B9B" },
+              { name: "profit2", label: "CM1 Profit", color: "#5EA49B" },
+              {
+                name: "advertisingCosts",
+                label: "Advertising Costs",
+                color: "#F47A00",
+              },
+              { name: "Other", label: "Other", color: "#00627D" },
+              { name: "profit", label: "CM2 Profit", color: "#87AD12" },
+            ].map(({ name, label, color }) => {
+              const isChecked = !!selectedGraphs[name];
+
+              return (
+                <label
+                  key={name}
+                  className={[
+                    "shrink-0",
+                    "flex items-center gap-1 sm:gap-1.5",
+                    "font-semibold select-none whitespace-nowrap",
+                    "text-[9px] sm:text-[10px] md:text-[11px] lg:text-xs xl:text-sm",
+                    "text-charcoal-500",
+                    isChecked ? "opacity-100" : "opacity-40",
+                    allValuesZero ? "cursor-not-allowed" : "cursor-pointer",
+                  ].join(" ")}
+                >
+                  <span
+                    className="
+                      flex items-center justify-center
+                      h-3 w-3 sm:h-3.5 sm:w-3.5
+                      rounded-sm border transition
+                    "
+                    style={{
+                      borderColor: color,
+                      backgroundColor: isChecked ? color : "white",
+                      opacity: allValuesZero ? 0.6 : 1,
+                    }}
+                    onClick={() => !allValuesZero && toggleMetric(name)}
+                  >
+                    {isChecked && (
+                      <svg
+                        viewBox="0 0 24 24"
+                        width="14"
+                        height="14"
+                        className="text-white"
+                      >
+                        <path
+                          fill="currentColor"
+                          d="M20.285 6.709a1 1 0 0 0-1.414-1.414L9 15.168l-3.879-3.88a1 1 0 0 0-1.414 1.415l4.586 4.586a1 1 0 0 0 1.414 0l10-10Z"
+                        />
+                      </svg>
+                    )}
+                  </span>
+                  <span className="capitalize">{label}</span>
+                </label>
+              );
+            })}
+          </div>
+
+          {/* Chart */}
+          <div className="relative mt-2 sm:mt-3">
+            <div
+              className={`flex w-full items-center justify-center
+                h-[320px] sm:h-[360px] md:h-[400px] lg:h-[420px]
+                transition-opacity duration-300
+                ${allValuesZero ? "opacity-30" : "opacity-100"}`}
+            >
+              {datasets.length > 0 && (
+                <Line
+                  data={{ labels: formattedLabels, datasets }}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
                       intersect: false,
-                      callbacks: {
-                        label: (tooltipItem: any) => {
-                          // dataset.label already contains pretty label (e.g. "Sales")
-                          const displayLabel =
-                            (tooltipItem.dataset.label as string) || "";
-                          const value = tooltipItem.raw as number;
-                          return `${displayLabel}: ${currencySymbol} ${value.toLocaleString(
-                            undefined,
-                            {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2,
-                            }
-                          )}`;
+                      mode: allValuesZero ? "nearest" : "index",
+                    },
+                    plugins: {
+                      tooltip: {
+                        enabled: !allValuesZero,
+                        mode: "index",
+                        intersect: false,
+                        callbacks: {
+                          label: (tooltipItem: any) => {
+                            const displayLabel =
+                              (tooltipItem.dataset.label as string) || "";
+                            const value = tooltipItem.raw as number;
+                            return `${displayLabel}: ${currencySymbol} ${value.toLocaleString(
+                              undefined,
+                              {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              }
+                            )}`;
+                          },
                         },
                       },
+                      legend: { display: false },
                     },
-                    legend: { display: false },
-                  },
-                  scales: {
-                    x: {
-                      title: { display: true, text: "Month" },
-                      ticks: {
-                        minRotation: 0,
-                        maxRotation: 0,
-                        // IMPORTANT: always show the tick if there's only 1 label (monthly case)
-                        autoSkip: formattedLabels.length > 6,
-                        maxTicksLimit:
-                          formattedLabels.length > 0
-                            ? formattedLabels.length
-                            : 12,
-                        callback: (_v, idx) =>
-                          String(formattedLabels[idx] ?? ""),
+                    scales: {
+                      x: {
+                        title: { display: true, text: "Month" },
+                        ticks: {
+                          minRotation: 0,
+                          maxRotation: 0,
+                          autoSkip: formattedLabels.length > 6,
+                          maxTicksLimit:
+                            formattedLabels.length > 0
+                              ? formattedLabels.length
+                              : 12,
+                          callback: (_v, idx) =>
+                            String(formattedLabels[idx] ?? ""),
+                        },
+                      },
+                      y: {
+                        title: {
+                          display: true,
+                          text: `Amount (${currencySymbol})`,
+                        },
+                        min: minY,
+                        ticks: { padding: 0 },
                       },
                     },
-                    y: {
-                      title: {
-                        display: true,
-                        text: `Amount (${currencySymbol})`,
-                      },
-                      min: minY,
-                      ticks: { padding: 0 },
-                    },
-                  },
-                }}
+                  }}
+                />
+              )}
+            </div>
+
+            {/* Must select >= 1 metric */}
+            {noMetricSelected && (
+              <ModalMsg
+                show={showModal}
+                onClose={() => setShowModal(false)}
+                message="At least one metric must be selected to display the graph."
               />
             )}
           </div>
-
-          {/* Must select >= 1 metric */}
-          {noMetricSelected && (
-            <ModalMsg
-              show={showModal}
-              onClose={() => setShowModal(false)}
-              message="At least one metric must be selected to display the graph."
-            />
-          )}
-
-          {/* No data overlay */}
-          {/* {allValuesZero && (
-          <div
-            className={[
-              "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2",
-              "bg-white/95 border-2 border-gray-200 rounded-xl",
-              "p-4 sm:p-5 md:p-6 text-center shadow-lg backdrop-blur",
-              "z-50 w-[92%] max-w-[480px]",
-            ].join(" ")}
-          >
-            <div className="mb-3">
-              <img
-                src="/lock.png"
-                alt="No Data Icon"
-                className="mx-auto h-12 w-12 opacity-70"
-              />
-            </div>
-            <h3 className="text-[#414042] mb-2 text-base sm:text-lg font-semibold">
-              No Data Available
-            </h3>
-            <p className="text-gray-600 text-xs sm:text-sm leading-relaxed">
-              To see performance metrics, you need to upload more files for{" "}
-              <strong>{getTitle()}</strong>
-            </p>
-            <div className="mt-3 px-3 py-2 bg-gray-50 rounded text-[11px] sm:text-xs text-gray-500">
-              Sample data shown for preview
-            </div>
-            <button
-              className="mt-4 inline-flex items-center justify-center rounded-md bg-[#5EA68E] px-3 py-2 text-white text-xs sm:text-sm font-medium hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-[#5EA68E]/50"
-              onClick={() =>
-                router.push(
-                  `/Upload/${countryName === "global" ? "uk" : countryName}`
-                )
-              }
-            >
-              Upload MTD(s)
-            </button>
-          </div>
-        )} */}
         </div>
-
-        {/* Export button ABOVE chart */}
-        {/* <div
-        className={[
-          "mt-2 sm:mt-3",
-          "w-full mx-auto",
-          "flex justify-end",
-          allValuesZero ? "opacity-30" : "opacity-100",
-          "transition-opacity duration-300",
-        ].join(" ")}
-      >
-        <Button
-          onClick={exportToExcel}
-          size="sm"
-          disabled={allValuesZero}
-          className={allValuesZero ? "cursor-not-allowed" : "cursor-pointer"}
-        >
-          Download (.xlsx)
-          <FiDownload className="text-yellow-200" />
-        </Button>
-      </div> */}
-      </div>
+      )}
     </div>
   );
 };

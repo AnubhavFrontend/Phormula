@@ -202,32 +202,21 @@ export default function SkuMultiCountryUpload({ onClose, onComplete }: Props) {
             <p className="mt-3 text-center text-sm text-red-600">{error}</p>
           )}
 
-          <div className="mt-4 flex justify-center">
-            <Button
-              onClick={() => setShowConfirm(true)}
-              disabled={!file}
-              size="sm"
-              variant="primary"
-              className="font-bold shadow "
-            >
-              Next
-            </Button>
-          </div>
+          
         </div>
       )}
 
       {/* Step 2: confirmation modal with reusable DataTable */}
       {showConfirm && (
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 p-4">
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-white/60 p-4">
           <div
-            className="w-[80vw] max-w-4xl rounded-xl bg-white p-5 shadow-xl"
+            className="w- max-w-4xl rounded-xl bg-white p-5 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             {/* <h3 className="mb-3 text-center text-2xl font-semibold text-[#5EA68E]">
               Confirm SKU Data
             </h3> */}
             <PageBreadcrumb pageTitle="Confirm SKU Data" variant="table" />
-
             <DataTable
               columns={columns}
               data={rows}
@@ -236,7 +225,7 @@ export default function SkuMultiCountryUpload({ onClose, onComplete }: Props) {
               stickyHeader
               zebra
               emptyMessage="No parsed rows."
-              className="mb-4"
+              className="my-4 "
             />
 
             {error && (

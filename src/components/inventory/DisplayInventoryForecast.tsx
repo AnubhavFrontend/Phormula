@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { Line } from 'react-chartjs-2';
+import ExcelJS from 'exceljs';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -14,6 +14,7 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
+import { IoDownload } from "react-icons/io5";
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
@@ -90,7 +91,7 @@ const DisplayInventoryForecast: React.FC<DisplayInventoryForecastProps> = ({
   // Collect all keys
   const allKeys = useMemo<string[]>(() => {
     const s = new Set<string>();
-    forecastData.forEach((r) => Object.keys(r || {}).forEach((k) => s.add(k)));
+    forecastData.forEach((r) => Object.keys(r || {}).forEach((k) => s.add(k)))
     return Array.from(s);
   }, [forecastData]);
 
@@ -107,21 +108,22 @@ const DisplayInventoryForecast: React.FC<DisplayInventoryForecastProps> = ({
     return items;
   }, [allKeys]);
 
-  // We want the last two Sold months (displayed as "Aug", "Jul") in newer → older order
-  const last2SoldNewerFirst = useMemo<string[]>(() => {
-    const last2 = soldColsSorted.slice(-2).map((x) => x.key);
-    const sorted = last2
-      .map((k) => ({ k, ym: parseMonthHeaderToDate(k.replace(/\s+Sold$/i, ''))! }))
-      .sort((a, b) => compareYM(b.ym, a.ym))
-      .map((x) => x.k);
-    return sorted;
-  }, [soldColsSorted]);
-
   // The max sold month (to pick forecasts after this)
   const maxSoldYM = useMemo<YM | null>(() => {
     if (!soldColsSorted.length) return null;
     return soldColsSorted[soldColsSorted.length - 1].ym;
   }, [soldColsSorted]);
+
+  // Last 3 sold months, oldest -> newest
+  const last3SoldOldestFirst = useMemo<string[]>(() => {
+    return soldColsSorted.slice(-3).map((x) => x.key);
+  }, [soldColsSorted]);
+
+  // Labels for header 2nd row
+  const soldLabels = useMemo(
+    () => last3SoldOldestFirst.map((k) => monthShortLabel(k.replace(/\s+Sold$/i, ''))),
+    [last3SoldOldestFirst]
+  );
 
   // Forecast month columns (no "Sold"), sorted oldest->newest
   const forecastMonthColsSorted = useMemo(() => {
@@ -148,12 +150,6 @@ const DisplayInventoryForecast: React.FC<DisplayInventoryForecastProps> = ({
     return chosen;
   }, [forecastMonthColsSorted, maxSoldYM]);
 
-  // Labels for header 2nd row
-  const lastMonthKey = 'Last Month Sales(Units)';
-  const soldLabels = useMemo(
-    () => last2SoldNewerFirst.map((k) => monthShortLabel(k.replace(/\s+Sold$/i, ''))),
-    [last2SoldNewerFirst]
-  );
   const forecastLabels = useMemo(() => forecast3.map((k) => monthShortLabel(k)), [forecast3]);
 
   // Build table rows
@@ -165,17 +161,17 @@ const DisplayInventoryForecast: React.FC<DisplayInventoryForecastProps> = ({
           sNo: idx + 1,
           product: r['Product Name'] ?? '',
           sku: r['sku'] ?? '',
-          lastMonth: r[lastMonthKey] ?? '',
-          soldNewer: r[last2SoldNewerFirst[0]] ?? '',
-          soldOlder: r[last2SoldNewerFirst[1]] ?? '',
+          sold1: r[last3SoldOldestFirst[0]] ?? '',
+          sold2: r[last3SoldOldestFirst[1]] ?? '',
+          sold3: r[last3SoldOldestFirst[2]] ?? '',
           f1: r[forecast3[0]] ?? '',
           f2: r[forecast3[1]] ?? '',
           f3: r[forecast3[2]] ?? '',
         })),
-    [forecastData, last2SoldNewerFirst, forecast3]
+    [forecastData, last3SoldOldestFirst, forecast3]
   );
 
-  // Totals row
+  // Totals row in same order
   const totalsRow = useMemo(() => {
     const sumCol = (key: string) => {
       if (!key) return 0;
@@ -189,25 +185,30 @@ const DisplayInventoryForecast: React.FC<DisplayInventoryForecastProps> = ({
     };
     return {
       label: 'Total',
-      lastMonth: sumCol(lastMonthKey),
-      soldNewer: sumCol(last2SoldNewerFirst[0] || ''),
-      soldOlder: sumCol(last2SoldNewerFirst[1] || ''),
+      sold1: sumCol(last3SoldOldestFirst[0] || ''),
+      sold2: sumCol(last3SoldOldestFirst[1] || ''),
+      sold3: sumCol(last3SoldOldestFirst[2] || ''),
       f1: sumCol(forecast3[0] || ''),
       f2: sumCol(forecast3[1] || ''),
       f3: sumCol(forecast3[2] || ''),
     };
-  }, [forecastData, last2SoldNewerFirst, forecast3]);
+  }, [forecastData, last3SoldOldestFirst, forecast3]);
 
   // ===== Chart: Top 5 SKUs + Total =====
+
+  // Labels aligned with: [sold1, sold2, sold3, f1, f2, f3]
   const chartLabels = useMemo(
-    () => ['Last Month', ...soldLabels, ...forecastLabels],
+    () => [
+      ...soldLabels,
+      ...forecastLabels,
+    ],
     [soldLabels, forecastLabels]
   );
 
   const valuesForRow = (r: Record<string, any>) => [
-    Number(r[lastMonthKey]) || 0,
-    Number(r[last2SoldNewerFirst[0]]) || 0,
-    Number(r[last2SoldNewerFirst[1]]) || 0,
+    Number(r[last3SoldOldestFirst[0]]) || 0,
+    Number(r[last3SoldOldestFirst[1]]) || 0,
+    Number(r[last3SoldOldestFirst[2]]) || 0,
     Number(r[forecast3[0]]) || 0,
     Number(r[forecast3[1]]) || 0,
     Number(r[forecast3[2]]) || 0,
@@ -224,13 +225,14 @@ const DisplayInventoryForecast: React.FC<DisplayInventoryForecastProps> = ({
       .sort((a, b) => b.total - a.total)
       .slice(0, 5);
     return rows;
-  }, [forecastData, last2SoldNewerFirst, forecast3]);
+  }, [forecastData, last3SoldOldestFirst, forecast3]);
 
+  // Grand total aligned with chartLabels
   const grandTotalSeries = useMemo(
     () => [
-      totalsRow.lastMonth || 0,
-      totalsRow.soldNewer || 0,
-      totalsRow.soldOlder || 0,
+      totalsRow.sold1 || 0,
+      totalsRow.sold2 || 0,
+      totalsRow.sold3 || 0,
       totalsRow.f1 || 0,
       totalsRow.f2 || 0,
       totalsRow.f3 || 0,
@@ -238,7 +240,7 @@ const DisplayInventoryForecast: React.FC<DisplayInventoryForecastProps> = ({
     [totalsRow]
   );
 
-  const palette = ['#5EA68E', '#2CA9E0', '#FF8A5B', '#8E6CEF', '#F4C430', '#E15361'];
+  const palette = ['#2CA9E0', '#FF5C5C', '#5DA68E', '#F47A00', '#87AD12', '#AB64B5'];
   const forecastStartIndex = 3;
 
   const datasets = useMemo(() => {
@@ -261,8 +263,8 @@ const DisplayInventoryForecast: React.FC<DisplayInventoryForecastProps> = ({
     const totalDs = {
       label: 'Total',
       data: grandTotalSeries,
-      borderColor: '#111827',
-      backgroundColor: '#111827',
+      borderColor: '#AB64B5',
+      backgroundColor: '#AB64B5',
       borderWidth: 3,
       tension: 0.3,
       fill: false,
@@ -285,31 +287,44 @@ const DisplayInventoryForecast: React.FC<DisplayInventoryForecastProps> = ({
     [chartLabels, datasets]
   );
 
-  const chartOptions = useMemo(
-    () => ({
-      responsive: true,
-      plugins: {
-        legend: { position: 'top' as const },
-        title: {
-          display: true,
-          text: `Inventory Forecast — ${countryName?.toUpperCase?.() || ''}`,
-        },
-        tooltip: {
-          callbacks: {
-            label: (ctx: any) => {
-              const val = ctx.parsed?.y ?? 0;
-              return `${ctx.dataset.label}: ${Number(val).toLocaleString()}`;
-            },
+const chartOptions = useMemo(
+  () => ({
+    layout: {
+      // 👇 Legend aur actual chart area ke beech ka gap
+      padding: {
+        top: 0,
+        bottom: 24, // yahan se chart niche jayega, legend se gap banega
+      },
+    },
+    plugins: {
+      legend: {
+        position: 'top'  as const,
+        align: 'center' as const, // legend items center align (top pe)
+        labels: {
+          padding: 20,     // 70 se kam, taaki items khud tight rahein
+          boxWidth: 14,    // thoda bada square
+          boxHeight: 14,   // square ko text ke equal height pe
+          font: {
+            size: 12,
           },
         },
       },
-      scales: {
-        x: { title: { display: true, text: 'Months' } },
-        y: { title: { display: true, text: 'Units' }, beginAtZero: true },
+      tooltip: {
+        callbacks: {
+          label: (ctx: any) => {
+            const val = ctx.parsed?.y ?? 0;
+            return `${ctx.dataset.label}: ${Number(val).toLocaleString()}`;
+          },
+        },
       },
-    }),
-    [countryName]
-  );
+    },
+    scales: {
+      x: { title: { display: true, text: 'Months' } },
+      y: { title: { display: true, text: 'Units' }, beginAtZero: true },
+    },
+  }),
+  [countryName]
+);
 
   const forecastPlugin = {
     id: 'forecastBackground',
@@ -331,50 +346,92 @@ const DisplayInventoryForecast: React.FC<DisplayInventoryForecastProps> = ({
   };
 
   // Optional month range
- useEffect(() => {
-  if (!Array.isArray(data) || data.length === 0) return; // guard
+  useEffect(() => {
+    if (!Array.isArray(data) || data.length === 0) return; // guard
 
-  const fetchMonthRange = async () => {
-    try {
-      const token = localStorage.getItem('jwtToken');
-      if (!token) return;
+    const fetchMonthRange = async () => {
+      try {
+        const token = localStorage.getItem('jwtToken');
+        if (!token) return;
 
-      const resp = await fetch(
-        `http://127.0.0.1:5000/api/forecast_monthrange?country=${encodeURIComponent(countryName.toLowerCase())}`,
-        { method: 'GET', headers: { Authorization: `Bearer ${token}` } }
-      );
+        const resp = await fetch(
+          `http://127.0.0.1:5000/api/forecast_monthrange?country=${encodeURIComponent(
+            countryName.toLowerCase()
+          )}`,
+          { method: 'GET', headers: { Authorization: `Bearer ${token}` } }
+        );
 
-      if (!resp.ok) {
-        // helpful debug in UI console
-        console.warn('monthrange failed', resp.status);
-        return;
+        if (!resp.ok) {
+          console.warn('monthrange failed', resp.status);
+          return;
+        }
+        const j = (await resp.json()) as { month_range?: string };
+        setMonthRange(j.month_range ?? null);
+      } catch (e) {
+        console.warn('monthrange error', e);
       }
-      const j = (await resp.json()) as { month_range?: string };
-      setMonthRange(j.month_range ?? null);
-    } catch (e) {
-      console.warn('monthrange error', e);
+    };
+
+    fetchMonthRange();
+  }, [countryName, data]);
+
+  // Helper: convert data URL -> ArrayBuffer for exceljs
+  const base64DataUrlToArrayBuffer = (dataUrl: string): ArrayBuffer => {
+    const base64 = dataUrl.split(',')[1];
+    const binary = atob(base64);
+    const len = binary.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
+      bytes[i] = binary.charCodeAt(i);
     }
+    return bytes.buffer;
   };
 
-  fetchMonthRange();
-}, [countryName, data]); 
+  // Helper: get PNG with **white background** ONLY for Excel
+  const getChartPngWithWhiteBg = (): string | null => {
+    const chartInstance = chartRef.current as any;
+    if (!chartInstance) return null;
 
-  const handleDownload = () => {
-    // 1) Excel with totals row at bottom
+    const sourceCanvas: HTMLCanvasElement | undefined =
+      chartInstance.canvas || chartInstance.ctx?.canvas;
+    if (!sourceCanvas) return null;
+
+    const exportCanvas = document.createElement('canvas');
+    exportCanvas.width = sourceCanvas.width;
+    exportCanvas.height = sourceCanvas.height;
+    const ctx = exportCanvas.getContext('2d');
+    if (!ctx) return null;
+
+    // White background
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+
+    // Draw original chart canvas on top
+    ctx.drawImage(sourceCanvas, 0, 0);
+
+    return exportCanvas.toDataURL('image/png');
+  };
+
+  const handleDownload = async () => {
+    // ===== 1. Prepare table data (same as table) =====
     const header1 = ['S.No', 'Product Name', 'SKU', 'Last 3 Months', '', '', 'Forecasted Months', '', ''];
     const header2 = [
       '', '', '',
-      'Last Month', soldLabels[0] || '', soldLabels[1] || '',
-      forecastLabels[0] || '', forecastLabels[1] || '', forecastLabels[2] || '',
+      soldLabels[0] || '',
+      soldLabels[1] || '',
+      soldLabels[2] || '',
+      forecastLabels[0] || '',
+      forecastLabels[1] || '',
+      forecastLabels[2] || '',
     ];
 
     const rows = tableRows.map((r) => [
       r.sNo,
       r.product,
       r.sku,
-      r.lastMonth,
-      r.soldNewer,
-      r.soldOlder,
+      r.sold1,
+      r.sold2,
+      r.sold3,
       r.f1,
       r.f2,
       r.f3,
@@ -382,129 +439,234 @@ const DisplayInventoryForecast: React.FC<DisplayInventoryForecastProps> = ({
 
     const totalsExcelRow = [
       '', 'Total', '',
-      totalsRow.lastMonth,
-      totalsRow.soldNewer,
-      totalsRow.soldOlder,
+      totalsRow.sold1,
+      totalsRow.sold2,
+      totalsRow.sold3,
       totalsRow.f1,
       totalsRow.f2,
       totalsRow.f3,
     ];
 
-    const ws = XLSX.utils.aoa_to_sheet([header1, header2, ...rows, totalsExcelRow]);
+    const tableData = [header1, header2, ...rows, totalsExcelRow];
 
-    // Merge first header row blocks and vertical headers
-    (ws as any)['!merges'] = [
-      { s: { r: 0, c: 3 }, e: { r: 0, c: 5 } }, // D1-F1
-      { s: { r: 0, c: 6 }, e: { r: 0, c: 8 } }, // G1-I1
-      { s: { r: 0, c: 0 }, e: { r: 1, c: 0 } }, // S.No
-      { s: { r: 0, c: 1 }, e: { r: 1, c: 1 } }, // Product
-      { s: { r: 0, c: 2 }, e: { r: 1, c: 2 } }, // SKU
-    ];
+    // ===== 2. Create workbook & sheet =====
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet('Forecast (View)');
 
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Forecast (View)');
-    const buf = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    // ===== 3. Add chart image (with white background) at TOP =====
+    const dataUrl = getChartPngWithWhiteBg();
+    if (dataUrl) {
+      const buffer = base64DataUrlToArrayBuffer(dataUrl);
+      const imageId = workbook.addImage({
+        buffer,
+        extension: 'png',
+      });
+
+      // Chart on top: A1 to I18
+      sheet.addImage(imageId, 'A1:I18');
+    }
+
+    // ===== 4. Add table BELOW chart =====
+    const tableStartRow = 20; // little gap after chart
+
+    tableData.forEach((row, idx) => {
+      sheet.getRow(tableStartRow + idx).values = row;
+    });
+
+    // Merge cells for group headers (offset by tableStartRow)
+    sheet.mergeCells(tableStartRow, 4, tableStartRow, 6); // D? - F? "Last 3 Months"
+    sheet.mergeCells(tableStartRow, 7, tableStartRow, 9); // G? - I? "Forecasted Months"
+    sheet.mergeCells(tableStartRow, 1, tableStartRow + 1, 1); // S.No
+    sheet.mergeCells(tableStartRow, 2, tableStartRow + 1, 2); // Product Name
+    sheet.mergeCells(tableStartRow, 3, tableStartRow + 1, 3); // SKU
+
+    // Header styling
+    const headerRow1 = sheet.getRow(tableStartRow);
+    const headerRow2 = sheet.getRow(tableStartRow + 1);
+    [headerRow1, headerRow2].forEach((row) => {
+      row.eachCell((cell) => {
+        cell.alignment = { vertical: 'middle', horizontal: 'center' };
+        cell.font = { bold: true };
+        cell.border = {
+          top: { style: 'thin' },
+          bottom: { style: 'thin' },
+          left: { style: 'thin' },
+          right: { style: 'thin' },
+        };
+      });
+    });
+
+    // Body borders
+    for (let r = tableStartRow + 2; r < tableStartRow + tableData.length; r++) {
+      const row = sheet.getRow(r);
+      row.eachCell((cell) => {
+        cell.border = {
+          top: { style: 'thin' },
+          bottom: { style: 'thin' },
+          left: { style: 'thin' },
+          right: { style: 'thin' },
+        };
+      });
+    }
+
+    // Auto column width
+   sheet.columns.forEach((col) => {
+  if (!col) return; // safety
+
+  let maxLength = 10;
+
+  if (col.eachCell) {
+    col.eachCell((cell) => {
+      const v = cell.value as string | number | null;
+      if (v != null) {
+        const len = String(v).length;
+        if (len > maxLength) maxLength = len;
+      }
+    });
+  }
+
+  col.width = maxLength + 2;
+});
+
+    // ===== 5. Download .xlsx (chart + table together) =====
+    const xlsxBuffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob(
+      [xlsxBuffer],
+      { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }
+    );
     saveAs(
-      new Blob([buf], { type: 'application/octet-stream' }),
+      blob,
       `Inventory_Forecast_View_${countryName}_${month}_${year}.xlsx`
     );
-
-    // 2) Chart PNG
-    const chartInstance = chartRef.current;
-    const dataUrl = chartInstance?.toBase64Image?.() || chartInstance?.canvas?.toDataURL?.('image/png');
-    if (dataUrl) {
-      const byteString = atob(dataUrl.split(',')[1]);
-      const ab = new ArrayBuffer(byteString.length);
-      const ia = new Uint8Array(ab);
-      for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
-      const imgBlob = new Blob([ab], { type: 'image/png' });
-      saveAs(imgBlob, `Inventory_Forecast_Chart_${countryName}_${month}_${year}.png`);
-    }
   };
 
   if (!forecastData.length) return <p style={{ color: 'gray' }}>No data available.</p>;
 
   return (
     <div>
-      <h3  className='text-3xl font-bold text-[#414042]'>
-      Forecasted Data - 
+      <h3 className="text-2xl font-bold text-[#414042]">
+        Forecasted Data -{' '}
         {monthRange && (
-          <span className='text-[#5EA68E]'>
-          {countryName.toUpperCase()}   <strong>({monthRange})</strong>
+          <span className="text-[#5EA68E]">
+            {countryName.toUpperCase()} <strong>({monthRange})</strong>
           </span>
         )}
       </h3>
 
       {/* Chart: Top 5 SKUs + Total */}
-      <div className="bg-gray-50 p-4 rounded-lg">
-        <Line ref={chartRef} data={chartData} options={chartOptions} plugins={[forecastPlugin]} />
-      </div>
-
-      {/* Table with two-row header and totals row */}
-      <div className="overflow-x-auto mt-6">
-        <table className="min-w-full text-sm border border-gray-300 rounded-lg">
-          <thead>
-            <tr>
-              <th className="p-2 border bg-[#5EA68E] text-[#F8EDCE]">S.No</th>
-              <th className="p-2 border bg-[#5EA68E] text-[#F8EDCE]">Product Name</th>
-              <th className="p-2 border bg-[#5EA68E] text-[#F8EDCE]">SKU</th>
-              <th className="p-2 border bg-[#5EA68E] text-[#F8EDCE]" colSpan={3}>
-                Last 3 Months
-              </th>
-              <th className="p-2 border bg-[#5EA68E] text-[#F8EDCE]" colSpan={3}>
-                Forecasted Months
-              </th>
-            </tr>
-            <tr>
-              <th className="p-2 border bg-[#D9D9D9]"></th>
-              <th className="p-2 border bg-[#D9D9D9]"></th>
-              <th className="p-2 border bg-[#D9D9D9]"></th>
-              <th className="p-2 border bg-[#D9D9D9]">Last Month</th>
-              <th className="p-2 border bg-[#D9D9D9]">{soldLabels[0] || ''}</th>
-              <th className="p-2 border bg-[#D9D9D9]">{soldLabels[1] || ''}</th>
-              <th className="p-2 border bg-[#D9D9D9]">{forecastLabels[0] || ''}</th>
-              <th className="p-2 border bg-[#D9D9D9]">{forecastLabels[1] || ''}</th>
-              <th className="p-2 border bg-[#D9D9D9]">{forecastLabels[2] || ''}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {tableRows.map((row, i) => (
-              <tr key={i} className="text-center border-t">
-                <td className="p-2 border">{row.sNo}</td>
-                <td className="p-2 border text-left">{row.product}</td>
-                <td className="p-2 border">{row.sku}</td>
-                <td className="p-2 border">{row.lastMonth}</td>
-                <td className="p-2 border">{row.soldNewer}</td>
-                <td className="p-2 border">{row.soldOlder}</td>
-                <td className="p-2 border">{row.f1}</td>
-                <td className="p-2 border">{row.f2}</td>
-                <td className="p-2 border">{row.f3}</td>
-              </tr>
-            ))}
-            {/* Totals row */}
-            <tr className="text-center border-t bg-[#F7F7F7] font-semibold">
-              <td className="p-2 border"></td>
-              <td className="p-2 border text-left">Total</td>
-              <td className="p-2 border"></td>
-              <td className="p-2 border">{totalsRow.lastMonth}</td>
-              <td className="p-2 border">{totalsRow.soldNewer}</td>
-              <td className="p-2 border">{totalsRow.soldOlder}</td>
-              <td className="p-2 border">{totalsRow.f1}</td>
-              <td className="p-2 border">{totalsRow.f2}</td>
-              <td className="p-2 border">{totalsRow.f3}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div className="flex justify-end gap-3 mt-6">
+      <div className=" p-4 border border-[#000000] rounded-lg mt-5">
+        
+        <div className='flex justify-between items-center '>
+ <div>
+          <h2 className='text-xl text-[#414042] font-semibold'>Top 5 SKUs Inventory Trend</h2>
+        <p className='text-sm '>Historical data vs forecasted trends</p>
+        </div>
+        <div className="mt-2 flex flex-wrap gap-6 text-xs">
+        <div className="flex items-center gap-2">
+          <span className="inline-block w-8 border-b-2 border-black" />
+          <span>Last 3 months (Actual)</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="inline-block w-8 border-b-2 border-black border-dashed" />
+          <span>Next 3 months (Forecast)</span>
+        </div>
+        <div className="flex justify-end gap-3">
         <button
           onClick={handleDownload}
-          className="bg-[#37455F] text-sm text-[#F8EDCE] font-bold w-[220px] py-2 rounded-lg shadow-[0px_4px_4px_0px_#00000040]"
-        >
-          Download (.xlsx & .png)
+        className="bg-white border border-[#8B8585] px-1 rounded-sm"
+                                    style={{
+                         boxShadow: "0px 4px 4px 0px #00000040",  
+                       }}
+                                 >
+                                 <IoDownload size={27} />
         </button>
       </div>
+      <div className="flex justify-end gap-3">
+        <button
+          onClick={handleDownload}
+          className="bg-[#37455F] text-sm text-[#F8EDCE] font-bold px-6 py-2 rounded-lg shadow-[0px_4px_4px_0px_#00000040]"
+        >
+         Raise PO
+        </button>
+      </div>
+      </div>
+        </div>
+       
+        <Line ref={chartRef} data={chartData} options={chartOptions} plugins={[forecastPlugin]} />
+     
+<h2 className='text-2xl font-bold text-[#414042]'>Detailed Forecast Data (All SKUs)</h2>
+      {/* Table with two-row header and totals row */}
+   <div className="overflow-x-auto mt-6">
+  <table className="min-w-full text-sm border border-[#414042] rounded-lg">
+    <thead>
+  <tr className="font-normal">
+    <th className="p-3 border border-[#414042] bg-[#D9D9D9] font-semibold text-center">
+      S.No
+    </th>
+    <th className="p-3 border border-[#414042] bg-[#D9D9D9] font-semibold text-left">
+      Product Name
+    </th>
+    <th className="p-3 border border-[#414042] bg-[#D9D9D9] font-semibold text-center">
+      SKU
+    </th>
+
+    {/* Last 3 Months */}
+    <th className="p-3 border border-[#414042] bg-[#5EA68E] text-[#F8EDCE] font-semibold" colSpan={3}>
+      Last 3 Months
+    </th>
+
+    {/* Forecasted Months */}
+    <th className="p-3 border border-[#414042] bg-[#5EA68E] text-[#F8EDCE] font-semibold" colSpan={3}>
+      Forecasted Months
+    </th>
+  </tr>
+
+  <tr>
+    <th className="p-2 border border-[#414042] bg-[#D9D9D9]"></th>
+    <th className="p-2 border border-[#414042] bg-[#D9D9D9]"></th>
+    <th className="p-2 border border-[#414042] bg-[#D9D9D9]"></th>
+
+    {/* Dynamic month labels */}
+    <th className="p-2 border border-[#414042] bg-[#D9D9D9]">{soldLabels[0] || ''}</th>
+    <th className="p-2 border border-[#414042] bg-[#D9D9D9]">{soldLabels[1] || ''}</th>
+    <th className="p-2 border border-[#414042] bg-[#D9D9D9]">{soldLabels[2] || ''}</th>
+    <th className="p-2 border border-[#414042] bg-[#D9D9D9]">{forecastLabels[0] || ''}</th>
+    <th className="p-2 border border-[#414042] bg-[#D9D9D9]">{forecastLabels[1] || ''}</th>
+    <th className="p-2 border border-[#414042] bg-[#D9D9D9]">{forecastLabels[2] || ''}</th>
+  </tr>
+</thead>
+
+    <tbody>
+      {tableRows.map((row, i) => (
+        <tr key={i} className="text-center border-t border-[#414042] odd:bg-white even:bg-[#5EA68E33]">
+          <td className="p-2 border border-[#414042]">{row.sNo}</td>
+          <td className="p-2 border border-[#414042] text-left">{row.product}</td>
+          <td className="p-2 border border-[#414042]">{row.sku}</td>
+          <td className="p-2 border border-[#414042]">{row.sold1}</td>
+          <td className="p-2 border border-[#414042]">{row.sold2}</td>
+          <td className="p-2 border border-[#414042]">{row.sold3}</td>
+          <td className="p-2 border border-[#414042]">{row.f1}</td>
+          <td className="p-2 border border-[#414042]">{row.f2}</td>
+          <td className="p-2 border border-[#414042]">{row.f3}</td>
+        </tr>
+      ))}
+      <tr className="text-center border-t border-[#414042] bg-[#F7F7F7] font-semibold">
+        <td className="p-2 border border-[#414042]"></td>
+        <td className="p-2 border border-[#414042] text-left">Total</td>
+        <td className="p-2 border border-[#414042]"></td>
+        <td className="p-2 border border-[#414042]">{totalsRow.sold1}</td>
+        <td className="p-2 border border-[#414042]">{totalsRow.sold2}</td>
+        <td className="p-2 border border-[#414042]">{totalsRow.sold3}</td>
+        <td className="p-2 border border-[#414042]">{totalsRow.f1}</td>
+        <td className="p-2 border border-[#414042]">{totalsRow.f2}</td>
+        <td className="p-2 border border-[#414042]">{totalsRow.f3}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+ </div>
+
+      
     </div>
   );
 };

@@ -106,8 +106,8 @@ export default function UploadLocalInvModal({
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+    <div className="modal-overlay " onClick={onClose}>
+      <div className="modal-content z-[100000]" onClick={(e) => e.stopPropagation()}>
         <div className="form-container">
           <div className="header-title">Upload Local Warehouse Stock Balance File</div>
           <form onSubmit={handleSubmit}>
@@ -186,7 +186,7 @@ export default function UploadLocalInvModal({
       </div>
 
       <style jsx>{`
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); display:flex; align-items:center; justify-content:center; z-index:1000; }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); display:flex; align-items:center; justify-content:center; z-index:10000; }
         .modal-content { background:#fff; max-width:700px; width:92%; max-height:90vh; overflow:auto; border-radius:10px; box-shadow:0 10px 30px rgba(0,0,0,.2); }
         .form-container{ margin:auto; padding:30px; box-sizing:border-box; border:2px solid #5EA68E; border-radius:15px; background:#fff; }
         .header-title{ text-align:center; font-size:24px; color:#5EA68E; font-weight:600; margin-bottom:10px; }

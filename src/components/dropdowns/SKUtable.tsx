@@ -29,6 +29,7 @@ type TableRow = {
     quantity?: number;
     asp?: number;
     ASP?: number; // sometimes keys differ in casing
+    product_sales?: number;
     net_sales?: number;
     cost_of_unit_sold?: number;
     amazon_fee?: number;
@@ -168,6 +169,7 @@ const SKUtable: React.FC<SKUtableProps> = ({
             product_name: "Sample Product A",
             quantity: 100,
             asp: 12.5,
+            product_sales: 1250,
             net_sales: 1250,
             cost_of_unit_sold: 500,
             amazon_fee: 100,
@@ -183,6 +185,7 @@ const SKUtable: React.FC<SKUtableProps> = ({
             product_name: "Sample Product B",
             quantity: 80,
             asp: 10,
+            product_sales: 800,
             net_sales: 800,
             cost_of_unit_sold: 300,
             amazon_fee: 80,
@@ -198,6 +201,7 @@ const SKUtable: React.FC<SKUtableProps> = ({
             product_name: "Sample Product C",
             quantity: 80,
             asp: 8,
+            product_sales: 800,
             net_sales: 400,
             cost_of_unit_sold: 400,
             amazon_fee: 50,
@@ -213,6 +217,7 @@ const SKUtable: React.FC<SKUtableProps> = ({
             product_name: "Total",
             quantity: 80,
             asp: 10,
+            product_sales: 800,
             net_sales: 800,
             cost_of_unit_sold: 300,
             amazon_fee: 80,
@@ -259,6 +264,7 @@ const SKUtable: React.FC<SKUtableProps> = ({
             "product_name",
             "quantity",
             aspKey || "asp",
+            "product_sales",
             "net_sales",
             "cost_of_unit_sold",
             "amazon_fee",
@@ -272,6 +278,9 @@ const SKUtable: React.FC<SKUtableProps> = ({
         ];
         return cols.filter(Boolean) as (keyof TableRow | string)[];
     }, [aspKey, showamazonfee, showprofit]);
+
+    const totalTableColumns = 1 + columnsToDisplay.length;
+    const summaryLabelColSpan = totalTableColumns - 1;
 
     /* --------- Fetch user data (brand/company names) --------- */
     useEffect(() => {
@@ -535,6 +544,7 @@ const SKUtable: React.FC<SKUtableProps> = ({
             "product_name",
             "quantity",
             "asp",
+            "product_sales",
             "net_sales",
             "cost_of_unit_sold",
             "amazon_fee",
@@ -611,31 +621,35 @@ const SKUtable: React.FC<SKUtableProps> = ({
             [columnsToDisplay2[0]]: "Product Name",
             [columnsToDisplay2[1]]: "Quantity Sold",
             [columnsToDisplay2[2]]: "ASP",
-            [columnsToDisplay2[3]]: "Net Sales",
-            [columnsToDisplay2[4]]: "Cost of Goods Sold",
-            [columnsToDisplay2[5]]: "Amazon Fees",
-            [columnsToDisplay2[6]]: "Selling Fees",
-            [columnsToDisplay2[7]]: "FBA fees",
-            [columnsToDisplay2[8]]: "Net Credits",
-            [columnsToDisplay2[9]]: "Net Taxes",
-            [columnsToDisplay2[10]]: "CM1 Profit",
-            [columnsToDisplay2[11]]: "CM1 Profit (%)",
-            [columnsToDisplay2[12]]: "CM1 Profit per Unit",
+            [columnsToDisplay2[3]]: "Gross Sales",             // 👈 changed
+            [columnsToDisplay2[4]]: "Net Sales",               // 👈 changed
+            [columnsToDisplay2[5]]: "Cost of Goods Sold",
+            [columnsToDisplay2[6]]: "Amazon Fees",
+            [columnsToDisplay2[7]]: "Selling Fees",
+            [columnsToDisplay2[8]]: "FBA fees",
+            [columnsToDisplay2[9]]: "Net Credits",
+            [columnsToDisplay2[10]]: "Net Taxes",
+            [columnsToDisplay2[11]]: "CM1 Profit",
+            [columnsToDisplay2[12]]: "CM1 Profit (%)",
+            [columnsToDisplay2[13]]: "CM1 Profit per Unit",
         };
 
+
         const signageRow = {
-            [columnsToDisplay2[2]]: "",
-            [columnsToDisplay2[3]]: "(+)",
-            [columnsToDisplay2[4]]: "(-)",
-            [columnsToDisplay2[5]]: "(-)",
-            [columnsToDisplay2[6]]: "(-)",
-            [columnsToDisplay2[7]]: "(-)",
-            [columnsToDisplay2[8]]: "(+)",
-            [columnsToDisplay2[9]]: "",
-            [columnsToDisplay2[10]]: "",
-            [columnsToDisplay2[11]]: "",
-            [columnsToDisplay2[12]]: "",
+            [columnsToDisplay2[2]]: "",          // ASP
+            [columnsToDisplay2[3]]: "",       // Gross Sales
+            [columnsToDisplay2[4]]: "(+)",       // Net Sales
+            [columnsToDisplay2[5]]: "(-)",       // COGS
+            [columnsToDisplay2[6]]: "(-)",       // Amazon Fees
+            [columnsToDisplay2[7]]: "(-)",       // Selling Fees
+            [columnsToDisplay2[8]]: "(-)",       // FBA Fees
+            [columnsToDisplay2[9]]: "(+)",       // Net Credits
+            [columnsToDisplay2[10]]: "",         // Net Taxes
+            [columnsToDisplay2[11]]: "",         // CM1 Profit
+            [columnsToDisplay2[12]]: "",         // CM1 Profit (%)
+            [columnsToDisplay2[13]]: "",         // CM1 Profit per Unit
         };
+
 
         const fullData = [
             ...getExtraRows().map((row) => ({ [columnsToDisplay2[0]]: row[0] })),
@@ -714,419 +728,392 @@ const SKUtable: React.FC<SKUtableProps> = ({
                 </span>
             </div> */}
 
+            <div className="rounded-xl border border-slate-200 bg-white shadow-sm p-1 sm:p-2">
+                <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex flex-wrap items-baseline gap-2 justify-center sm:justify-start">
+                        <PageBreadcrumb
+                            pageTitle={getTitle()}
+                            variant="page"
+                            align="left"
+                            textSize="2xl"
+                        />
+                        <span className="text-[#5EA68E] text-lg sm:text-2xl md:text-2xl font-bold">
+                            ({currencySymbol})
+                        </span>
+                    </div>
 
-            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex flex-wrap items-baseline gap-2 justify-center sm:justify-start">
-                    <PageBreadcrumb
-                        pageTitle={getTitle()}
-                        variant="page"
-                        align="left"
-                        textSize="2xl"
-                    />
-                    <span className="text-[#5EA68E] text-lg sm:text-2xl md:text-2xl font-bold">
-                        ({currencySymbol})
-                    </span>
+                    <div className="flex justify-center sm:justify-end">
+                        <DownloadIconButton onClick={handleDownloadExcel} />
+                    </div>
                 </div>
 
-                <div className="flex justify-center sm:justify-end">
-                    <DownloadIconButton onClick={handleDownloadExcel} />
+
+
+
+                <div className={`transition-opacity ${noDataFound ? "opacity-30" : "opacity-100"}`}>
+                    {showModal2 && (
+                        <CustomModal onClose={() => setShowModal2(false)}>
+                            <SkuMultiCountryUpload
+                                onClose={() => setShowModal2(false)}
+                                onComplete={() => setShowModal2(false)}
+                            />
+                        </CustomModal>
+                    )}
+
+                    {/* Main table */}
+
+                    <div className="w-full overflow-x-auto">
+                        <div className="min-w-full">
+                            <table className="min-w-[800px] w-full table-auto border-collapse text-[#414042]">
+                                <thead className="sticky top-0 z-10 font-bold text-[#f8edcf]">
+                                    <tr className="bg-[#5EA68E]">
+                                        <th className="w-[60px] whitespace-nowrap border border-gray-300 px-2 py-2 text-center text-[clamp(12px,0.729vw,16px)]">
+                                            Sno.
+                                        </th>
+                                        <th className="whitespace-nowrap border border-gray-300 px-2 py-2 text-left text-[clamp(12px,0.729vw,16px)]">
+                                            Product Name
+                                        </th>
+                                        <th className="whitespace-nowrap border border-gray-300 px-2 py-2 text-center text-[clamp(12px,0.729vw,16px)]">
+                                            Quantity Sold
+                                        </th>
+                                        <th className="whitespace-nowrap border border-gray-300 px-2 py-2 text-center text-[clamp(12px,0.729vw,16px)]">
+                                            ASP
+                                        </th>
+                                        <th className="whitespace-nowrap border border-gray-300 px-2 py-2 text-center text-[clamp(12px,0.729vw,16px)]">
+                                            Gross Sales
+                                        </th>
+                                        <th className="whitespace-nowrap border border-gray-300 px-2 py-2 text-center text-[clamp(12px,0.729vw,16px)]">
+                                            Net Sales
+                                        </th>
+                                        <th className="whitespace-nowrap border border-gray-300 px-2 py-2 text-center text-[clamp(12px,0.729vw,16px)]">
+                                            COGS
+                                        </th>
+                                        <th
+                                            onClick={handleAmazonFeeClick}
+                                            className="relative cursor-pointer select-none whitespace-nowrap border border-gray-300 bg-[#4a8773] px-6 py-2 text-center text-[clamp(12px,0.729vw,16px)]"
+                                        >
+                                            {/* Left Icon */}
+                                            <span className="absolute left-2 top-1/2 -translate-y-1/2">
+                                                {showamazonfee ? <FaCaretRight /> : <FaCaretLeft />}
+                                            </span>
+
+                                            {/* Center Text */}
+                                            <span>Amazon Fees</span>
+
+                                            {/* Right Icon */}
+                                            <span className="absolute right-2 top-1/2 -translate-y-1/2">
+                                                {showamazonfee ? <FaCaretLeft /> : <FaCaretRight />}
+                                            </span>
+                                        </th>
+                                        {showamazonfee && (
+                                            <>
+                                                <th className="whitespace-nowrap border border-gray-300 bg-[#4a8773] px-2 py-2 text-center text-[clamp(12px,0.729vw,16px)]">
+                                                    Selling Fees
+                                                </th>
+                                                <th className="whitespace-nowrap border border-gray-300 bg-[#4a8773] px-2 py-2 text-center text-[clamp(12px,0.729vw,16px)]">
+                                                    FBA fees
+                                                </th>
+                                            </>
+                                        )}
+                                        <th className="whitespace-nowrap border border-gray-300 px-2 py-2 text-center text-[clamp(12px,0.729vw,16px)]">
+                                            Net Credits
+                                        </th>
+                                        <th className="whitespace-nowrap border border-gray-300 px-2 py-2 text-center text-[clamp(12px,0.729vw,16px)]">
+                                            Net Taxes
+                                        </th>
+                                        <th
+                                            onClick={handleprofitClick}
+                                            className="relative cursor-pointer select-none whitespace-nowrap border border-gray-300 bg-[#4a8773] px-6 py-2 text-center text-[clamp(12px,0.729vw,16px)]"
+                                        >
+                                            {/* Left Icon */}
+                                            <span className="absolute left-2 top-1/2 -translate-y-1/2">
+                                                {showprofit ? <FaCaretRight /> : <FaCaretLeft />}
+                                            </span>
+
+                                            {/* Center Text */}
+                                            <span>CM1 Profit</span>
+
+                                            {/* Right Icon */}
+                                            <span className="absolute right-2 top-1/2 -translate-y-1/2">
+                                                {showprofit ? <FaCaretLeft /> : <FaCaretRight />}
+                                            </span>
+                                        </th>
+
+                                        {showprofit && (
+                                            <>
+                                                <th className="whitespace-nowrap border border-gray-300 bg-[#4a8773] px-2 py-2 text-center text-[clamp(12px,0.729vw,16px)]">
+                                                    CM1 Profit (%)
+                                                </th>
+                                                <th className="whitespace-nowrap border border-gray-300 bg-[#4a8773] px-2 py-2 text-center text-[clamp(12px,0.729vw,16px)]">
+                                                    CM1 Profit per Unit
+                                                </th>
+                                            </>
+                                        )}
+                                    </tr>
+
+                                    <tr className="font-bold">
+                                        <td className="border border-gray-300 px-2 py-2 text-[clamp(12px,0.729vw,16px)]" />
+                                        <td className="border border-gray-300 px-2 py-2 text-[clamp(12px,0.729vw,16px)]" />
+                                        <td className="border border-gray-300 px-2 py-2 text-[clamp(12px,0.729vw,16px)]" />
+                                        <td className="border border-gray-300 px-2 py-2 text-[clamp(12px,0.729vw,16px)]" />
+                                        <td className="border border-gray-300 px-2 py-2 text-[clamp(12px,0.729vw,16px)]" />
+                                        <td className="whitespace-nowrap border border-gray-300 px-2 py-2 text-[clamp(12px,0.729vw,16px)] text-green-700">
+                                            (+)
+                                        </td>
+                                        <td className="whitespace-nowrap border border-gray-300 px-2 py-2 text-[clamp(12px,0.729vw,16px)] text-[#ff5c5c]">
+                                            (-)
+                                        </td>
+                                        <td
+                                            onClick={handleAmazonFeeClick}
+                                            className="whitespace-nowrap border border-gray-300 px-2 py-2 text-[clamp(12px,0.729vw,16px)] text-[#ff5c5c]"
+                                        >
+                                            (-)
+                                        </td>
+                                        {showamazonfee && (
+                                            <>
+                                                <td className="whitespace-nowrap border border-gray-300 px-2 py-2 text-[clamp(12px,0.729vw,16px)] text-[#ff5c5c]">
+                                                    (-)
+                                                </td>
+                                                <td className="whitespace-nowrap border border-gray-300 px-2 py-2 text-[clamp(12px,0.729vw,16px)] text-[#ff5c5c]">
+                                                    (-)
+                                                </td>
+                                            </>
+                                        )}
+                                        <td className="whitespace-nowrap border border-gray-300 px-2 py-2 text-[clamp(12px,0.729vw,16px)] text-green-700">
+                                            (+)
+                                        </td>
+                                        <td className="whitespace-nowrap border border-gray-300 px-2 py-2 text-[clamp(12px,0.729vw,16px)]" />
+                                        <td className="whitespace-nowrap border border-gray-300 px-2 py-2 text-[clamp(12px,0.729vw,16px)]" />
+                                        {showprofit && (
+                                            <>
+                                                <td className="whitespace-nowrap border border-gray-300 px-2 py-2 text-[clamp(12px,0.729vw,16px)]" />
+                                                <td className="whitespace-nowrap border border-gray-300 px-2 py-2 text-[clamp(12px,0.729vw,16px)]" />
+                                            </>
+                                        )}
+                                    </tr>
+                                </thead>
+
+                                <tbody>
+                                    {tableData.length > 0 ? (
+                                        tableData.map((row, index) => {
+                                            const isLastRow = index === tableData.length - 1;
+                                            const isCostZero = (row["cost_of_unit_sold"] || 0) === 0;
+
+                                            return (
+                                                <tr
+                                                    key={index}
+                                                    className={`${index % 2 === 0 ? "bg-white" : "bg-gray-50"} ${isLastRow ? "bg-gray-200 font-semibold" : ""
+                                                        } ${isCostZero ? "text-[#ff5c5c]" : ""}`}
+                                                >
+                                                    <td className="whitespace-nowrap border border-gray-300 px-2 py-2 text-center text-[clamp(12px,0.729vw,16px)]">
+                                                        {isLastRow ? "" : index + 1}
+                                                    </td>
+
+                                                    {columnsToDisplay.map((column, idx) => {
+                                                        const col = column as keyof TableRow;
+                                                        const isProductName = col === "product_name";
+                                                        const raw = row[col];
+                                                        const cellContent = formatValue(raw as any, col as string);
+
+                                                        return (
+                                                            <td
+                                                                key={idx}
+                                                                className={`whitespace-nowrap border border-gray-300 px-2 py-2 text-[clamp(12px,0.729vw,16px)] ${isProductName ? "text-left" : "text-center"
+                                                                    }`}
+                                                            >
+                                                                {isProductName && !isLastRow ? (
+                                                                    <span
+                                                                        onClick={() => handleProductClick(String(raw || ""))}
+                                                                        className="inline-block max-w-[220px] cursor-pointer truncate align-middle text-[#60a68e] no-underline"
+                                                                    // title={String(cellContent || "")}
+                                                                    >
+                                                                        {String(cellContent || "")}
+                                                                        {(isCostZero || !raw) && (
+                                                                            <span className="ml-1 text-[#ff5c5c]">
+                                                                                {row.sku && (
+                                                                                    <strong title="Product name is not available & COGS is zero because You need to Upload SKU data file.">
+                                                                                        {row.sku}
+                                                                                    </strong>
+                                                                                )}
+                                                                                <i
+                                                                                    className="fa-solid fa-circle-info ml-1 cursor-pointer"
+                                                                                    title="Product name is not available & COGS is zero because You need to Upload SKU data file."
+                                                                                    onClick={(e) => {
+                                                                                        e.stopPropagation();
+                                                                                        setShowModal2(true);
+                                                                                    }}
+                                                                                />
+                                                                            </span>
+                                                                        )}
+                                                                    </span>
+                                                                ) : (
+                                                                    <span
+                                                                        className="inline-block max-w-[220px] truncate"
+                                                                    // title={String(cellContent || "")}
+                                                                    >
+                                                                        {cellContent as React.ReactNode}
+                                                                    </span>
+                                                                )}
+                                                            </td>
+                                                        );
+                                                    })}
+                                                </tr>
+                                            );
+                                        })
+                                    ) : (
+                                        <tr>
+                                            <td
+                                                className="border border-gray-300 px-2 py-3 text-center text-[clamp(12px,0.729vw,16px)]"
+                                                colSpan={columnsToDisplay.length + 1}
+                                            >
+                                                No data available
+                                            </td>
+                                        </tr>
+                                    )}
+
+                                    {/* Summary rows */}
+
+                                    {/* Summary rows */}
+                                    <tr>
+                                        <td
+                                            colSpan={summaryLabelColSpan}
+                                            className="border border-gray-300 px-2 py-2 text-left text-[clamp(12px,0.729vw,16px)]"
+                                        >
+                                            Cost of Advertisement &nbsp;
+                                            <strong className="text-[#ff5c5c]">(-)</strong>
+                                        </td>
+                                        <td className="whitespace-nowrap border border-gray-300 px-2 py-2 text-center text-[clamp(12px,0.729vw,16px)]">
+                                            {formatValue(totals.advertising_total, "advertising_total")}
+                                        </td>
+                                    </tr>
+
+                                    {(countryName === "us" || countryName === "global") && (
+                                        <tr>
+                                            <td
+                                                colSpan={summaryLabelColSpan}
+                                                className="border border-gray-300 px-2 py-2 text-left text-[clamp(12px,0.729vw,16px)]"
+                                            >
+                                                Shipment Charges &nbsp;
+                                                <strong className="text-[#ff5c5c]">(-)</strong>
+                                            </td>
+                                            <td className="whitespace-nowrap border border-gray-300 px-2 py-2 text-center text-[clamp(12px,0.729vw,16px)]">
+                                                {formatValue(totals.shipment_charges, "shipment_charges")}
+                                            </td>
+                                        </tr>
+                                    )}
+
+                                    <tr>
+                                        <td
+                                            colSpan={summaryLabelColSpan}
+                                            className="border border-gray-300 px-2 py-2 text-left text-[clamp(12px,0.729vw,16px)]"
+                                        >
+                                            Platform Fees &nbsp;
+                                            <strong className="text-[#ff5c5c]">(-)</strong>
+                                        </td>
+                                        <td className="whitespace-nowrap border border-gray-300 px-2 py-2 text-center text-[clamp(12px,0.729vw,16px)]">
+                                            {formatValue(totals.platform_fee, "platform_fee")}
+                                        </td>
+                                    </tr>
+
+                                    <tr>
+                                        <td
+                                            colSpan={summaryLabelColSpan}
+                                            className="border border-gray-300 px-2 py-2 text-left text-[clamp(12px,0.729vw,16px)]"
+                                        >
+                                            CM2 Profit/Loss
+                                        </td>
+                                        <td className="whitespace-nowrap border border-gray-300 px-2 py-2 text-center text-[clamp(12px,0.729vw,16px)]">
+                                            {formatValue(totals.cm2_profit, "cm2_profit")}
+                                        </td>
+                                    </tr>
+
+                                    <tr>
+                                        <td
+                                            colSpan={summaryLabelColSpan}
+                                            className="border border-gray-300 px-2 py-2 text-left text-[clamp(12px,0.729vw,16px)]"
+                                        >
+                                            CM2 Margins
+                                        </td>
+                                        <td className="whitespace-nowrap border border-gray-300 px-2 py-2 text-center text-[clamp(12px,0.729vw,16px)]">
+                                            {formatValue(totals.cm2_margins, "cm2_margins")}%
+                                        </td>
+                                    </tr>
+
+                                    <tr>
+                                        <td
+                                            colSpan={summaryLabelColSpan}
+                                            className="border border-gray-300 px-2 py-2 text-left text-[clamp(12px,0.729vw,16px)]"
+                                        >
+                                            TACoS (Total Advertising Cost of Sale)
+                                        </td>
+                                        <td className="whitespace-nowrap border border-gray-300 px-2 py-2 text-center text-[clamp(12px,0.729vw,16px)]">
+                                            {formatValue(totals.acos, "acos")}%
+                                        </td>
+                                    </tr>
+
+                                    <tr>
+                                        <td
+                                            colSpan={summaryLabelColSpan}
+                                            className="border border-gray-300 px-2 py-2 text-left text-[clamp(12px,0.729vw,16px)]"
+                                        >
+                                            Net Reimbursement
+                                        </td>
+                                        <td className="whitespace-nowrap border border-gray-300 px-2 py-2 text-center text-[clamp(12px,0.729vw,16px)]">
+                                            {formatValue(totals.rembursement_fee, "rembursement_fee")}
+                                        </td>
+                                    </tr>
+
+                                    <tr>
+                                        <td
+                                            colSpan={summaryLabelColSpan}
+                                            className="border border-gray-300 px-2 py-2 text-left text-[clamp(12px,0.729vw,16px)]"
+                                        >
+                                            Reimbursement vs CM2 Margins
+                                        </td>
+                                        <td className="whitespace-nowrap border border-gray-300 px-2 py-2 text-center text-[clamp(12px,0.729vw,16px)]">
+                                            {formatValue(
+                                                totals.rembursment_vs_cm2_margins,
+                                                "rembursment_vs_cm2_margins"
+                                            )}
+                                            %
+                                        </td>
+                                    </tr>
+
+                                    <tr>
+                                        <td
+                                            colSpan={summaryLabelColSpan}
+                                            className="border border-gray-300 px-2 py-2 text-left text-[clamp(12px,0.729vw,16px)]"
+                                        >
+                                            Reimbursement vs Sales
+                                        </td>
+                                        <td className="whitespace-nowrap border border-gray-300 px-2 py-2 text-center text-[clamp(12px,0.729vw,16px)]">
+                                            {formatValue(
+                                                totals.reimbursement_vs_sales,
+                                                "reimbursement_vs_sales"
+                                            )}
+                                            %
+                                        </td>
+                                    </tr>
+
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
 
 
 
 
-            <div className={`transition-opacity ${noDataFound ? "opacity-30" : "opacity-100"}`}>
-                {showModal2 && (
-                    <CustomModal onClose={() => setShowModal2(false)}>
-                        <SkuMultiCountryUpload
-                            onClose={() => setShowModal2(false)}
-                            onComplete={() => setShowModal2(false)}
-                        />
-                    </CustomModal>
-                )}
-
-                {/* Main table */}
-                <div className="w-full overflow-x-auto">
-                    <div className="min-w-full">
-                        <table className="min-w-[800px] w-full table-auto border-collapse text-[#414042]">
-                            <thead className="sticky top-0 z-10 font-bold text-[#f8edcf]">
-                                <tr className="bg-[#5EA68E]">
-                                    <th className="w-[60px] whitespace-nowrap border border-gray-300 px-2 py-2 text-center text-[clamp(12px,0.729vw,16px)]">
-                                        Sno.
-                                    </th>
-                                    <th className="whitespace-nowrap border border-gray-300 px-2 py-2 text-left text-[clamp(12px,0.729vw,16px)]">
-                                        Product Name
-                                    </th>
-                                    <th className="whitespace-nowrap border border-gray-300 px-2 py-2 text-center text-[clamp(12px,0.729vw,16px)]">
-                                        Quantity Sold
-                                    </th>
-                                    <th className="whitespace-nowrap border border-gray-300 px-2 py-2 text-center text-[clamp(12px,0.729vw,16px)]">
-                                        ASP
-                                    </th>
-                                    <th className="whitespace-nowrap border border-gray-300 px-2 py-2 text-center text-[clamp(12px,0.729vw,16px)]">
-                                        Net Sales
-                                    </th>
-                                    <th className="whitespace-nowrap border border-gray-300 px-2 py-2 text-center text-[clamp(12px,0.729vw,16px)]">
-                                        COGS
-                                    </th>
-                                    <th
-                                        onClick={handleAmazonFeeClick}
-                                        className="relative cursor-pointer select-none whitespace-nowrap border border-gray-300 bg-[#4a8773] px-6 py-2 text-center text-[clamp(12px,0.729vw,16px)]"
-                                    >
-                                        {/* Left Icon */}
-                                        <span className="absolute left-2 top-1/2 -translate-y-1/2">
-                                            {showamazonfee ? <FaCaretRight /> : <FaCaretLeft />}
-                                        </span>
-
-                                        {/* Center Text */}
-                                        <span>Amazon Fees</span>
-
-                                        {/* Right Icon */}
-                                        <span className="absolute right-2 top-1/2 -translate-y-1/2">
-                                            {showamazonfee ? <FaCaretLeft /> : <FaCaretRight />}
-                                        </span>
-                                    </th>
-                                    {showamazonfee && (
-                                        <>
-                                            <th className="whitespace-nowrap border border-gray-300 bg-[#4a8773] px-2 py-2 text-center text-[clamp(12px,0.729vw,16px)]">
-                                                Selling Fees
-                                            </th>
-                                            <th className="whitespace-nowrap border border-gray-300 bg-[#4a8773] px-2 py-2 text-center text-[clamp(12px,0.729vw,16px)]">
-                                                FBA fees
-                                            </th>
-                                        </>
-                                    )}
-                                    <th className="whitespace-nowrap border border-gray-300 px-2 py-2 text-center text-[clamp(12px,0.729vw,16px)]">
-                                        Net Credits
-                                    </th>
-                                    <th className="whitespace-nowrap border border-gray-300 px-2 py-2 text-center text-[clamp(12px,0.729vw,16px)]">
-                                        Net Taxes
-                                    </th>
-                                    <th
-                                        onClick={handleprofitClick}
-                                        className="relative cursor-pointer select-none whitespace-nowrap border border-gray-300 bg-[#4a8773] px-6 py-2 text-center text-[clamp(12px,0.729vw,16px)]"
-                                    >
-                                        {/* Left Icon */}
-                                        <span className="absolute left-2 top-1/2 -translate-y-1/2">
-                                            {showprofit ? <FaCaretRight /> : <FaCaretLeft />}
-                                        </span>
-
-                                        {/* Center Text */}
-                                        <span>CM1 Profit</span>
-
-                                        {/* Right Icon */}
-                                        <span className="absolute right-2 top-1/2 -translate-y-1/2">
-                                            {showprofit ? <FaCaretLeft /> : <FaCaretRight />}
-                                        </span>
-                                    </th>
-
-                                    {showprofit && (
-                                        <>
-                                            <th className="whitespace-nowrap border border-gray-300 bg-[#4a8773] px-2 py-2 text-center text-[clamp(12px,0.729vw,16px)]">
-                                                CM1 Profit (%)
-                                            </th>
-                                            <th className="whitespace-nowrap border border-gray-300 bg-[#4a8773] px-2 py-2 text-center text-[clamp(12px,0.729vw,16px)]">
-                                                CM1 Profit per Unit
-                                            </th>
-                                        </>
-                                    )}
-                                </tr>
-
-                                <tr className="font-bold">
-                                    <td className="border border-gray-300 px-2 py-2 text-[clamp(12px,0.729vw,16px)]" />
-                                    <td className="border border-gray-300 px-2 py-2 text-[clamp(12px,0.729vw,16px)]" />
-                                    <td className="border border-gray-300 px-2 py-2 text-[clamp(12px,0.729vw,16px)]" />
-                                    <td className="border border-gray-300 px-2 py-2 text-[clamp(12px,0.729vw,16px)]" />
-                                    <td className="whitespace-nowrap border border-gray-300 px-2 py-2 text-[clamp(12px,0.729vw,16px)] text-green-700">
-                                        (+)
-                                    </td>
-                                    <td className="whitespace-nowrap border border-gray-300 px-2 py-2 text-[clamp(12px,0.729vw,16px)] text-[#ff5c5c]">
-                                        (-)
-                                    </td>
-                                    <td
-                                        onClick={handleAmazonFeeClick}
-                                        className="whitespace-nowrap border border-gray-300 px-2 py-2 text-[clamp(12px,0.729vw,16px)] text-[#ff5c5c]"
-                                    >
-                                        (-)
-                                    </td>
-                                    {showamazonfee && (
-                                        <>
-                                            <td className="whitespace-nowrap border border-gray-300 px-2 py-2 text-[clamp(12px,0.729vw,16px)] text-[#ff5c5c]">
-                                                (-)
-                                            </td>
-                                            <td className="whitespace-nowrap border border-gray-300 px-2 py-2 text-[clamp(12px,0.729vw,16px)] text-[#ff5c5c]">
-                                                (-)
-                                            </td>
-                                        </>
-                                    )}
-                                    <td className="whitespace-nowrap border border-gray-300 px-2 py-2 text-[clamp(12px,0.729vw,16px)] text-green-700">
-                                        (+)
-                                    </td>
-                                    <td className="whitespace-nowrap border border-gray-300 px-2 py-2 text-[clamp(12px,0.729vw,16px)]" />
-                                    <td className="whitespace-nowrap border border-gray-300 px-2 py-2 text-[clamp(12px,0.729vw,16px)]" />
-                                    {showprofit && (
-                                        <>
-                                            <td className="whitespace-nowrap border border-gray-300 px-2 py-2 text-[clamp(12px,0.729vw,16px)]" />
-                                            <td className="whitespace-nowrap border border-gray-300 px-2 py-2 text-[clamp(12px,0.729vw,16px)]" />
-                                        </>
-                                    )}
-                                </tr>
-                            </thead>
-
-                            <tbody>
-                                {tableData.length > 0 ? (
-                                    tableData.map((row, index) => {
-                                        const isLastRow = index === tableData.length - 1;
-                                        const isCostZero = (row["cost_of_unit_sold"] || 0) === 0;
-
-                                        return (
-                                            <tr
-                                                key={index}
-                                                className={`${index % 2 === 0 ? "bg-white" : "bg-gray-50"} ${isLastRow ? "bg-gray-200 font-semibold" : ""
-                                                    } ${isCostZero ? "text-[#ff5c5c]" : ""}`}
-                                            >
-                                                <td className="whitespace-nowrap border border-gray-300 px-2 py-2 text-center text-[clamp(12px,0.729vw,16px)]">
-                                                    {isLastRow ? "" : index + 1}
-                                                </td>
-
-                                                {columnsToDisplay.map((column, idx) => {
-                                                    const col = column as keyof TableRow;
-                                                    const isProductName = col === "product_name";
-                                                    const raw = row[col];
-                                                    const cellContent = formatValue(raw as any, col as string);
-
-                                                    return (
-                                                        <td
-                                                            key={idx}
-                                                            className={`whitespace-nowrap border border-gray-300 px-2 py-2 text-[clamp(12px,0.729vw,16px)] ${isProductName ? "text-left" : "text-center"
-                                                                }`}
-                                                        >
-                                                            {isProductName && !isLastRow ? (
-                                                                <span
-                                                                    onClick={() => handleProductClick(String(raw || ""))}
-                                                                    className="inline-block max-w-[220px] cursor-pointer truncate align-middle text-[#60a68e] no-underline"
-                                                                // title={String(cellContent || "")}
-                                                                >
-                                                                    {String(cellContent || "")}
-                                                                    {(isCostZero || !raw) && (
-                                                                        <span className="ml-1 text-[#ff5c5c]">
-                                                                            {row.sku && (
-                                                                                <strong title="Product name is not available & COGS is zero because You need to Upload SKU data file.">
-                                                                                    {row.sku}
-                                                                                </strong>
-                                                                            )}
-                                                                            <i
-                                                                                className="fa-solid fa-circle-info ml-1 cursor-pointer"
-                                                                                title="Product name is not available & COGS is zero because You need to Upload SKU data file."
-                                                                                onClick={(e) => {
-                                                                                    e.stopPropagation();
-                                                                                    setShowModal2(true);
-                                                                                }}
-                                                                            />
-                                                                        </span>
-                                                                    )}
-                                                                </span>
-                                                            ) : (
-                                                                <span
-                                                                    className="inline-block max-w-[220px] truncate"
-                                                                // title={String(cellContent || "")}
-                                                                >
-                                                                    {cellContent as React.ReactNode}
-                                                                </span>
-                                                            )}
-                                                        </td>
-                                                    );
-                                                })}
-                                            </tr>
-                                        );
-                                    })
-                                ) : (
-                                    <tr>
-                                        <td
-                                            className="border border-gray-300 px-2 py-3 text-center text-[clamp(12px,0.729vw,16px)]"
-                                            colSpan={columnsToDisplay.length + 1}
-                                        >
-                                            No data available
-                                        </td>
-                                    </tr>
-                                )}
-
-                                {/* Summary rows */}
-                                <tr>
-                                    <td
-                                        colSpan={showamazonfee ? 11 : 9}
-                                        className="border border-gray-300 px-2 py-2 text-left text-[clamp(12px,0.729vw,16px)]"
-                                    >
-                                        Cost of Advertisement &nbsp;
-                                        <strong className="text-[#ff5c5c]">(-)</strong>
-                                    </td>
-                                    <td className="whitespace-nowrap border border-gray-300 px-2 py-2 text-center text-[clamp(12px,0.729vw,16px)]">
-                                        {formatValue(totals.advertising_total, "advertising_total")}
-                                    </td>
-                                    {showprofit && (
-                                        <>
-                                            <td className="border border-gray-300 px-2 py-2 text-[clamp(12px,0.729vw,16px)]" />
-                                            <td className="border border-gray-300 px-2 py-2 text-[clamp(12px,0.729vw,16px)]" />
-                                        </>
-                                    )}
-                                </tr>
-
-                                {(countryName === "us" || countryName === "global") && (
-                                    <tr>
-                                        <td
-                                            colSpan={showamazonfee ? 11 : 9}
-                                            className="border border-gray-300 px-2 py-2 text-left text-[clamp(12px,0.729vw,16px)]"
-                                        >
-                                            Shipment Charges &nbsp;
-                                            <strong className="text-[#ff5c5c]">(-)</strong>
-                                        </td>
-                                        <td className="whitespace-nowrap border border-gray-300 px-2 py-2 text-center text-[clamp(12px,0.729vw,16px)]">
-                                            {formatValue(totals.shipment_charges, "shipment_charges")}
-                                        </td>
-                                        {showprofit && (
-                                            <>
-                                                <td className="border border-gray-300 px-2 py-2 text-[clamp(12px,0.729vw,16px)]" />
-                                                <td className="border border-gray-300 px-2 py-2 text-[clamp(12px,0.729vw,16px)]" />
-                                            </>
-                                        )}
-                                    </tr>
-                                )}
-
-                                <tr>
-                                    <td
-                                        colSpan={showamazonfee ? 11 : 9}
-                                        className="border border-gray-300 px-2 py-2 text-left text-[clamp(12px,0.729vw,16px)]"
-                                    >
-                                        Platform Fees &nbsp;<strong className="text-[#ff5c5c]">(-)</strong>
-                                    </td>
-                                    <td className="whitespace-nowrap border border-gray-300 px-2 py-2 text-center text-[clamp(12px,0.729vw,16px)]">
-                                        {formatValue(totals.platform_fee, "platform_fee")}
-                                    </td>
-                                    {showprofit && (
-                                        <>
-                                            <td className="border border-gray-300 px-2 py-2 text-[clamp(12px,0.729vw,16px)]" />
-                                            <td className="border border-gray-300 px-2 py-2 text-[clamp(12px,0.729vw,16px)]" />
-                                        </>
-                                    )}
-                                </tr>
-
-                                <tr>
-                                    <td
-                                        colSpan={showamazonfee ? 11 : 9}
-                                        className="border border-gray-300 px-2 py-2 text-left text-[clamp(12px,0.729vw,16px)]"
-                                    >
-                                        CM2 Profit/Loss
-                                    </td>
-                                    <td className="whitespace-nowrap border border-gray-300 px-2 py-2 text-center text-[clamp(12px,0.729vw,16px)]">
-                                        {formatValue(totals.cm2_profit, "cm2_profit")}
-                                    </td>
-                                    {showprofit && (
-                                        <>
-                                            <td className="border border-gray-300 px-2 py-2 text-[clamp(12px,0.729vw,16px)]" />
-                                            <td className="border border-gray-300 px-2 py-2 text-[clamp(12px,0.729vw,16px)]" />
-                                        </>
-                                    )}
-                                </tr>
-
-                                <tr>
-                                    <td
-                                        colSpan={showamazonfee ? 11 : 9}
-                                        className="border border-gray-300 px-2 py-2 text-left text-[clamp(12px,0.729vw,16px)]"
-                                    >
-                                        CM2 Margins
-                                    </td>
-                                    <td className="whitespace-nowrap border border-gray-300 px-2 py-2 text-center text-[clamp(12px,0.729vw,16px)]">
-                                        {formatValue(totals.cm2_margins, "cm2_margins")}%
-                                    </td>
-                                    {showprofit && (
-                                        <>
-                                            <td className="border border-gray-300 px-2 py-2 text-[clamp(12px,0.729vw,16px)]" />
-                                            <td className="border border-gray-300 px-2 py-2 text-[clamp(12px,0.729vw,16px)]" />
-                                        </>
-                                    )}
-                                </tr>
-
-                                <tr>
-                                    <td
-                                        colSpan={showamazonfee ? 11 : 9}
-                                        className="border border-gray-300 px-2 py-2 text-left text-[clamp(12px,0.729vw,16px)]"
-                                    >
-                                        TACoS (Total Advertising Cost of Sale)
-                                    </td>
-                                    <td className="whitespace-nowrap border border-gray-300 px-2 py-2 text-center text-[clamp(12px,0.729vw,16px)]">
-                                        {formatValue(totals.acos, "acos")}%
-                                    </td>
-                                    {showprofit && (
-                                        <>
-                                            <td className="border border-gray-300 px-2 py-2 text-[clamp(12px,0.729vw,16px)]" />
-                                            <td className="border border-gray-300 px-2 py-2 text-[clamp(12px,0.729vw,16px)]" />
-                                        </>
-                                    )}
-                                </tr>
-
-                                <tr>
-                                    <td
-                                        colSpan={showamazonfee ? 11 : 9}
-                                        className="border border-gray-300 px-2 py-2 text-left text-[clamp(12px,0.729vw,16px)]"
-                                    >
-                                        Net Reimbursement
-                                    </td>
-                                    <td className="whitespace-nowrap border border-gray-300 px-2 py-2 text-center text-[clamp(12px,0.729vw,16px)]">
-                                        {formatValue(totals.rembursement_fee, "rembursement_fee")}
-                                    </td>
-                                    {showprofit && (
-                                        <>
-                                            <td className="border border-gray-300 px-2 py-2 text-[clamp(12px,0.729vw,16px)]" />
-                                            <td className="border border-gray-300 px-2 py-2 text-[clamp(12px,0.729vw,16px)]" />
-                                        </>
-                                    )}
-                                </tr>
-
-                                <tr>
-                                    <td
-                                        colSpan={showamazonfee ? 11 : 9}
-                                        className="border border-gray-300 px-2 py-2 text-left text-[clamp(12px,0.729vw,16px)]"
-                                    >
-                                        Reimbursement vs CM2 Margins
-                                    </td>
-                                    <td className="whitespace-nowrap border border-gray-300 px-2 py-2 text-center text-[clamp(12px,0.729vw,16px)]">
-                                        {formatValue(totals.rembursment_vs_cm2_margins, "rembursment_vs_cm2_margins")}%
-                                    </td>
-                                    {showprofit && (
-                                        <>
-                                            <td className="border border-gray-300 px-2 py-2 text-[clamp(12px,0.729vw,16px)]" />
-                                            <td className="border border-gray-300 px-2 py-2 text-[clamp(12px,0.729vw,16px)]" />
-                                        </>
-                                    )}
-                                </tr>
-
-                                <tr>
-                                    <td
-                                        colSpan={showamazonfee ? 11 : 9}
-                                        className="border border-gray-300 px-2 py-2 text-left text-[clamp(12px,0.729vw,16px)]"
-                                    >
-                                        Reimbursement vs Sales
-                                    </td>
-                                    <td className="whitespace-nowrap border border-gray-300 px-2 py-2 text-center text-[clamp(12px,0.729vw,16px)]">
-                                        {formatValue(totals.reimbursement_vs_sales, "reimbursement_vs_sales")}%
-                                    </td>
-                                    {showprofit && (
-                                        <>
-                                            <td className="border border-gray-300 px-2 py-2 text-[clamp(12px,0.729vw,16px)]" />
-                                            <td className="border border-gray-300 px-2 py-2 text-[clamp(12px,0.729vw,16px)]" />
-                                        </>
-                                    )}
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-
-
-                {/* Top & Bottom tables */}
-                <div className="mt-8 flex flex-col justify-between gap-7 md:gap-3 text-[#414042] md:flex-row">
+            {/* Top & Bottom tables */}
+            <div className="rounded-xl border border-slate-200 bg-white shadow-sm p-1 sm:p-2 
+            
+            
+            
+            
+            
+            ">
+                <div className=" flex flex-col justify-between gap-7 md:gap-3 text-[#414042] md:flex-row">
                     <div className="flex-1">
                         <div className="flex gap-2 text-lg sm:text-2xl md:text-2xl mb-2 md:mb-4 font-bold">
                             <PageBreadcrumb pageTitle="Most 5 Profitable Products" variant="page" align="left" textSize="2xl" />

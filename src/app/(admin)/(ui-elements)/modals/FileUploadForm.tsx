@@ -431,7 +431,7 @@
 // //       <div className="w-full h-full overflow-y-auto flex flex-col items-center">
 // //         <div className="w-full flex justify-center px-3 md:px-5 lg:px-8">
 // //           <div className="w-full max-w-[830px] border-2 border-emerald-500 shadow-md shadow-emerald-500/40 rounded-xl bg-white mt-2 md:mt-4 p-4 md:p-5 lg:p-6 text-[13px] md:text-[14px]">
-// //             <h2 className="text-center text-2xl md:text-3xl font-semibold text-emerald-500 my-3 md:my-4">
+// //             <h2 className="text-center text-2xl md:text-3xl font-semibold text-[#5EA68E] my-3 md:my-4">
 // //               Upload File <i className="fa-solid fa-cloud-arrow-up" />
 // //             </h2>
 
@@ -1096,7 +1096,7 @@
 //       <div className="w-full h-full overflow-y-auto flex flex-col items-center">
 //         <div className="w-full flex justify-center px-3 md:px-5 lg:px-8">
 //           <div className="w-full max-w-[830px] border-2 border-emerald-500 shadow-md shadow-emerald-500/40 rounded-xl bg-white mt-2 md:mt-4 p-4 md:p-5 lg:p-6 text-[13px] md:text-[14px]">
-//             <h2 className="text-center text-2xl md:text-3xl font-semibold text-emerald-500 my-3 md:my-4">
+//             <h2 className="text-center text-2xl md:text-3xl font-semibold text-[#5EA68E] my-3 md:my-4">
 //               Upload File <i className="fa-solid fa-cloud-arrow-up" />
 //             </h2>
 
@@ -2150,9 +2150,9 @@ const submitForm = async () => {
   return (
     <>
       <div className="w-full h-full overflow-y-auto flex flex-col items-center">
-        <div className="w-full flex justify-center px-3 md:px-5 lg:px-8">
-          <div className="w-full max-w-[830px] border-2 border-emerald-500 shadow-md shadow-emerald-500/40 rounded-xl bg-white mt-2 md:mt-4 p-4 md:p-5 lg:p-6 text-[13px] md:text-[14px]">
-            <h2 className="text-center text-2xl md:text-3xl font-semibold text-emerald-500 my-3 md:my-4">
+        <div className="w-full flex justify-center ">
+          <div className="w-full  shadow-md rounded-xl bg-white  p-4 md:p-5 lg:p-6 text-[13px] md:text-[14px]">
+            <h2 className="text-center text-2xl md:text-3xl font-semibold text-[#5EA68E] my-3 md:my-4">
               Upload File <i className="fa-solid fa-cloud-arrow-up" />
             </h2>
 
@@ -2182,10 +2182,13 @@ const submitForm = async () => {
                     />
                     {file1 && (
                       <p className="pointer-events-none absolute text-center px-2 text-neutral-800 font-medium text-xs md:text-sm break-words">
-                        {file1.name}
+                        {file1?.name || "Choose File"}
                       </p>
                     )}
                   </div>
+                   <p className="text-[#5EA68E] font-semibold text-[11px] md:text-xs m-0">
+                    Amazon → Seller Central → Payments → Reports Repository → Report Type Transactions → Select Month
+                  </p>
                 </div>
 
                 <div className="space-y-1.5">
@@ -2211,10 +2214,16 @@ const submitForm = async () => {
                     />
                     {file2 && (
                       <p className="pointer-events-none absolute text-center px-2 text-neutral-800 font-medium text-xs md:text-sm break-words">
-                        {file2.name}
+                        {file2?.name || 'Choose File'}
                       </p>
                     )}
                   </div>
+                   <p className="text-[#5EA68E] font-semibold text-[11px] md:text-xs m-0">
+                    Amazon → Seller Central → Reports → Fulfilment by amazon → Inventory Ledger → Download
+                  </p>
+                  <p className="italic text-neutral-600 text-[11px] md:text-xs m-0">
+                    *Summary View - Aggregate report by Country. Select last day of the previous month and download in .csv format
+                  </p>
                 </div>
               </div>
 

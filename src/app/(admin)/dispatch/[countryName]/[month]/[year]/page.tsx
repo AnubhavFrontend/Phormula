@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import * as XLSX from 'xlsx'
+import '@/app/(admin)/pnlforecast/[countryName]/[month]/[year]/Styles.css';
 import { Modal } from '@/components/ui/modal'; // Adjust path as needed
 import FileUploadForm from '@/app/(admin)/(ui-elements)/modals/FileUploadForm'; // Adjust path as needed
 

@@ -821,7 +821,7 @@ const formatted = formatPhoneNumber(fullPhone);
 
   return (
     <div className="flex flex-col flex-1 lg:w-1/2 w-full overflow-y-auto no-scrollbar relative">
-      <div className="flex flex-col justify-center flex-1 w-full max-w-md mx-auto">
+      <div className="flex flex-col justify-center flex-1 w-full max-w-lg mx-auto">
         <div>
           <div className="mb-5 sm:mb-8">
             <h1 className="mb-2 font-semibold text-green-500 text-title-sm dark:text-white/90 sm:text-title-md">
@@ -834,7 +834,7 @@ const formatted = formatPhoneNumber(fullPhone);
 
           <div>
             <form onSubmit={onSubmit} noValidate>
-              <div className="space-y-5">
+              <div className="space-y-3">
                 {/* Email */}
                 <div>
                   <Label>
@@ -925,6 +925,7 @@ const formatted = formatPhoneNumber(fullPhone);
                     </button>
                   </div>
 
+                  
                 </div>
 
                 {/* Confirm Password */}
@@ -954,7 +955,7 @@ const formatted = formatPhoneNumber(fullPhone);
                       )}
                     </button>
                   </div>
-                  
+
                   {password && passwordErrors.length > 0 && (
                     <p className="mt-1.5 text-xs text-red-500" aria-live="polite">
                       Password must contain: {passwordErrors.join(", ")}
@@ -963,13 +964,13 @@ const formatted = formatPhoneNumber(fullPhone);
                 </div>
 
                 {/* Terms */}
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 ">
                   <Checkbox
-                    className="w-5 h-5"
+                    className="w-3 h-3"
                     checked={isChecked}
                     onChange={setIsChecked}
                   />
-                  <p className="inline-block font-normal text-gray-500 dark:text-gray-400">
+                  <p className="inline-block font-normal text-gray-500 dark:text-gray-400 text-xs">
                     By creating an account you agree to the{" "}
                     <span className="text-gray-800 dark:text-white/90">
                       Terms and Conditions
@@ -990,11 +991,11 @@ const formatted = formatPhoneNumber(fullPhone);
                 )}
 
                 {/* Submit */}
-                <div>
+                <div className="pt-2">
                   <Button
                     type="submit"
                     disabled={isLoading || !canSubmit}
-                    className="flex items-center justify-center w-full px-4 py-3 text-sm font-medium transition rounded-lg disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="flex items-center justify-center w-full px-4 text-sm font-medium transition rounded-lg disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     {isLoading ? "Please wait…" : "Sign Up"}
                   </Button>
@@ -1003,7 +1004,7 @@ const formatted = formatPhoneNumber(fullPhone);
             </form>
 
             {/* Divider */}
-            <div className="relative py-3 sm:py-5">
+            <div className="relative ">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-charcoal-500 "></div>
               </div>
@@ -1016,7 +1017,7 @@ const formatted = formatPhoneNumber(fullPhone);
 
             {/* Google Sign-in */}
             {/* Google Sign-in (full width) */}
-            <div className="mt-2 w-full border border-charcoal-500 rounded-lg">
+            <div className="mt-2 w-full border border-charcoal-500 rounded-lg h-12">
               <button
                 type="button"
                 disabled

@@ -508,8 +508,8 @@ const onNext = async (e: React.FormEvent) => {
     <div className="flex flex-col flex-1 lg:w-1/2 w-full">
       
 
-      <div className="flex flex-col justify-center flex-1 w-full max-w-md mx-auto">
-        <div>
+      <div className="flex flex-col justify-center flex-1 w-full max-w-lg mx-auto">
+        <div className="flex flex-col gap-8">
           <div className="mb-5 sm:mb-8">
             <h1 className="mb-2 font-semibold text-charcoal-500 text-title-sm dark:text-white/90 sm:text-title-md">
               Which <span className="text-[#5EA68E]">Country</span> do <br />you want to start with?
@@ -521,24 +521,52 @@ const onNext = async (e: React.FormEvent) => {
               {OPTIONS.map((label) => {
                 const checked = selected.includes(label);
                 return (
-                  <label
-                    key={label}
-                    className={`flex items-center justify-between rounded-lg border px-4 py-3 cursor-pointer transition ${
-                      checked
-                        ? "border-[#48A887] bg-[#f5faff]"
-                        : "border-gray-300 bg-white dark:bg-gray-900"
-                    }`}
-                  >
-                    <span className="text-base text-[#414042] dark:text-gray-200">
-                      {label}
-                    </span>
-                    <input
-                      type="checkbox"
-                      className="h-5 w-5 accent-[#48A887]"
-                      checked={checked}
-                      onChange={() => toggle(label)}
-                    />
-                  </label>
+                 <label
+  key={label}
+  className={`flex items-center justify-between rounded-lg border px-4 py-3 cursor-pointer transition ${
+    checked
+      ? "border-[#48A887] bg-[#f5faff]"
+      : "border-gray-300 bg-white dark:bg-gray-900"
+  }`}
+>
+  <span className="text-base text-[#414042] dark:text-gray-200">
+    {label}
+  </span>
+
+  {/* Hidden Input */}
+  <input
+    type="checkbox"
+    checked={checked}
+    onChange={() => toggle(label)}
+    className="hidden peer"
+  />
+
+  {/* Custom Checkbox */}
+  <span
+    className="
+      h-5 w-5 flex items-center justify-center rounded border border-gray-400
+      peer-checked:bg-[#48A887]
+      peer-checked:border-[#48A887]
+    "
+  >
+    {/* Tick Icon */}
+    {checked && (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="#f8edce"   // ⭐ CUSTOM TICK COLOR
+        strokeWidth="3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="h-4 w-4"
+      >
+        <polyline points="20 6 9 17 4 12" />
+      </svg>
+    )}
+  </span>
+</label>
+
                 );
               })}
             </div>
@@ -553,35 +581,24 @@ const onNext = async (e: React.FormEvent) => {
               We are adding more integrations on our tool.
             </p>
 
-            <div className="mt-6 flex items-center justify-end gap-3">
-              <Button
-                type="button"
-                onClick={onBack}
-                variant="outline"
-              >
-                Back
-              </Button>
-              <Button
-                type="submit"
-                disabled={loading}
-                variant="primary"
-              >
-                {loading ? "Please wait…" : "Next"}
-              </Button>
-            </div>
+            <div className="mt-10 flex items-center justify-end gap-3 ">
+    <button
+      type="button"
+      onClick={onBack}
+      className="inline-flex justify-center rounded-lg bg-gray-200 px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-300 dark:bg-white/10 dark:text-gray-200 dark:hover:bg-white/15"
+    >
+      Back
+    </button>
+    <button
+      type="submit"
+      disabled={loading}
+      className="inline-flex justify-center rounded-lg bg-[#2c3854] px-4 py-2 text-sm font-semibold text-[#f8edcf] hover:opacity-95 disabled:opacity-60"
+    >
+      {loading ? "Please wait…" : "Next"}
+    </button>
+  </div>
           </form>
 
-          <div className="mt-5">
-            <p className="text-sm font-normal text-center text-gray-700 dark:text-gray-400 sm:text-start">
-              Need to change something?{" "}
-              <Link
-                href="/signup"
-                className="text-brand-500 hover:text-brand-600 dark:text-brand-400"
-              >
-                Go back to Sign Up
-              </Link>
-            </p>
-          </div>
         </div>
       </div>
     </div>

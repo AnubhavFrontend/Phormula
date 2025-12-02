@@ -2,6 +2,7 @@
 
 // import * as React from "react";
 // import clsx from "clsx";
+// import Loader from "@/components/loader/Loader"; // 👈 NEW
 
 // export type Row = Record<string, React.ReactNode>;
 
@@ -38,6 +39,10 @@
 
 //   /** Optional callback when page changes (1-based) */
 //   onPageChange?: (page: number) => void;
+
+//   /** Loading state */
+//   loading?: boolean;              // 👈 NEW
+//   loaderHeight?: number | string; // 👈 NEW (optional custom height)
 // };
 
 // export default function DataTable<T extends Row>({
@@ -49,13 +54,15 @@
 //   stickyHeader = true,
 //   zebra = true,
 //   emptyMessage = "No data found.",
-//   showCellTitle = true,
+//   showCellTitle = false,
 //   pageSize = 10,
 //   initialPage = 1,
 //   paginate = true, // default on
 //   scrollY = true, // default on
 //   rowClassName,
 //   onPageChange,
+//   loading = false,          // 👈 NEW default
+//   loaderHeight = 260,       // 👈 NEW default height
 // }: DataTableProps<T>) {
 //   const containerStyle: React.CSSProperties = {
 //     // only limit height (and allow vertical scroll) when scrollY is true
@@ -67,6 +74,26 @@
 //   };
 
 //   const hasData = Array.isArray(data) && data.length > 0;
+
+//   // 👇 Loader handling
+//   const loaderStyleHeight =
+//     typeof loaderHeight === "number" ? `${loaderHeight}px` : loaderHeight;
+
+//   if (loading) {
+//     return (
+//       <div className="flex items-center justify-center" style={{ height: loaderStyleHeight }}>
+//         <Loader
+//           src="/infinity-unscreen.gif"
+//           size={150}
+//           transparent
+//           roundedClass="rounded-full"
+//           backgroundClass="bg-transparent"
+//           respectReducedMotion
+//         />
+//       </div>
+//     );
+//   }
+//   // 👆 end loader
 
 //   // Pagination state (1-based)
 //   const [page, setPage] = React.useState<number>(Math.max(1, initialPage));
@@ -82,9 +109,7 @@
 
 //   const total = data?.length ?? 0;
 
-//   const totalPages = paginate
-//     ? Math.max(1, Math.ceil(total / pageSize))
-//     : 1;
+//   const totalPages = paginate ? Math.max(1, Math.ceil(total / pageSize)) : 1;
 
 //   const startIdx =
 //     !paginate || total === 0
@@ -94,9 +119,7 @@
 //       : (page - 1) * pageSize + 1;
 
 //   const endIdx =
-//     !paginate || total === 0
-//       ? total
-//       : Math.min(page * pageSize, total);
+//     !paginate || total === 0 ? total : Math.min(page * pageSize, total);
 
 //   const pageRows = React.useMemo(() => {
 //     if (!hasData) return [];
@@ -133,14 +156,15 @@
 //       >
 //         <table
 //           className={clsx(
-//             // responsive font + nowrap + min width so it scrolls nicely on small screens
-//             "min-w-[720px] w-full border-collapse text-xs md:text-sm whitespace-nowrap",
+//             // let parent control width, no forced min-width, no forced nowrap
+//             "w-full border-collapse text-xs md:text-sm",
 //             tableClassName
 //           )}
 //         >
+
 //           <thead
 //             className={clsx(
-//               "bg-green-500 text-amber-100",
+//               "bg-green-500 text-amber-100 ",
 //               stickyHeader && "sticky top-0 z-10"
 //             )}
 //           >
@@ -149,11 +173,12 @@
 //                 <th
 //                   key={String(col.key) + i}
 //                   className={clsx(
-//                     "border border-slate-300 px-3 py-2 md:py-3 text-left",
+//                     "border border-slate-300 px-3 py-2 md:py-3",
 //                     col.headerClassName
 //                   )}
 //                   style={col.width ? { width: col.width } : undefined}
 //                 >
+
 //                   {col.header}
 //                 </th>
 //               ))}
@@ -199,10 +224,10 @@
 //                       >
 //                         {col.render
 //                           ? col.render(
-//                               row,
-//                               value,
-//                               (page - 1) * pageSize + ri
-//                             )
+//                             row,
+//                             value,
+//                             (page - 1) * pageSize + ri
+//                           )
 //                           : value ?? "\u00A0"}
 //                       </td>
 //                     );
@@ -276,6 +301,16 @@
 
 
 
+// // // Usage
+
+// // <DataTable
+// //   columns={columns}
+// //   data={rows}
+// //   loading={isLoading}      // 👈 pass your loading state here
+// //   loaderHeight={320}       // optional, can omit
+// // />
+
+
 
 
 
@@ -307,7 +342,8 @@
 
 import * as React from "react";
 import clsx from "clsx";
-import Loader from "@/components/loader/Loader"; // 👈 NEW
+import Loader from "@/components/loader/Loader";
+import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 
 export type Row = Record<string, React.ReactNode>;
 
@@ -324,7 +360,6 @@ type DataTableProps<T extends Row> = {
   columns: ColumnDef<T>[];
   data: T[];
 
-  /** Layout & UX */
   className?: string;
   tableClassName?: string;
   maxHeight?: number | string;
@@ -333,21 +368,16 @@ type DataTableProps<T extends Row> = {
   emptyMessage?: string;
   showCellTitle?: boolean;
 
-  /** Pagination (client-side) */
-  pageSize?: number; // default 10
-  initialPage?: number; // 1-based index
+  pageSize?: number;
+  initialPage?: number;
   paginate?: boolean;
   scrollY?: boolean;
 
-  /** Row styling */
   rowClassName?: (row: T, rowIndex: number) => string;
-
-  /** Optional callback when page changes (1-based) */
   onPageChange?: (page: number) => void;
 
-  /** Loading state */
-  loading?: boolean;              // 👈 NEW
-  loaderHeight?: number | string; // 👈 NEW (optional custom height)
+  loading?: boolean;
+  loaderHeight?: number | string;
 };
 
 export default function DataTable<T extends Row>({
@@ -362,15 +392,14 @@ export default function DataTable<T extends Row>({
   showCellTitle = false,
   pageSize = 10,
   initialPage = 1,
-  paginate = true, // default on
-  scrollY = true, // default on
+  paginate = true,
+  scrollY = true,
   rowClassName,
   onPageChange,
-  loading = false,          // 👈 NEW default
-  loaderHeight = 260,       // 👈 NEW default height
+  loading = false,
+  loaderHeight = 260,
 }: DataTableProps<T>) {
   const containerStyle: React.CSSProperties = {
-    // only limit height (and allow vertical scroll) when scrollY is true
     maxHeight: scrollY
       ? typeof maxHeight === "number"
         ? `${maxHeight}px`
@@ -380,13 +409,19 @@ export default function DataTable<T extends Row>({
 
   const hasData = Array.isArray(data) && data.length > 0;
 
-  // 👇 Loader handling
+  // Loader
   const loaderStyleHeight =
     typeof loaderHeight === "number" ? `${loaderHeight}px` : loaderHeight;
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center" style={{ height: loaderStyleHeight }}>
+      <div
+        className={clsx(
+          "flex items-center justify-center rounded-xl border border-slate-200 bg-white shadow-sm",
+          className
+        )}
+        style={{ minHeight: loaderStyleHeight }}
+      >
         <Loader
           src="/infinity-unscreen.gif"
           size={150}
@@ -398,12 +433,10 @@ export default function DataTable<T extends Row>({
       </div>
     );
   }
-  // 👆 end loader
 
-  // Pagination state (1-based)
+  // Pagination
   const [page, setPage] = React.useState<number>(Math.max(1, initialPage));
 
-  // Reset to page 1 if data changes and current page exceeds new total
   React.useEffect(() => {
     const totalPages = Math.max(1, Math.ceil((data?.length ?? 0) / pageSize));
     if (page > totalPages) {
@@ -413,7 +446,6 @@ export default function DataTable<T extends Row>({
   }, [data, pageSize]);
 
   const total = data?.length ?? 0;
-
   const totalPages = paginate ? Math.max(1, Math.ceil(total / pageSize)) : 1;
 
   const startIdx =
@@ -428,7 +460,7 @@ export default function DataTable<T extends Row>({
 
   const pageRows = React.useMemo(() => {
     if (!hasData) return [];
-    if (!paginate) return data; // no slicing when pagination disabled
+    if (!paginate) return data;
     const start = (page - 1) * pageSize;
     return data.slice(start, start + pageSize);
   }, [data, page, pageSize, hasData, paginate]);
@@ -439,37 +471,59 @@ export default function DataTable<T extends Row>({
     onPageChange?.(next);
   };
 
-  const onFirst = () => goToPage(1);
   const onPrev = () => goToPage(page - 1);
   const onNext = () => goToPage(page + 1);
-  const onLast = () => goToPage(totalPages);
+
+  // -------- helper to build "1 2 3 … 8 9 10" style pages --------
+  const getPageItems = (
+    current: number,
+    totalP: number
+  ): (number | "dots")[] => {
+    const items: (number | "dots")[] = [];
+    if (totalP <= 7) {
+      for (let i = 1; i <= totalP; i += 1) items.push(i);
+      return items;
+    }
+
+    if (current <= 3) {
+      items.push(1, 2, 3, "dots", totalP - 1, totalP);
+    } else if (current >= totalP - 2) {
+      items.push(1, 2, "dots", totalP - 2, totalP - 1, totalP);
+    } else {
+      items.push(1, "dots", current - 1, current, current + 1, "dots", totalP);
+    }
+
+    return items;
+  };
+
+  const pageItems = getPageItems(page, totalPages);
 
   return (
     <div
       className={clsx(
-        "overflow-hidden rounded border border-gray-200",
+        "overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm",
         className
       )}
     >
       <div
         className={clsx(
           "w-full",
-          scrollY ? "overflow-auto" : "overflow-x-auto", // only horizontal scroll when scrollY=false
+          scrollY ? "overflow-y-auto" : "overflow-x-auto",
           stickyHeader && "scroll-pt-12"
         )}
         style={containerStyle}
       >
         <table
           className={clsx(
-            // let parent control width, no forced min-width, no forced nowrap
-            "w-full border-collapse text-xs md:text-sm",
+            "w-full border-collapse text-xs sm:text-sm text-slate-700",
             tableClassName
           )}
         >
-
+          {/* HEADER like your green example */}
           <thead
             className={clsx(
-              "bg-green-500 text-amber-100 ",
+              "bg-[#5EA68E] text-white",
+              "text-xs sm:text-sm font-semibold",
               stickyHeader && "sticky top-0 z-10"
             )}
           >
@@ -478,12 +532,11 @@ export default function DataTable<T extends Row>({
                 <th
                   key={String(col.key) + i}
                   className={clsx(
-                    "border border-slate-300 px-3 py-2 md:py-3",
+                    "border border-[#e1e5ea] px-3 py-2.5 text-left align-middle",
                     col.headerClassName
                   )}
                   style={col.width ? { width: col.width } : undefined}
                 >
-
                   {col.header}
                 </th>
               ))}
@@ -494,7 +547,7 @@ export default function DataTable<T extends Row>({
             {!hasData && (
               <tr>
                 <td
-                  className="px-3 py-4 text-xs md:text-sm text-gray-500"
+                  className="px-3 py-8 text-center text-xs sm:text-sm text-slate-400"
                   colSpan={columns.length}
                 >
                   {emptyMessage}
@@ -507,8 +560,8 @@ export default function DataTable<T extends Row>({
                 <tr
                   key={ri}
                   className={clsx(
-                    zebra && ri % 2 === 1 ? "bg-gray-50" : "bg-white",
-                    "hover:bg-emerald-50/70",
+                    zebra && ri % 2 === 1 ? "bg-slate-50" : "bg-white",
+                    "transition-colors hover:bg-emerald-50/80",
                     rowClassName?.(row, (page - 1) * pageSize + ri)
                   )}
                 >
@@ -520,7 +573,7 @@ export default function DataTable<T extends Row>({
                       <td
                         key={String(col.key) + ci}
                         className={clsx(
-                          "max-w-[240px] truncate border border-slate-200 px-3 py-2",
+                          "max-w-[260px] truncate border border-[#e1e5ea] px-3 py-2.5 align-middle text-xs sm:text-sm",
                           col.cellClassName
                         )}
                         title={
@@ -529,10 +582,10 @@ export default function DataTable<T extends Row>({
                       >
                         {col.render
                           ? col.render(
-                            row,
-                            value,
-                            (page - 1) * pageSize + ri
-                          )
+                              row,
+                              value,
+                              (page - 1) * pageSize + ri
+                            )
                           : value ?? "\u00A0"}
                       </td>
                     );
@@ -543,59 +596,77 @@ export default function DataTable<T extends Row>({
         </table>
       </div>
 
-      {/* Pagination footer */}
-      {paginate && (
-        <div className="flex flex-col items-center gap-2 border-t border-gray-200 p-3 sm:flex-row sm:justify-between">
-          <div className="text-xs text-gray-600">
+      {/* PAGINATION – like your screenshot */}
+      {paginate && totalPages > 1 && (
+        <div className="border-t border-slate-200 bg-slate-50 px-4 py-3">
+          {/* summary row (optional, centered) */}
+          {/* <div className="mb-2 text-center text-[11px] sm:text-xs text-slate-600">
             {total > 0 ? (
               <>
-                Showing <span className="font-medium">{startIdx}</span>–
-                <span className="font-medium">{endIdx}</span> of{" "}
-                <span className="font-medium">{total}</span>
+                Showing{" "}
+                <span className="font-semibold text-slate-800">{startIdx}</span>
+                –
+                <span className="font-semibold text-slate-800">{endIdx}</span>{" "}
+                of{" "}
+                <span className="font-semibold text-slate-800">{total}</span>
               </>
             ) : (
               <>No records</>
             )}
-          </div>
+          </div> */}
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={onFirst}
-              disabled={page <= 1}
-              className="rounded border px-2 py-1 text-xs disabled:opacity-50"
-              aria-label="First page"
-            >
-              « First
-            </button>
+          <div className="flex items-center justify-between gap-4 text-xs sm:text-sm">
+            {/* Previous */}
             <button
               onClick={onPrev}
               disabled={page <= 1}
-              className="rounded border px-2 py-1 text-xs disabled:opacity-50"
-              aria-label="Previous page"
+              className={clsx(
+                "inline-flex items-center rounded-md border border-slate-200 bg-white px-2 py-1.5 text-slate-700 shadow-sm hover:bg-slate-100",
+                "disabled:cursor-not-allowed disabled:opacity-50"
+              )}
             >
-              ‹ Prev
+             <FaChevronLeft />
             </button>
 
-            <span className="text-xs text-gray-700">
-              Page <span className="font-medium">{page}</span> of{" "}
-              <span className="font-medium">{totalPages}</span>
-            </span>
+            {/* Center page numbers */}
+            <div className="flex items-center justify-center gap-1 sm:gap-1.5">
+              {pageItems.map((item, idx) =>
+                item === "dots" ? (
+                  <span
+                    key={`dots-${idx}`}
+                    className="px-1 text-slate-400 select-none"
+                  >
+                    …
+                  </span>
+                ) : (
+                  <button
+                    key={item}
+                    onClick={() => goToPage(item)}
+                    className={clsx(
+                      "h-7 w-7 sm:h-8 sm:w-8 rounded-full text-xs sm:text-sm",
+                      "flex items-center justify-center",
+                      "transition-colors",
+                      item === page
+                        ? "bg-slate-200 text-slate-900 font-semibold"
+                        : "text-slate-700 hover:bg-slate-100"
+                    )}
+                  >
+                    {item}
+                  </button>
+                )
+              )}
+            </div>
 
+            {/* Next */}
             <button
               onClick={onNext}
               disabled={page >= totalPages}
-              className="rounded border px-2 py-1 text-xs disabled:opacity-50"
-              aria-label="Next page"
+              className={clsx(
+                "inline-flex items-center rounded-md border border-slate-200 bg-white px-2 py-1.5 text-slate-700 shadow-sm hover:bg-slate-100",
+                "disabled:cursor-not-allowed disabled:opacity-50"
+              )}
             >
-              Next ›
-            </button>
-            <button
-              onClick={onLast}
-              disabled={page >= totalPages}
-              className="rounded border px-2 py-1 text-xs disabled:opacity-50"
-              aria-label="Last page"
-            >
-              Last »
+              <FaChevronRight />
             </button>
           </div>
         </div>
@@ -603,14 +674,3 @@ export default function DataTable<T extends Row>({
     </div>
   );
 }
-
-
-
-// // Usage
-
-// <DataTable
-//   columns={columns}
-//   data={rows}
-//   loading={isLoading}      // 👈 pass your loading state here
-//   loaderHeight={320}       // optional, can omit
-// />

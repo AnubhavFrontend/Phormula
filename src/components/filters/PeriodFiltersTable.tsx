@@ -145,6 +145,7 @@
 "use client";
 
 import React from "react";
+import { FaAngleDown } from "react-icons/fa";
 
 export type Range = "monthly" | "quarterly" | "yearly";
 
@@ -208,6 +209,14 @@ const PeriodFiltersTable: React.FC<Props> = (props) => {
   const showQuarterly = allowedRanges.includes("quarterly");
   const showYearly = allowedRanges.includes("yearly");
 
+  <style>
+    {`
+  select option {
+    text-align:center !important;
+  }
+`}
+  </style>
+
   return (
     <div className="inline-flex overflow-hidden rounded-md border border-[#414042] bg-white font-[Lato] text-[clamp(12px,0.729vw,16px)]">
       {/* PERIOD SELECT */}
@@ -226,7 +235,7 @@ const PeriodFiltersTable: React.FC<Props> = (props) => {
           {showYearly && <option value="yearly">Yearly</option>}
         </select>
         <span className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-xs text-[#414042]">
-          ▾
+          <FaAngleDown />
         </span>
       </div>
 
@@ -259,7 +268,7 @@ const PeriodFiltersTable: React.FC<Props> = (props) => {
               ))}
           </select>
           <span className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-xs text-[#414042]">
-            ▾
+            <FaAngleDown />
           </span>
         </div>
       )}
@@ -278,8 +287,9 @@ const PeriodFiltersTable: React.FC<Props> = (props) => {
             </option>
           ))}
         </select>
-        <span className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-xs text-[#414042]">
-          ▾
+        <span className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-xs text-charcoal-500">
+          {/* ▾ */}
+          <FaAngleDown />
         </span>
       </div>
     </div>

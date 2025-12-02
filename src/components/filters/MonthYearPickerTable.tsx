@@ -130,6 +130,7 @@
 "use client";
 
 import React from "react";
+import { FaAngleDown } from "react-icons/fa";
 
 type ValueMode = "lower" | "preserve";
 
@@ -218,7 +219,7 @@ const MonthYearPickerTable: React.FC<MonthYearPickerTableProps> = ({
           ))}
         </select>
        <span className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-xs text-[#414042]">
-          ▾
+           <FaAngleDown />
         </span>
       </div>
 
@@ -238,7 +239,7 @@ const MonthYearPickerTable: React.FC<MonthYearPickerTableProps> = ({
           ))}
         </select>
         <span className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-xs text-[#414042]">
-          ▾
+           <FaAngleDown />
         </span>
       </div>
     </div>

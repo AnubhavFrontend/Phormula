@@ -2681,8 +2681,11 @@
 
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import Loader from "@/components/loader/Loader";
+import DownloadIconButton from "@/components/ui/button/DownloadIconButton";
+import { RootState, useAppSelector } from "@/lib/store";
 import { useAmazonConnections } from "@/lib/utils/useAmazonConnections";
 import React, { useEffect, useState, useMemo, useCallback } from "react";
+import { useSelector } from "react-redux";
 
 /* ===================== ENV & ENDPOINTS ===================== */
 const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:5000";
@@ -2906,7 +2909,6 @@ const toNumberSafe = (v: any) => {
 };
 
 /* ===================== SALES TARGET CARD ===================== */
-/* ===================== SALES TARGET CARD ===================== */
 type RegionKey = "Global" | "UK" | "US" | "CA";
 
 type RegionMetrics = {
@@ -3002,9 +3004,9 @@ function SalesTargetCard({
     (badgeIsUp ? "▲ " : "▼ ") + `${Math.abs(deltaPct).toFixed(2)}%`;
 
   return (
-    <div className="rounded-2xl border bg-white p-5 shadow-sm">
+    <div className="h-full rounded-2xl border bg-white p-5 shadow-sm flex flex-col">
       {/* Header with tabs */}
-      <div className="mb-3 flex flex-col items-center justify-between gap-2">
+      <div className="flex flex-col items-center justify-between gap-2">
         <PageBreadcrumb
           pageTitle="Sales Target"
           textSize="2xl"
@@ -3012,8 +3014,7 @@ function SalesTargetCard({
           align="center"
         />
 
-        {/* ✅ Tabs: Global + only connected regions */}
-        <div className="inline-flex rounded-lg border bg-gray-50 p-1 text-xs">
+        <div className="inline-flex rounded-lg border bg-gray-50 p-1 text-xs my-1 md:my-8">
           {availableRegions.map((key) => (
             <button
               key={key}
@@ -3031,7 +3032,7 @@ function SalesTargetCard({
       </div>
 
       {/* Legend */}
-      <div className="mt-3 mb-2 flex items-center gap-5 text-xs">
+      <div className="mt-5 mb-2 flex items-center justify-between gap-2 text-xs">
         <div className="flex items-center gap-2">
           <span
             className="inline-block h-3 w-3 rounded-sm"
@@ -3055,89 +3056,116 @@ function SalesTargetCard({
         </div>
       </div>
 
-      {/* Gauge */}
-      <div className="mt-4 flex items-center justify-center">
-        <svg width={size} height={size / 2} viewBox={`0 0 ${size} ${size / 2}`}>
-          {/* grey target arc */}
-          <path
-            d={arcPath(fullFrom, fullTo, rTarget)}
-            fill="none"
-            stroke="#e5e7eb"
-            strokeWidth={strokeMain}
-            strokeLinecap="round"
-          />
+      {/* 🔹 Middle section grows to fill available height */}
+      <div className="flex-1 flex flex-col items-center justify-center mt-4 md:mt-10 ">
+        {/* Gauge */}
+        <div className="mt-2 md:mt-0 flex items-center justify-center">
+          <svg
+            width={size}
+            height={size / 2}
+            viewBox={`0 0 ${size} ${size / 2}`}
+          >
+            {/* arcs & knobs as you had */}
+            <path
+              d={arcPath(fullFrom, fullTo, rTarget)}
+              fill="none"
+              stroke="#e5e7eb"
+              strokeWidth={strokeMain}
+              strokeLinecap="round"
+            />
+            <path
+              d={arcPath(fullFrom, toDeg_LastMTD, rLastMTD)}
+              fill="none"
+              stroke="#f59e0b"
+              strokeWidth={strokeLast}
+              strokeLinecap="round"
+            />
+            <path
+              d={arcPath(fullFrom, toDeg_MTD, rCurrent)}
+              fill="none"
+              stroke="#5EA68E"
+              strokeWidth={strokeMain}
+              strokeLinecap="round"
+            />
+            <circle
+              cx={knobYellow.x}
+              cy={knobYellow.y}
+              r={10}
+              fill="#f59e0b"
+              stroke="#fffbeb"
+              strokeWidth={4}
+            />
+            <circle
+              cx={knobGreen.x}
+              cy={knobGreen.y}
+              r={14}
+              fill="#5EA68E"
+              stroke="#ecfdf3"
+              strokeWidth={5}
+            />
+          </svg>
+        </div>
 
-          {/* orange last-month arc */}
-          <path
-            d={arcPath(fullFrom, toDeg_LastMTD, rLastMTD)}
-            fill="none"
-            stroke="#f59e0b"
-            strokeWidth={strokeLast}
-            strokeLinecap="round"
-          />
-
-          {/* green MTD arc */}
-          <path
-            d={arcPath(fullFrom, toDeg_MTD, rCurrent)}
-            fill="none"
-            stroke="#5EA68E"
-            strokeWidth={strokeMain}
-            strokeLinecap="round"
-          />
-
-          {/* pointers */}
-          <circle
-            cx={knobYellow.x}
-            cy={knobYellow.y}
-            r={10}
-            fill="#f59e0b"
-            stroke="#fffbeb"
-            strokeWidth={4}
-          />
-
-          <circle
-            cx={knobGreen.x}
-            cy={knobGreen.y}
-            r={14}
-            fill="#5EA68E"
-            stroke="#ecfdf3"
-            strokeWidth={5}
-          />
-        </svg>
-      </div>
-
-      {/* Center metrics */}
-      <div className="text-center">
-        <div className="text-3xl font-bold">{(pct * 100).toFixed(1)}%</div>
-        <div
-          className={`mx-auto mt-1 inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ${badgeIsUp ? "bg-green-50 text-green-700" : "bg-rose-50 text-rose-700"
-            }`}
-        >
-          {badgeStr}
+        {/* Center metrics */}
+        <div className="mt-2 text-center">
+          <div className="text-3xl font-bold">{(pct * 100).toFixed(1)}%</div>
+          <div
+            className={`mx-auto mt-1 inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ${badgeIsUp
+              ? "bg-green-50 text-green-700"
+              : "bg-rose-50 text-rose-700"
+              }`}
+          >
+            {badgeStr}
+          </div>
         </div>
       </div>
 
-      {/* Bottom KPIs (in K) */}
-      <div className="mt-4 grid grid-cols-4 gap-4 text-sm">
-        <div className="flex flex-col items-center justify-between rounded-xl bg-gray-50 p-3">
-          <div className="text-gray-500">Today</div>
+      {/* Bottom KPIs stay pinned near bottom of card */}
+      {/* <div className="border border-red-700 mt-3 md:mt-12 mb-12 grid grid-cols-4 gap-4 text-sm">
+        <div className="flex flex-col text-center items-center justify-between rounded-xl bg-gray-50 p-3">
+          <div className="text-gray-500">Today's Sale</div>
           <div className="mt-0.5 font-semibold">{fmtUSDk(todayApprox)}</div>
         </div>
-        <div className="flex flex-col items-center justify-between rounded-xl bg-gray-50 p-3">
+        <div className="flex flex-col text-center items-center justify-between rounded-xl bg-gray-50 p-3">
           <div className="text-gray-500">MTD Sales</div>
           <div className="mt-0.5 font-semibold">{fmtUSDk(mtdUSD)}</div>
         </div>
-        <div className="flex flex-col items-center justify-between rounded-xl bg-gray-50 p-3">
+        <div className="flex flex-col  text-center items-center justify-between rounded-xl bg-gray-50 p-3">
           <div className="text-gray-500">Sales Target</div>
           <div className="mt-0.5 font-semibold">{fmtUSDk(targetUSD)}</div>
         </div>
-        <div className="flex flex-col items-center justify-between rounded-xl bg-gray-50 p-3">
+        <div className="flex flex-col  text-center items-center justify-between rounded-xl bg-gray-50 p-3">
+          <div className="text-gray-500">{prevLabel} Sales</div>
+          <div className="mt-0.5 font-semibold">
+            {fmtUSDk(lastMonthTotalUSD)}
+          </div>
+        </div>
+      </div> */}
+
+      <div className="mt-3 md:mt-12 mb-3 grid grid-cols-2 gap-4 text-sm">
+        <div className="flex flex-col text-center items-center justify-between rounded-xl bg-gray-50 p-3">
+          <div className="text-gray-500">Today's Sale</div>
+          <div className="mt-0.5 font-semibold">{fmtUSDk(todayApprox)}</div>
+        </div>
+
+        <div className="flex flex-col text-center items-center justify-between rounded-xl bg-gray-50 p-3">
+          <div className="text-gray-500">MTD Sales</div>
+          <div className="mt-0.5 font-semibold">{fmtUSDk(mtdUSD)}</div>
+        </div>
+
+        <div className="flex flex-col text-center items-center justify-between rounded-xl bg-gray-50 p-3">
+          <div className="text-gray-500">Sales Target</div>
+          <div className="mt-0.5 font-semibold">{fmtUSDk(targetUSD)}</div>
+        </div>
+
+        <div className="flex flex-col text-center items-center justify-between rounded-xl bg-gray-50 p-3">
           <div className="text-gray-500">{prevLabel} Sales</div>
           <div className="mt-0.5 font-semibold">
             {fmtUSDk(lastMonthTotalUSD)}
           </div>
         </div>
       </div>
+
     </div>
   );
 }
@@ -3148,7 +3176,7 @@ function SimpleBarChart({
   items,
   height = 300,
   padding = { top: 28, right: 24, bottom: 56, left: 24 },
-  colors = ["#2563eb", "#5EA68E", "#FFBE25", "#ec4899", "#8b5cf6"],
+  colors = ["#2CA9E0", "#ff5c5c", "#AB64B5", "#F47A00", "#00627D","#87AD12"],
 }: {
   items: Array<{ label: string; raw: number; display: string }>;
   height?: number;
@@ -3316,6 +3344,9 @@ function SimpleBarChart({
   );
 }
 
+
+
+
 /* ===================== MAIN PAGE ===================== */
 export default function DashboardPage() {
   // Amazon
@@ -3345,6 +3376,12 @@ export default function DashboardPage() {
 
   // which region is selected in the P&L graph
   const [graphRegion, setGraphRegion] = useState<RegionKey>("Global");
+
+  const brandName = useSelector(
+    (state: RootState) => state.auth.user?.brand_name
+  );
+
+  console.log("brandName", brandName)
 
   const fetchAmazon = useCallback(async () => {
     setLoading(true);
@@ -3867,644 +3904,498 @@ export default function DashboardPage() {
   }, [graphRegion, combinedUSD, uk]);
 
   // ✅ Now that ALL hooks are declared, it's safe to early-return
-  if (initialLoading) {
-    return (
-      <Loader
-        src="/infinity-unscreen.gif"
-        label="Loading sales dashboard…"
-        fullscreen
-        size={120}
-        roundedClass="rounded-none"
-        backgroundClass="bg-transparent"
-        respectReducedMotion
-      />
-    );
-  }
+  // if (initialLoading) {
+  //   return (
+  //     <Loader
+  //       src="/infinity-unscreen.gif"
+  //       label="Loading sales dashboard…"
+  //       fullscreen
+  //       size={120}
+  //       roundedClass="rounded-none"
+  //       backgroundClass="bg-transparent"
+  //       respectReducedMotion
+  //     />
+  //   );
+  // }
+
+    useEffect(() => {
+    if (initialLoading) {
+      const prev = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = prev;
+      };
+    }
+  }, [initialLoading]);
+
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-6">
-      {/* Top header */}
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-start justify-center gap-2 whitespace-nowrap">
-          <PageBreadcrumb
-            pageTitle="Sales Dashboard -"
-            variant="page"
-            textSize="2xl"
-            className="text-2xl"
-          />
-          <span className="text-[#5EA68E] text-lg font-semibold sm:text-2xl md:text-2xl">
-            {(() => {
-              const { monthName, year } = getISTYearMonth();
-              const shortMon = new Date(
-                `${monthName} 1, ${year}`
-              ).toLocaleString("en-US", {
-                month: "short",
-                timeZone: "Asia/Kolkata",
-              });
-              return `${shortMon} '${String(year).slice(-2)}`;
-            })()}
-          </span>
-        </div>
+    <div className="relative">
+      {/* Overlay that covers ONLY this page’s content area */}
+      {initialLoading && (
+        <>
+          {/* dim just the content area */}
+          <div className="fixed inset-0 z-40 bg-white/70" />
 
-        <button
-          onClick={refreshAll}
-          disabled={anyLoading}
-          className={`w-full rounded-md border px-3 py-1.5 text-sm shadow-sm active:scale-[.99] sm:w-auto ${anyLoading
-            ? "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400"
-            : "border-gray-300 bg-white hover:bg-gray-50"
-            }`}
-          title="Refresh Amazon & Shopify"
-        >
-          {anyLoading ? (
-            <span className="inline-flex items-center gap-2">
-              <Loader
-                src="/infinity-unscreen.gif"
-                size={16}
-                transparent
-                roundedClass="rounded-full"
-                backgroundClass="bg-transparent"
-                className="text-gray-400"
-                forceFallback={false}
-                respectReducedMotion
-              />
-              <span>Refreshing…</span>
-            </span>
-          ) : (
-            "Refresh"
-          )}
-        </button>
-      </div>
+          {/* centered loader */}
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <Loader
+              src="/infinity-unscreen.gif"
+              label="Loading sales dashboard…"
+              size={120}
+              roundedClass="rounded-xl"
+              backgroundClass="bg-transparent"
+              respectReducedMotion
+            />
+          </div>
+        </>
+      )}
 
-      <div className="grid grid-cols-12 gap-6">
-        {/* LEFT 8: Global + Amazon + Shopify cards */}
-        <div className="col-span-12 space-y-6 lg:col-span-8">
-          {/* GLOBAL card */}
-          {/* <div className="rounded-2xl border bg-white p-5 shadow-sm">
-            <div className="mb-4">
-              <div className="flex items-baseline gap-2">
+      {/* Actual page content (what you already have) */}
+      <div
+        className={initialLoading ? "pointer-events-none opacity-40" : ""}
+      >
+
+
+        <div className="mx-auto max-w-7xl">
+          {/* Top header */}
+          <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+
+            {/* LEFT SIDE: Title block */}
+            <div className="flex flex-col leading-tight">
+              <p className="text-lg text-charcoal-500 mb-1">
+                Let's get started, <span className="text-green-500">{brandName}!</span>
+              </p>
+
+              <div className="flex items-center gap-2">
                 <PageBreadcrumb
-                  pageTitle="Global -"
+                  pageTitle="Sales Dashboard -"
                   variant="page"
-                  align="left"
+                  textSize="2xl"
+                  className="text-2xl font-semibold"
                 />
-                <span className="text-[#5EA68E] text-lg font-semibold sm:text-2xl md:text-2xl">
+
+                <span className="text-[#5EA68E] text-xl font-semibold">
                   {(() => {
                     const { monthName, year } = getISTYearMonth();
-                    const shortMon = new Date(
-                      `${monthName} 1, ${year}`
-                    ).toLocaleString("en-US", {
-                      month: "short",
-                      timeZone: "Asia/Kolkata",
-                    });
+                    const shortMon = new Date(`${monthName} 1, ${year}`).toLocaleString(
+                      "en-US",
+                      {
+                        month: "short",
+                        timeZone: "Asia/Kolkata",
+                      }
+                    );
                     return `${shortMon} '${String(year).slice(-2)}`;
                   })()}
                 </span>
               </div>
-              <p className="mt-1 text-sm text-charcoal-500">
-                Real-time data from Amazon &amp; Shopify
-              </p>
             </div>
 
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
-              <div className="rounded-2xl border border-[#87AD12] bg-[#87AD1226] p-5 shadow-sm">
-                <div className="text-sm text-charcoal-500">Sales (USD)</div>
-                <div className="mt-2 text-lg font-semibold">
-                  <ValueOrSkeleton loading={anyLoading} mode="inline">
-                    {fmtUSD(globalCardMetrics.totalSalesUSD)}
-                  </ValueOrSkeleton>
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-[#F47A00] bg-[#F47A0026] p-5 shadow-sm">
-                <div className="text-sm text-charcoal-500">Units</div>
-                <div className="mt-2 text-lg font-semibold">
-                  <ValueOrSkeleton loading={anyLoading} mode="inline" compact>
-                    {fmtInt(globalCardMetrics.totalUnits)}
-                  </ValueOrSkeleton>
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-[#2CA9E0] bg-[#2CA9E026] p-5 shadow-sm">
-                <div className="text-sm text-charcoal-500">ASP (USD)</div>
-                <div className="mt-2 text-lg font-semibold">
-                  <ValueOrSkeleton loading={anyLoading} mode="inline" compact>
-                    {fmtUSD(globalCardMetrics.aspUSD)}
-                  </ValueOrSkeleton>
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-[#AB64B5] bg-[#AB64B526] p-5 shadow-sm">
-                <div className="text-sm text-charcoal-500">Profit (USD)</div>
-                <div className="mt-2 text-lg font-semibold">
-                  <ValueOrSkeleton loading={anyLoading} mode="inline" compact>
-                    {fmtUSD(globalCardMetrics.profitUSD)}
-                  </ValueOrSkeleton>
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-[#00627B] bg-[#00627B26] p-5 shadow-sm">
-                <div className="text-sm text-charcoal-500">Profit %</div>
-                <div className="mt-2 text-lg font-semibold">
-                  <ValueOrSkeleton loading={anyLoading} mode="inline" compact>
-                    {fmtPct(globalCardMetrics.profitPct)}
-                  </ValueOrSkeleton>
-                </div>
-              </div>
-            </div>
-          </div> */}
-
-          {/* GLOBAL card */}
-          <div className="rounded-2xl border bg-white p-5 shadow-sm">
-            <div className="mb-4">
-              <div className="flex items-baseline gap-2">
-                <PageBreadcrumb
-                  pageTitle="Global -"
-                  variant="page"
-                  align="left"
-                />
-                <span className="text-[#5EA68E] text-lg font-semibold sm:text-2xl md:text-2xl">
-                  {(() => {
-                    const { monthName, year } = getISTYearMonth();
-                    const shortMon = new Date(
-                      `${monthName} 1, ${year}`
-                    ).toLocaleString("en-US", {
-                      month: "short",
-                      timeZone: "Asia/Kolkata",
-                    });
-                    return `${shortMon} '${String(year).slice(-2)}`;
-                  })()}
+            {/* RIGHT BUTTON */}
+            <button
+              onClick={refreshAll}
+              disabled={anyLoading}
+              className={`w-full rounded-md border px-3 py-1.5 text-sm shadow-sm active:scale-[.99] sm:w-auto ${anyLoading
+                ? "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400"
+                : "border-gray-300 bg-white hover:bg-gray-50"
+                }`}
+            >
+              {anyLoading ? (
+                <span className="inline-flex items-center gap-2">
+                  <Loader
+                    src="/infinity-unscreen.gif"
+                    size={16}
+                    transparent
+                    roundedClass="rounded-full"
+                    backgroundClass="bg-transparent"
+                    className="text-gray-400"
+                    forceFallback={false}
+                    respectReducedMotion
+                  />
+                  <span>Refreshing…</span>
                 </span>
-              </div>
-              <p className="mt-1 text-sm text-charcoal-500">
-                Real-time data from Amazon &amp; Shopify
-              </p>
-            </div>
-
-            {noIntegrations ? (
-              <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-                <p className="font-medium">
-                  Connection needs to be established in order to view details.
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
-                <div className="rounded-2xl border border-[#87AD12] bg-[#87AD1226] p-5 shadow-sm">
-                  <div className="text-sm text-charcoal-500">Sales</div>
-                  <div className="mt-2 text-lg font-semibold">
-                    <ValueOrSkeleton loading={anyLoading} mode="inline">
-                      {fmtUSD(globalCardMetrics.totalSalesUSD)}
-                    </ValueOrSkeleton>
-                  </div>
-                </div>
-
-                <div className="rounded-2xl border border-[#F47A00] bg-[#F47A0026] p-5 shadow-sm">
-                  <div className="text-sm text-charcoal-500">Units</div>
-                  <div className="mt-2 text-lg font-semibold">
-                    <ValueOrSkeleton loading={anyLoading} mode="inline" compact>
-                      {fmtInt(globalCardMetrics.totalUnits)}
-                    </ValueOrSkeleton>
-                  </div>
-                </div>
-
-                <div className="rounded-2xl border border-[#2CA9E0] bg-[#2CA9E026] p-5 shadow-sm">
-                  <div className="text-sm text-charcoal-500">ASP</div>
-                  <div className="mt-2 text-lg font-semibold">
-                    <ValueOrSkeleton loading={anyLoading} mode="inline" compact>
-                      {fmtUSD(globalCardMetrics.aspUSD)}
-                    </ValueOrSkeleton>
-                  </div>
-                </div>
-
-                <div className="rounded-2xl border border-[#AB64B5] bg-[#AB64B526] p-5 shadow-sm">
-                  <div className="text-sm text-charcoal-500">Profit</div>
-                  <div className="mt-2 text-lg font-semibold">
-                    <ValueOrSkeleton loading={anyLoading} mode="inline" compact>
-                      {fmtUSD(globalCardMetrics.profitUSD)}
-                    </ValueOrSkeleton>
-                  </div>
-                </div>
-
-                <div className="rounded-2xl border border-[#00627B] bg-[#00627B26] p-5 shadow-sm">
-                  <div className="text-sm text-charcoal-500">Profit %</div>
-                  <div className="mt-2 text-lg font-semibold">
-                    <ValueOrSkeleton loading={anyLoading} mode="inline" compact>
-                      {fmtPct(globalCardMetrics.profitPct)}
-                    </ValueOrSkeleton>
-                  </div>
-                </div>
-              </div>
-            )}
+              ) : (
+                "Refresh"
+              )}
+            </button>
           </div>
 
 
+          {/* <div className="grid grid-cols-12 gap-6"> */}
+          <div
+            className={`grid grid-cols-12 gap-6 ${!noIntegrations ? "items-stretch" : ""
+              }`}
+          >
+            {/* LEFT 8: Global + Amazon + Shopify cards */}
+            <div className="col-span-12 space-y-6 lg:col-span-8 order-2 lg:order-1">
 
-
-          {/* AMAZON card */}
-          {/* <div className="rounded-2xl border bg-white p-5 shadow-sm">
-            <div className="mb-4 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-              <div className="flex flex-col">
-                <div className="flex flex-wrap items-baseline gap-2">
-                  <PageBreadcrumb
-                    pageTitle="Amazon -"
-                    variant="page"
-                    align="left"
-                  />
-                  <span className="text-[#5EA68E] text-lg font-semibold sm:text-2xl md:text-2xl">
-                    {(() => {
-                      const { monthName, year } = getISTYearMonth();
-                      const shortMon = new Date(
-                        `${monthName} 1, ${year}`
-                      ).toLocaleString("en-US", {
-                        month: "short",
-                        timeZone: "Asia/Kolkata",
-                      });
-                      return `${shortMon} '${String(year).slice(-2)}`;
-                    })()}
-                  </span>
+              {/* GLOBAL card */}
+              <div className="rounded-2xl border bg-white p-5 shadow-sm">
+                <div className="mb-4">
+                  <div className="flex items-baseline gap-2">
+                    <PageBreadcrumb
+                      pageTitle="Global -"
+                      variant="page"
+                      align="left"
+                    />
+                    <span className="text-[#5EA68E] text-lg font-semibold sm:text-2xl md:text-2xl">
+                      {(() => {
+                        const { monthName, year } = getISTYearMonth();
+                        const shortMon = new Date(
+                          `${monthName} 1, ${year}`
+                        ).toLocaleString("en-US", {
+                          month: "short",
+                          timeZone: "Asia/Kolkata",
+                        });
+                        return `${shortMon} '${String(year).slice(-2)}`;
+                      })()}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-sm text-charcoal-500">
+                    Real-time data from Amazon &amp; Shopify
+                  </p>
                 </div>
 
-                <p className="mt-1 text-sm text-charcoal-500">
-                  Real-time data from Amazon
-                </p>
+                {noIntegrations ? (
+                  <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+                    <p className="font-medium">
+                      Connection needs to be established in order to view details.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                    <div className="rounded-2xl border border-[#87AD12] bg-[#87AD1226] p-5 shadow-sm">
+                      <div className="text-sm text-charcoal-500">Sales</div>
+                      <div className="mt-2 text-lg font-semibold">
+                        <ValueOrSkeleton loading={anyLoading} mode="inline">
+                          {fmtUSD(globalCardMetrics.totalSalesUSD)}
+                        </ValueOrSkeleton>
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-[#F47A00] bg-[#F47A0026] p-5 shadow-sm">
+                      <div className="text-sm text-charcoal-500">Units</div>
+                      <div className="mt-2 text-lg font-semibold">
+                        <ValueOrSkeleton loading={anyLoading} mode="inline" compact>
+                          {fmtInt(globalCardMetrics.totalUnits)}
+                        </ValueOrSkeleton>
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-[#2CA9E0] bg-[#2CA9E026] p-5 shadow-sm">
+                      <div className="text-sm text-charcoal-500">ASP</div>
+                      <div className="mt-2 text-lg font-semibold">
+                        <ValueOrSkeleton loading={anyLoading} mode="inline" compact>
+                          {fmtUSD(globalCardMetrics.aspUSD)}
+                        </ValueOrSkeleton>
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-[#AB64B5] bg-[#AB64B526] p-5 shadow-sm">
+                      <div className="text-sm text-charcoal-500">Profit</div>
+                      <div className="mt-2 text-lg font-semibold">
+                        <ValueOrSkeleton loading={anyLoading} mode="inline" compact>
+                          {fmtUSD(globalCardMetrics.profitUSD)}
+                        </ValueOrSkeleton>
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-[#00627B] bg-[#00627B26] p-5 shadow-sm">
+                      <div className="text-sm text-charcoal-500">Profit %</div>
+                      <div className="mt-2 text-lg font-semibold">
+                        <ValueOrSkeleton loading={anyLoading} mode="inline" compact>
+                          {fmtPct(globalCardMetrics.profitPct)}
+                        </ValueOrSkeleton>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
-              
-              {amazonTabs.length > 0 && (
-                <div className="inline-flex w-full justify-between rounded-lg border bg-gray-50 p-1 text-xs sm:w-auto sm:justify-start">
-                  {amazonTabs.map((key) => (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => setAmazonRegion(key)}
-                      className={`min-w-[60px] rounded-lg px-3 py-1 text-center ${
-                        key === amazonRegion
-                          ? "bg-[#C7E6D7] text-gray-900 shadow-sm"
-                          : "text-gray-600 hover:text-gray-900"
-                      }`}
-                    >
-                      {key}
-                    </button>
-                  ))}
+              {/* AMAZON card */}
+              <div className="rounded-2xl border bg-white p-5 shadow-sm">
+                <div className="mb-4 flex flex-row gap-4 items-start md:items-start md:justify-between">
+                  {/* Left: title + subtitle */}
+                  <div className="flex flex-col flex-1 min-w-0">
+                    <div className="flex flex-wrap items-baseline gap-2">
+                      <PageBreadcrumb
+                        pageTitle="Amazon -"
+                        variant="page"
+                        align="left"
+                      />
+                      <span className="text-[#5EA68E] text-lg font-semibold sm:text-2xl md:text-2xl">
+                        {(() => {
+                          const { monthName, year } = getISTYearMonth();
+                          const shortMon = new Date(
+                            `${monthName} 1, ${year}`
+                          ).toLocaleString("en-US", {
+                            month: "short",
+                            timeZone: "Asia/Kolkata",
+                          });
+                          return `${shortMon} '${String(year).slice(-2)}`;
+                        })()}
+                      </span>
+                    </div>
+
+                    <p className="mt-1 text-sm text-charcoal-500">
+                      Real-time data from Amazon
+                    </p>
+                  </div>
+
+                  {/* Right: region tabs */}
+                  {amazonTabs.length > 0 && (
+                    <div className="mt-1 md:mt-0 self-start md:self-center">
+                      <div className="inline-flex flex-wrap gap-1 rounded-lg border bg-gray-50 p-1 text-xs">
+                        {amazonTabs.map((key) => (
+                          <button
+                            key={key}
+                            type="button"
+                            onClick={() => setAmazonRegion(key)}
+                            className={`min-w-[60px] rounded-lg px-3 py-1 text-center ${key === amazonRegion
+                              ? "bg-[#C7E6D7] text-gray-900 shadow-sm"
+                              : "text-gray-600 hover:text-gray-900"
+                              }`}
+                          >
+                            {key}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
+
+
+                {noIntegrations ? (
+                  <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+                    <p className="font-medium">
+                      Connection needs to be established in order to view details.
+                    </p>
+                  </div>
+                ) : !amazonIntegrated ? (
+                  <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+                    <p className="font-medium">
+                      Connection needs to be established in order to view Amazon details.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                    <div className="rounded-2xl border border-[#87AD12] bg-[#87AD1226] p-5 shadow-sm">
+                      <div className="text-sm text-charcoal-500">Sales</div>
+                      <div className="mt-2 text-lg font-semibold">
+                        <ValueOrSkeleton loading={loading} mode="inline">
+                          {fmtGBP(uk.netSalesGBP)}
+                        </ValueOrSkeleton>
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-[#F47A00] bg-[#F47A0026] p-5 shadow-sm">
+                      <div className="text-sm text-charcoal-500">Units</div>
+                      <div className="mt-2 text-lg font-semibold">
+                        <ValueOrSkeleton loading={loading} mode="inline" compact>
+                          {fmtInt(cms?.total_quantity ?? 0)}
+                        </ValueOrSkeleton>
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-[#2CA9E0] bg-[#2CA9E026] p-5 shadow-sm">
+                      <div className="text-sm text-charcoal-500">ASP</div>
+                      <div className="mt-2 text-lg font-semibold">
+                        <ValueOrSkeleton loading={loading} mode="inline" compact>
+                          {fmtGBP(uk.aspGBP)}
+                        </ValueOrSkeleton>
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-[#AB64B5] bg-[#AB64B526] p-5 shadow-sm">
+                      <div className="text-sm text-charcoal-500">Profit</div>
+                      <div className="mt-2 text-lg font-semibold">
+                        <ValueOrSkeleton loading={loading} mode="inline" compact>
+                          {fmtGBP(uk.profitGBP)}
+                        </ValueOrSkeleton>
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-[#00627B] bg-[#00627B26] p-5 shadow-sm">
+                      <div className="text-sm text-charcoal-500">Profit %</div>
+                      <div className="mt-2 text-lg font-semibold">
+                        <ValueOrSkeleton loading={loading} mode="inline" compact>
+                          {fmtPct(uk.profitPctGBP)}
+                        </ValueOrSkeleton>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+
+
+              {/* SHOPIFY card */}
+              <div className="rounded-2xl border bg-white p-5 shadow-sm">
+                <div className="mb-4 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                  <div className="flex flex-col">
+                    <div className="flex items-baseline gap-2">
+                      <PageBreadcrumb
+                        pageTitle="Shopify -"
+                        variant="page"
+                        align="left"
+                        textSize="2xl"
+                      />
+                      <span className="text-2xl font-semibold text-[#5EA68E]">
+                        {(() => {
+                          const { monthName, year } = getISTYearMonth();
+                          const shortMon = new Date(
+                            `${monthName} 1, ${year}`
+                          ).toLocaleString("en-US", {
+                            month: "short",
+                            timeZone: "Asia/Kolkata",
+                          });
+                          return `${shortMon} '${String(year).slice(-2)}`;
+                        })()}
+                      </span>
+                    </div>
+
+                    <p className="mt-1 text-sm text-charcoal-500">
+                      Real-time data from Shopify
+                    </p>
+                  </div>
+
+
+                </div>
+
+                {shopifyNotConnected ? (
+                  <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+                    <p className="font-medium">
+                      Connection needs to be established in order to view Shopify
+                      details.
+                    </p>
+                  </div>
+                ) : shopifyLoading ? (
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                    {[...Array(5)].map((_, i) => (
+                      <div
+                        key={i}
+                        className="rounded-2xl border bg-white p-5 shadow-sm"
+                      >
+                        <div className="h-3 w-24 animate-pulse rounded bg-gray-200" />
+                        <div className="mt-2 h-7 w-28 animate-pulse rounded bg-gray-200" />
+                      </div>
+                    ))}
+                  </div>
+                ) : shopify ? (
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+
+
+                    <div className="rounded-2xl border border-[#F47A00] bg-[#F47A0026] p-5 shadow-sm">
+                      <div className="text-sm text-charcoal-500">Total Sales</div>
+                      <div className="mt-1 text-lg font-bold tracking-tight text-gray-900">
+                        <ValueOrSkeleton loading={shopifyLoading} mode="inline">
+                          {fmtShopify(toNumberSafe(shopify?.net_sales ?? 0))}
+                        </ValueOrSkeleton>
+                      </div>
+                    </div>
+
+
+                    <div className="rounded-2xl border border-[#2CA9E0] bg-[#2CA9E026] p-5 shadow-sm">
+                      <div className="text-sm text-charcoal-500">Units</div>
+                      <div className="mt-1 text-lg font-semibold text-gray-900">
+                        <ValueOrSkeleton
+                          loading={shopifyLoading}
+                          mode="inline"
+                          compact
+                        >
+                          {shopify?.total_orders}
+                        </ValueOrSkeleton>
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-[#87AD12] bg-[#87AD1226] p-5 shadow-sm">
+                      <div className="text-sm text-gray-500">ASP</div>
+                      <div className="mt-1 text-lg font-semibold text-gray-900">
+                        <ValueOrSkeleton
+                          loading={shopifyLoading}
+                          mode="inline"
+                          compact
+                        >
+                          {(() => {
+                            const units = toNumberSafe(
+                              shopify?.total_orders ?? 0
+                            );
+                            const net = toNumberSafe(shopify?.net_sales ?? 0);
+                            if (units <= 0) return "—";
+                            return fmtShopify(net / units);
+                          })()}
+                        </ValueOrSkeleton>
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-[#AB64B5] bg-[#AB64B526] p-5 shadow-sm">
+                      <div className="text-sm text-charcoal-500">Sessions</div>
+                      <div className="mt-1 text-lg font-semibold text-gray-900">
+                        —
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-[#00627B] bg-[#00627B26] p-5 shadow-sm">
+                      <div className="text-sm text-gray-500">Conversion %</div>
+                      <div className="mt-1 text-lg font-semibold text-gray-900">
+                        —
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-2 text-sm text-gray-500">
+                    No Shopify data for the current month.
+                  </div>
+                )}
+              </div>
             </div>
 
-            {unauthorized ? (
-              <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-                <p className="font-medium">
-                  Connection needs to be established in order to view Amazon
-                  details.
-                </p>
+            <aside
+              className={`col-span-12 lg:col-span-4 order-1 lg:order-2 ${!noIntegrations ? "flex" : ""
+                }`}
+            >
+
+              <div
+                className={`lg:sticky lg:top-6 w-full ${!noIntegrations ? "flex-1" : ""
+                  }`}
+              >
+                <SalesTargetCard regions={regions} defaultRegion="Global" />
               </div>
-            ) : (
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
-                <div className="rounded-2xl border border-[#87AD12] bg-[#87AD1226] p-5 shadow-sm">
-                  <div className="text-sm text-charcoal-500">Sales</div>
-                  <div className="mt-2 text-lg font-semibold">
-                    <ValueOrSkeleton loading={loading} mode="inline">
-                      {fmtGBP(uk.netSalesGBP)}
-                    </ValueOrSkeleton>
-                  </div>
+            </aside>
+          </div>
+
+          {amazonIntegrated && (
+            <div className="mt-8 rounded-2xl border bg-[#D9D9D933] p-5 shadow-sm">
+              <div className="mb-3 flex items-center justify-between">
+                <div className="text-sm text-gray-500">
+                  <PageBreadcrumb pageTitle="Amazon" align="left" textSize="2xl" variant="page" />
+                  <p className="text-charcoal-500">Real-time data from Amazon Global </p>
                 </div>
 
-                <div className="rounded-2xl border border-[#F47A00] bg-[#F47A0026] p-5 shadow-sm">
-                  <div className="text-sm text-charcoal-500">Units</div>
-                  <div className="mt-2 text-lg font-semibold">
-                    <ValueOrSkeleton loading={loading} mode="inline" compact>
-                      {fmtInt(cms?.total_quantity ?? 0)}
-                    </ValueOrSkeleton>
-                  </div>
-                </div>
-
-                <div className="rounded-2xl border border-[#2CA9E0] bg-[#2CA9E026] p-5 shadow-sm">
-                  <div className="text-sm text-charcoal-500">ASP</div>
-                  <div className="mt-2 text-lg font-semibold">
-                    <ValueOrSkeleton loading={loading} mode="inline" compact>
-                      {fmtGBP(uk.aspGBP)}
-                    </ValueOrSkeleton>
-                  </div>
-                </div>
-
-                <div className="rounded-2xl border border-[#AB64B5] bg-[#AB64B526] p-5 shadow-sm">
-                  <div className="text-sm text-charcoal-500">Profit</div>
-                  <div className="mt-2 text-lg font-semibold">
-                    <ValueOrSkeleton loading={loading} mode="inline" compact>
-                      {fmtGBP(uk.profitGBP)}
-                    </ValueOrSkeleton>
-                  </div>
-                </div>
-
-                <div className="rounded-2xl border border-[#00627B] bg-[#00627B26] p-5 shadow-sm">
-                  <div className="text-sm text-charcoal-500">Profit %</div>
-                  <div className="mt-2 text-lg font-semibold">
-                    <ValueOrSkeleton loading={loading} mode="inline" compact>
-                      {fmtPct(uk.profitPctGBP)}
-                    </ValueOrSkeleton>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div> */}
-
-
-          {/* AMAZON card */}
-          <div className="rounded-2xl border bg-white p-5 shadow-sm">
-            <div className="mb-4 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-              <div className="flex flex-col">
-                <div className="flex flex-wrap items-baseline gap-2">
-                  <PageBreadcrumb
-                    pageTitle="Amazon -"
-                    variant="page"
-                    align="left"
-                  />
-                  <span className="text-[#5EA68E] text-lg font-semibold sm:text-2xl md:text-2xl">
-                    {(() => {
-                      const { monthName, year } = getISTYearMonth();
-                      const shortMon = new Date(
-                        `${monthName} 1, ${year}`
-                      ).toLocaleString("en-US", {
-                        month: "short",
-                        timeZone: "Asia/Kolkata",
-                      });
-                      return `${shortMon} '${String(year).slice(-2)}`;
-                    })()}
-                  </span>
-                </div>
-
-                <p className="mt-1 text-sm text-charcoal-500">
-                  Real-time data from Amazon
-                </p>
-              </div>
-
-              {amazonTabs.length > 0 && (
-                <div className="inline-flex w-full justify-between rounded-lg border bg-gray-50 p-1 text-xs sm:w-auto sm:justify-start">
-                  {amazonTabs.map((key) => (
+                {/* 🔹 Global + integrated countries toggle */}
+                <div className="inline-flex rounded-lg border bg-gray-50 p-1 text-xs">
+                  {graphRegions.map((key) => (
                     <button
                       key={key}
                       type="button"
-                      onClick={() => setAmazonRegion(key)}
-                      className={`min-w-[60px] rounded-lg px-3 py-1 text-center ${key === amazonRegion
-                          ? "bg-[#C7E6D7] text-gray-900 shadow-sm"
-                          : "text-gray-600 hover:text-gray-900"
+                      onClick={() => setGraphRegion(key)}
+                      className={`px-3 py-1 rounded-lg ${key === graphRegion
+                        ? "bg-[#C7E6D7] text-gray-900 shadow-sm"
+                        : "text-gray-600 hover:text-gray-900"
                         }`}
                     >
                       {key}
                     </button>
                   ))}
                 </div>
-              )}
+              </div>
+
+              <SimpleBarChart items={plItems} />
             </div>
+          )}
 
-            {noIntegrations ? (
-              // neither Amazon nor Shopify connected
-              <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-                <p className="font-medium">
-                  Connection needs to be established in order to view details.
-                </p>
-              </div>
-            ) : !amazonIntegrated ? (
-              // Shopify may be connected, but Amazon is not
-              <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-                <p className="font-medium">
-                  Connection needs to be established in order to view Amazon details.
-                </p>
-              </div>
-            ) : (
-              // Amazon integrated → show metrics
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
-                <div className="rounded-2xl border border-[#87AD12] bg-[#87AD1226] p-5 shadow-sm">
-                  <div className="text-sm text-charcoal-500">Sales</div>
-                  <div className="mt-2 text-lg font-semibold">
-                    <ValueOrSkeleton loading={loading} mode="inline">
-                      {fmtGBP(uk.netSalesGBP)}
-                    </ValueOrSkeleton>
-                  </div>
-                </div>
-
-                <div className="rounded-2xl border border-[#F47A00] bg-[#F47A0026] p-5 shadow-sm">
-                  <div className="text-sm text-charcoal-500">Units</div>
-                  <div className="mt-2 text-lg font-semibold">
-                    <ValueOrSkeleton loading={loading} mode="inline" compact>
-                      {fmtInt(cms?.total_quantity ?? 0)}
-                    </ValueOrSkeleton>
-                  </div>
-                </div>
-
-                <div className="rounded-2xl border border-[#2CA9E0] bg-[#2CA9E026] p-5 shadow-sm">
-                  <div className="text-sm text-charcoal-500">ASP</div>
-                  <div className="mt-2 text-lg font-semibold">
-                    <ValueOrSkeleton loading={loading} mode="inline" compact>
-                      {fmtGBP(uk.aspGBP)}
-                    </ValueOrSkeleton>
-                  </div>
-                </div>
-
-                <div className="rounded-2xl border border-[#AB64B5] bg-[#AB64B526] p-5 shadow-sm">
-                  <div className="text-sm text-charcoal-500">Profit</div>
-                  <div className="mt-2 text-lg font-semibold">
-                    <ValueOrSkeleton loading={loading} mode="inline" compact>
-                      {fmtGBP(uk.profitGBP)}
-                    </ValueOrSkeleton>
-                  </div>
-                </div>
-
-                <div className="rounded-2xl border border-[#00627B] bg-[#00627B26] p-5 shadow-sm">
-                  <div className="text-sm text-charcoal-500">Profit %</div>
-                  <div className="mt-2 text-lg font-semibold">
-                    <ValueOrSkeleton loading={loading} mode="inline" compact>
-                      {fmtPct(uk.profitPctGBP)}
-                    </ValueOrSkeleton>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-
-
-          {/* SHOPIFY card */}
-          <div className="rounded-2xl border bg-white p-5 shadow-sm">
-            <div>
-              <div className="flex items-baseline gap-2">
-                <PageBreadcrumb
-                  pageTitle="Shopify -"
-                  variant="page"
-                  align="left"
-                  textSize="2xl"
-                />
-                <span className="text-2xl font-semibold text-[#5EA68E]">
-                  {(() => {
-                    const { monthName, year } = getISTYearMonth();
-                    const shortMon = new Date(
-                      `${monthName} 1, ${year}`
-                    ).toLocaleString("en-US", {
-                      month: "short",
-                      timeZone: "Asia/Kolkata",
-                    });
-                    return `${shortMon} '${String(year).slice(-2)}`;
-                  })()}
-                </span>
-              </div>
-
-              <p className="text-sm text-charcoal-500">
-                Real-time data from Shopify
-              </p>
-            </div>
-
-            {shopifyNotConnected ? (
-              <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-                <p className="font-medium">
-                  Connection needs to be established in order to view Shopify
-                  details.
-                </p>
-              </div>
-            ) : shopifyLoading ? (
-              <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-                {[...Array(5)].map((_, i) => (
-                  <div
-                    key={i}
-                    className="rounded-2xl border bg-white p-5 shadow-sm"
-                  >
-                    <div className="h-3 w-24 animate-pulse rounded bg-gray-200" />
-                    <div className="mt-2 h-7 w-28 animate-pulse rounded bg-gray-200" />
-                  </div>
-                ))}
-              </div>
-            ) : shopify ? (
-              <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-               
-
-                <div className="rounded-2xl border border-[#F47A00] bg-[#F47A0026] p-5 shadow-sm">
-                  <div className="text-sm text-charcoal-500">Total Sales</div>
-                  <div className="mt-1 text-lg font-bold tracking-tight text-gray-900">
-                    <ValueOrSkeleton loading={shopifyLoading} mode="inline">
-                      {fmtShopify(toNumberSafe(shopify?.net_sales ?? 0))}
-                    </ValueOrSkeleton>
-                  </div>
-                </div>
-
-                 
-                 <div className="rounded-2xl border border-[#2CA9E0] bg-[#2CA9E026] p-5 shadow-sm">
-                  <div className="text-sm text-charcoal-500">Units</div>
-                  <div className="mt-1 text-lg font-semibold text-gray-900">
-                    <ValueOrSkeleton
-                      loading={shopifyLoading}
-                      mode="inline"
-                      compact
-                    >
-                      {shopify?.total_orders}
-                    </ValueOrSkeleton>
-                  </div>
-                </div>
-
-                <div className="rounded-2xl border border-[#87AD12] bg-[#87AD1226] p-5 shadow-sm">
-                  <div className="text-sm text-gray-500">ASP</div>
-                  <div className="mt-1 text-lg font-semibold text-gray-900">
-                    <ValueOrSkeleton
-                      loading={shopifyLoading}
-                      mode="inline"
-                      compact
-                    >
-                      {(() => {
-                        const units = toNumberSafe(
-                          shopify?.total_orders ?? 0
-                        );
-                        const net = toNumberSafe(shopify?.net_sales ?? 0);
-                        if (units <= 0) return "—";
-                        return fmtShopify(net / units);
-                      })()}
-                    </ValueOrSkeleton>
-                  </div>
-                </div>
-
-                <div className="rounded-2xl border border-[#AB64B5] bg-[#AB64B526] p-5 shadow-sm">
-                  <div className="text-sm text-charcoal-500">Sessions</div>
-                  <div className="mt-1 text-lg font-semibold text-gray-900">
-                    —
-                  </div>
-                </div>
-
-                <div className="rounded-2xl border border-[#00627B] bg-[#00627B26] p-5 shadow-sm">
-                  <div className="text-sm text-gray-500">Conversion %</div>
-                  <div className="mt-1 text-lg font-semibold text-gray-900">
-                    —
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="mt-2 text-sm text-gray-500">
-                No Shopify data for the current month.
-              </div>
-            )}
-          </div>
         </div>
-
-        {/* RIGHT 4: Sales Target card */}
-        <aside className="col-span-12 lg:col-span-4">
-          <div className="lg:sticky lg:top-6">
-            <SalesTargetCard regions={regions} defaultRegion="Global" />
-          </div>
-        </aside>
       </div>
-
-      {/* FULL-WIDTH GRAPH (single, with Global + country toggle) */}
-      {/* <div className="mt-8 rounded-2xl border bg-white p-5 shadow-sm">
-        <div className="mb-3 flex items-center justify-between">
-          <div className="text-sm text-gray-500">
-            Amazon / Global — P&amp;L Breakdown (Sales, Fees, COGS, Ads, Other, Profit)
-          </div>
-
-         
-          <div className="inline-flex rounded-lg border bg-gray-50 p-1 text-xs">
-            {graphRegions.map((key) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => setGraphRegion(key)}
-                className={`px-3 py-1 rounded-lg ${key === graphRegion
-                  ? "bg-[#C7E6D7] text-gray-900 shadow-sm"
-                  : "text-gray-600 hover:text-gray-900"
-                  }`}
-              >
-                {key}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <SimpleBarChart items={plItems} />
-      </div> */}
-
-      {amazonIntegrated && (
-        <div className="mt-8 rounded-2xl border bg-white p-5 shadow-sm">
-          <div className="mb-3 flex items-center justify-between">
-            <div className="text-sm text-gray-500">
-              Amazon / Global — P&amp;L Breakdown (Sales, Fees, COGS, Ads, Other, Profit)
-            </div>
-
-            {/* 🔹 Global + integrated countries toggle */}
-            <div className="inline-flex rounded-lg border bg-gray-50 p-1 text-xs">
-              {graphRegions.map((key) => (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => setGraphRegion(key)}
-                  className={`px-3 py-1 rounded-lg ${key === graphRegion
-                      ? "bg-[#C7E6D7] text-gray-900 shadow-sm"
-                      : "text-gray-600 hover:text-gray-900"
-                    }`}
-                >
-                  {key}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <SimpleBarChart items={plItems} />
-        </div>
-      )}
-
-
     </div>
   );
 }

@@ -335,28 +335,28 @@ useEffect(() => {
       </h1>                  
 
         <div className="overflow-x-auto  bg-white mb-6">
-          <table className="min-w-[780px] sm:min-w-full border border-gray-200 font-lato">
+          <table className="min-w-[780px] sm:min-w-full border border-[#414042] font-lato">
             <thead className="bg-[#5EA68E] text-[#F8EDCE]">
               <tr>
-                <th className="py-3 xl:px-4 text-center font-medium border border-green-700 text-sm ">
+                <th className="py-3 xl:px-4 text-center font-medium border border-[#414042] text-sm ">
                   S. No.
                 </th>
-                <th className="py-3 xl:px-4 text-center font-medium border border-green-700 text-sm">
+                <th className="py-3 xl:px-4 text-center font-medium border border-[#414042] text-sm">
                   Product Name
                 </th>
-                <th className="py-3 xl:px-4 text-center font-medium border border-green-700 text-sm">
+                <th className="py-3 xl:px-4 text-center font-medium border border-[#414042] text-sm">
                   SKU
                 </th>
-                <th className="py-3 xl:px-4 text-center font-medium border border-green-700 text-sm">
+                <th className="py-3 xl:px-4 text-center font-medium border border-[#414042] text-sm">
                   Last Month Sales (Units)
                 </th>
-                <th className="py-3 xl:px-4 text-center font-medium border border-green-700 text-sm">
+                <th className="py-3 xl:px-4 text-center font-medium border border-[#414042] text-sm">
                   Peak Sale (last 3 mo)
                 </th>
-                <th className="py-3 xl:px-4 text-center font-medium border border-green-700 text-sm">
+                <th className="py-3 xl:px-4 text-center font-medium border border-[#414042] text-sm">
                   Last Month Growth (%)
                 </th>
-                <th className="py-3 xl:px-4 text-center font-medium border border-green-700 text-sm">
+                <th className="py-3 xl:px-4 text-center font-medium border border-[#414042] text-sm">
                   Growth (%)
                 </th>
               </tr>
@@ -366,31 +366,31 @@ useEffect(() => {
               {tableData.map((row, i) => (
                 <tr
                   key={row.sku}
-                  className={i % 2 === 0 ? 'bg-white' : 'bg-green-50'}
+                  className={i % 2 === 0 ? 'bg-white' : 'bg-white'}
                 >
-                  <td className="py-1 xl:px-4 px-2 text-center border-r border-gray-200 text-sm">
+                  <td className="py-1 xl:px-4 px-2 text-center border border-[#414042] text-sm">
                     {i + 1}
                   </td>
-                  <td className="py-1 xl:px-4 px-2 text-gray-800 border-r border-gray-200 text-left text-sm">
+                  <td className="py-1 xl:px-4 px-2 text-gray-800 border border-[#414042] text-left text-sm">
                     {row.productName}
                   </td>
-                  <td className="py-1 xl:px-4 px-2 text-center border-r border-gray-200 text-sm">
+                  <td className="py-1 xl:px-4 px-2 text-center border border-[#414042] text-sm">
                     {row.sku}
                   </td>
-                  <td className="py-1 xl:px-4 px-2 text-center border-r border-gray-200 text-sm">
+                  <td className="py-1 xl:px-4 px-2 text-center border border-[#414042] text-sm">
                     {row.lastMonthSales}
                   </td>
-                  <td className="py-1 xl:px-4 px-2 text-center border-r border-gray-200 text-sm">
+                  <td className="py-1 xl:px-4 px-2 text-center border border-[#414042] text-sm">
                     {row.peakLast3}
                   </td>
-                  <td className="py-1 xl:px-4 px-2 text-center border-r border-gray-200 text-sm">
+                  <td className="py-1 xl:px-4 px-2 text-center border border-[#414042] text-sm ">
                     {row.lastMonthGrowth}%
                   </td>
-                  <td className="py-1 xl:px-4 px-2 text-center">
-                    <div className="flex justify-center items-center gap-1">
+                  <td className="py-1 xl:px-4 px-2 text-center border border-[#414042] ">
+                    <div className="flex justify-center items-center gap-1 ">
                       <input
                         type="number"
-                        className="w-20 border border-gray-300 rounded text-center py-1 focus:outline-none focus:ring-2 focus:ring-green-500 text-sm font-lato"
+                        className="w-20  rounded text-center py-1  text-sm font-lato bg-[#D9D9D966]"
                         value={row.userInputGrowth}
                         onChange={(e) => {
                           const copy = [...tableData];
@@ -412,16 +412,16 @@ useEffect(() => {
               <tr className="bg-gray-100 font-semibold text-gray-800">
                 <td
                   colSpan={3}
-                  className="py-2 px-4 text-left border border-gray-200"
+                  className="py-2 px-4 text-left border border-[#414042]"
                 >
                   Total
                 </td>
-                <td className="py-2 px-4 text-center border border-gray-200">
+                <td className="py-2 px-4 text-center border border-[#414042]">
                   {totalLastMonthSales}
                 </td>
                 <td
                   colSpan={3}
-                  className="py-2 px-4 border border-gray-200"
+                  className="py-2 px-4 border border-[#414042]"
                 ></td>
               </tr>
 
@@ -482,7 +482,11 @@ useEffect(() => {
         showCloseButton
         className="max-w-4xl w-full mx-auto p-0"
       >
-        <FileUploadForm />
+        <FileUploadForm initialCountry={''} onClose={function (): void {
+          throw new Error('Function not implemented.');
+        } } onComplete={function (): void {
+          throw new Error('Function not implemented.');
+        } } />
       </Modal>
     </div>
   );

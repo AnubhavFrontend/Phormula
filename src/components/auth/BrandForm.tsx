@@ -388,15 +388,12 @@ export default function BrandForm() {
     <div className="flex flex-col flex-1 lg:w-1/2 w-full">
       
 
-      <div className="flex flex-col justify-center flex-1 w-full max-w-md mx-auto">
+      <div className="flex flex-col justify-center flex-1 w-full max-w-xl mx-auto">
         <div>
           <div className="mb-5 sm:mb-8">
             <h1 className="mb-2 font-semibold text-[#414042] text-title-sm dark:text-white/90 sm:text-title-md">
               What is your <span className="text-[#5EA68E]">Company</span> and <span className="text-[#5EA68E]">Brand</span> name?
             </h1>
-            <p className="text-sm text-charcoal-500 dark:text-gray-400">
-              Tell us your company and brand names.
-            </p>
           </div>
 
           <form onSubmit={onSubmit} className="space-y-5">
@@ -406,7 +403,7 @@ export default function BrandForm() {
               </label>
               <input
                 type="text"
-                className="h-11 w-full rounded-lg border border-charcoal-500 bg-white px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+                className="h-12 w-full rounded-lg border border-charcoal-500 bg-white px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
                 placeholder="Acme Corp"
                 value={companyName}
                 onChange={(e) => setCompanyName(e.target.value)}
@@ -421,7 +418,7 @@ export default function BrandForm() {
               </label>
               <input
                 type="text"
-                className="h-11 w-full rounded-lg border border-charcoal-500 bg-white px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+                className="h-12 w-full rounded-lg border border-charcoal-500 bg-white px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
                 placeholder="Acme"
                 value={brandName}
                 onChange={(e) => setBrandName(e.target.value)}
@@ -435,35 +432,23 @@ export default function BrandForm() {
               </p>
             )}
 
-            <div className="mt-6 flex items-center justify-end gap-3">
-              <Button
-                type="button"
-                onClick={onBack}
-                variant="outline"
-              >
-                Back
-              </Button>
-              <Button
-                type="submit"
-                disabled={loading}
-                variant="primary"
-              >
-                {loading ? "Please wait…" : "Next"}
-              </Button>
-            </div>
+            <div className="mt-10 flex items-center justify-end gap-3 ">
+    <button
+      type="button"
+      onClick={onBack}
+      className="inline-flex justify-center rounded-lg bg-gray-200 px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-300 dark:bg-white/10 dark:text-gray-200 dark:hover:bg-white/15"
+    >
+      Back
+    </button>
+    <button
+      type="submit"
+      disabled={loading}
+      className="inline-flex justify-center rounded-lg bg-[#2c3854] px-4 py-2 text-sm font-semibold text-[#f8edcf] hover:opacity-95 disabled:opacity-60"
+    >
+      {loading ? "Please wait…" : "Next"}
+    </button>
+  </div>
           </form>
-
-          <div className="mt-5">
-            <p className="text-sm font-normal text-center text-[#414042]  sm:text-start">
-              Want to change your countries?{" "}
-              <Link
-                href="/choose-country?onboard=1"
-                className="text-[#000000]"
-              >
-                Go back to Choose Country
-              </Link>
-            </p>
-          </div>
         </div>
       </div>
     </div>

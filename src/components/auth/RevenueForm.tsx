@@ -226,73 +226,90 @@ const onSubmit = (e: React.FormEvent) => {
     <div className="flex flex-col flex-1 lg:w-1/2 w-full">
 
       {/* Form column */}
-      <div className="flex flex-col justify-center flex-1 w-full max-w-md mx-auto">
-        <div>
-          <div className="mb-5 sm:mb-8">
+      <div className="flex flex-col justify-center flex-1 w-full max-w-lg mx-auto">
+        <div className="flex flex-col gap-14">
+          <div className="">
             <h1 className="mb-2 font-semibold text-gray-800 text-title-sm dark:text-white/90 sm:text-title-md">
-              Estimated Revenue
+            Select  <span className="text-[#5EA68E]">Estimated Revenue</span> achieved in the past 12 Months
             </h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Choose your estimated revenue for next year.
-            </p>
           </div>
 
-          <form onSubmit={onSubmit} className="space-y-4">
-            {REVENUE_OPTIONS.map((label) => (
-              <label
-                key={label}
-                className={`flex items-center justify-between rounded-lg border px-4 py-3 cursor-pointer transition ${
-                  selectedRevenue === label
-                    ? "border-[#48A887] bg-[#f5faff]"
-                    : "border-gray-300 bg-white dark:bg-gray-900"
-                }`}
-              >
-                <span className="text-base text-[#414042] dark:text-gray-200">{label}</span>
-                <input
-                  type="radio"
-                  name="revenue"
-                  className="h-5 w-5 accent-[#48A887]"
-                  checked={selectedRevenue === label}
-                  onChange={() => setSelectedRevenue(label)}
-                />
-              </label>
-            ))}
+         <form onSubmit={onSubmit} className="space-y-4">
+  {REVENUE_OPTIONS.map((label) => {
+    const checked = selectedRevenue === label;
 
-            {error && (
-              <p className="text-sm text-red-500" aria-live="polite">
-                {error}
-              </p>
-            )}
+    return (
+      <label
+        key={label}
+        className={`flex items-center justify-between rounded-lg border px-4 py-3 cursor-pointer transition ${
+          checked
+            ? "border-[#48A887] bg-[#f5faff]"
+            : "border-gray-300 bg-white dark:bg-gray-900"
+        }`}
+      >
+        <span className="text-base text-[#414042] dark:text-gray-200">
+          {label}
+        </span>
 
-            <div className="mt-6 flex items-center justify-end gap-3">
-              <button
-                type="button"
-                onClick={onBack}
-                className="inline-flex justify-center rounded-lg bg-gray-200 px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-300 dark:bg-white/10 dark:text-gray-200 dark:hover:bg-white/15"
-              >
-                Back
-              </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className="inline-flex justify-center rounded-lg bg-[#2c3854] px-4 py-2 text-sm font-semibold text-[#f8edcf] hover:opacity-95 disabled:opacity-60"
-              >
-                {loading ? "Please wait…" : "Submit"}
-              </button>
-            </div>
-          </form>
+        {/* Hidden checkbox (single-select behavior controlled by your state) */}
+        <input
+          type="checkbox"
+          checked={checked}
+          onChange={() => setSelectedRevenue(checked ? "" : label)}
+          className="sr-only peer"
+        />
 
-          <div className="mt-5">
-            <p className="text-sm font-normal text-center text-gray-700 dark:text-gray-400 sm:text-start">
-              Want to update brand details?{" "}
-              <Link
-                href="/brand?onboard=1"
-                className="text-brand-500 hover:text-brand-600 dark:text-brand-400"
-              >
-                Go back to Company & Brand
-              </Link>
-            </p>
-          </div>
+        {/* Custom checkbox */}
+        <span
+          className="
+            h-5 w-5 flex items-center justify-center rounded border border-gray-400
+            peer-checked:bg-[#48A887]
+            peer-checked:border-[#48A887]
+          "
+        >
+          {checked && (
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#f8edce"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-4 w-4"
+            >
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          )}
+        </span>
+      </label>
+    );
+  })}
+
+  {error && (
+    <p className="text-sm text-red-500" aria-live="polite">
+      {error}
+    </p>
+  )}
+
+  <div className="mt-10 flex items-center justify-end gap-3 ">
+    <button
+      type="button"
+      onClick={onBack}
+      className="inline-flex justify-center rounded-lg bg-gray-200 px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-300 dark:bg-white/10 dark:text-gray-200 dark:hover:bg-white/15"
+    >
+      Back
+    </button>
+    <button
+      type="submit"
+      disabled={loading}
+      className="inline-flex justify-center rounded-lg bg-[#2c3854] px-4 py-2 text-sm font-semibold text-[#f8edcf] hover:opacity-95 disabled:opacity-60"
+    >
+      {loading ? "Please wait…" : "Submit"}
+    </button>
+  </div>
+</form>
+
         </div>
       </div>
     </div>

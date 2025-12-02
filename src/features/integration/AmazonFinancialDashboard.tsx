@@ -812,7 +812,7 @@ const AmazonFinancialDashboard: React.FC<Props> = ({ region, country, onClose })
   const [busy, setBusy] = useState(false);
 
   // 1 / 3 / 6 / 12 months
-  const [selectedPeriod, setSelectedPeriod] = useState<number | null>(null);
+  const [selectedPeriod, setSelectedPeriod] = useState<number | null>(12);
 
   const daysBetween = (a: Date, b: Date) => Math.floor((+a - +b) / (24 * 3600 * 1000));
   const isOlderThan90Days = (year: number, month01: string) => {

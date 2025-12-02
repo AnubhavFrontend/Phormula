@@ -147,30 +147,28 @@ export default function FeepreviewUpload({ country: initialCountry, onClose }: F
             required
             className="block w-full cursor-pointer rounded-lg border border-gray-400 bg-white text-sm file:mr-3 file:rounded-md file:border-0 file:bg-gray-100 file:px-3 file:py-2 file:text-sm file:font-medium hover:file:bg-gray-200"
           />
-          <p className="mt-2 text-xs text-gray-500">
+          <p className="mt-2 text-sm text-[#5EA68E] font-semibold">
             Amazon → Seller Central → Reports → Fulfillment → Fee Preview
-            <br />
-            Download <b>.xlsx</b> (or .xls) for current FBA inventory
+            <br /> <span className="text-[#414042]"> Download <b>.xlsx</b> (or .xls) for current FBA inventory</span>
+           
           </p>
         </div>
 
-        <div className="flex items-center justify-end gap-3 pt-2">
-            <Button
-    variant="outline"
-    size="sm"
-    onClick={onClose}
-  >
-    Cancel
-  </Button>
-
-  {/* Next Button */}
-  <Button
-    variant="primary"
-    size="sm"
-    type="submit"
-  >
-    Next
-  </Button>
+        
+   <div className=" flex items-center justify-end gap-3 ">
+    <button
+      type="button"
+      onClick={onClose}
+      className="inline-flex justify-center rounded-lg bg-gray-200 px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-300 dark:bg-white/10 dark:text-gray-200 dark:hover:bg-white/15"
+    >
+      Back
+    </button>
+    <button
+      type="submit"
+      className="inline-flex justify-center rounded-lg bg-[#2c3854] px-4 py-2 text-sm font-semibold text-[#f8edcf] hover:opacity-95 disabled:opacity-60"
+    >
+     Next
+    </button>
         </div>
       </form>
     </div>

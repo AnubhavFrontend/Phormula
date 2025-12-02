@@ -365,17 +365,34 @@ const Dropdowns: React.FC<DropdownsProps> = ({
     return `${capitalizeFirstLetter(range)} Tracking Profitability - ${selectedYear}`;
   };
 
+  
   return (
     <div ref={layoutRef} className="space-y-4 relative">
       {/* Back / Title */}
-      <div className="flex gap-2">
-        <PageBreadcrumb pageTitle="Financial Metrics -" variant="page" align="left" textSize="2xl" />
-        <span className="text-[#5EA68E] font-bold text-lg sm:text-2xl md:text-2xl">
-          {countryName?.toLowerCase() === "global"
-            ? "GLOBAL"
-            : countryName?.toUpperCase()}
-        </span>
+      <div className="flex flex-col leading-tight">
+
+        {/* TOP ROW: Title + Country */}
+        <div className="flex gap-2">
+          <PageBreadcrumb
+            pageTitle="Financial Metrics -"
+            variant="page"
+            align="left"
+            textSize="2xl"
+          />
+
+          <span className="text-green-500 font-bold text-lg sm:text-2xl md:text-2xl">
+            {countryName?.toLowerCase() === "global"
+              ? "GLOBAL"
+              : countryName?.toUpperCase()}
+          </span>
+        </div>
+
+        {/* SUBTITLE (same as image) */}
+        <p className="text-sm text-charcoal-500 mt-1">
+          Track your profitability and key metrics
+        </p>
       </div>
+
 
       {/* WRAPPER: stacked layout */}
       <div className="flex flex-col gap-3 w-full">
@@ -403,9 +420,9 @@ const Dropdowns: React.FC<DropdownsProps> = ({
               variant="primary"
               size="sm"
               onClick={() => setShowUploadModal(true)}
-              className="ml-4"
+              startIcon={<AiOutlinePlus className="text-yellow-200" />}
             >
-              Upload MTD &nbsp; <AiOutlinePlus className="text-yellow-200" />
+              Upload MTD(s)
             </Button>
           )}
         </div>
@@ -653,20 +670,17 @@ const Dropdowns: React.FC<DropdownsProps> = ({
               <strong>{getTitle()}</strong>
             </p>
 
-            <div className="mb-4 text-xs text-gray-500 bg-gray-100 py-2 rounded-md">
-              Sample data shown for preview
-            </div>
-
-           {countryName !== "global" && (
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={() => setShowUploadModal(true)}
-              className="ml-4"
-            >
-              Upload MTD &nbsp; <AiOutlinePlus className="text-yellow-200" />
-            </Button>
-          )}
+            {countryName !== "global" && (
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => setShowUploadModal(true)}
+                className="ml-4"
+                startIcon={<AiOutlinePlus className="text-yellow-200" />}
+              >
+                Upload MTD(s)
+              </Button>
+            )}
           </div>
         </div>
       )}

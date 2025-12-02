@@ -13,16 +13,21 @@ export default function Loading() {
       <div className="bg-white rounded-2xl shadow-[0px_8px_24px_rgba(0,0,0,0.10)] p-6 w-full max-w-md text-center font-[Lato]">
 
         {/* Animated Logo */}
-        <Loader src="/loader/infinity-unscreen.gif" size={100} label="Loading animation" transparent />
+        <Loader
+  src="/loader/infinity-unscreen.gif"
+  size={100}
+  label="Loading animation"
+  transparent
+/>
 
         {/* Animated Dots */}
         <div className="flex justify-center my-3">
-          <span className="w-2 h-2 mx-1 rounded-full bg-[#5EA68E] animate-dot delay-0"></span>
-          <span className="w-2 h-2 mx-1 rounded-full bg-[#5EA68E] animate-dot delay-200"></span>
-          <span className="w-2 h-2 mx-1 rounded-full bg-[#5EA68E] animate-dot delay-400"></span>
-          <span className="w-2 h-2 mx-1 rounded-full bg-[#5EA68E] animate-dot delay-600"></span>
-          <span className="w-2 h-2 mx-1 rounded-full bg-[#5EA68E] animate-dot delay-800"></span>
-        </div>
+  <span className="w-2 h-2 mx-1 rounded-full bg-[#5EA68E] animate-dot delay-[0ms]"></span>
+  <span className="w-2 h-2 mx-1 rounded-full bg-[#5EA68E] animate-dot delay-[200ms]"></span>
+  <span className="w-2 h-2 mx-1 rounded-full bg-[#5EA68E] animate-dot delay-[400ms]"></span>
+  <span className="w-2 h-2 mx-1 rounded-full bg-[#5EA68E] animate-dot delay-[600ms]"></span>
+  <span className="w-2 h-2 mx-1 rounded-full bg-[#5EA68E] animate-dot delay-[800ms]"></span>
+</div>
 
         <h2 className="text-[#414042] text-2xl mt-2">Processing your data</h2>
         <p className="text-[#414042] text-sm mb-3">Analyzing financial information securely</p>

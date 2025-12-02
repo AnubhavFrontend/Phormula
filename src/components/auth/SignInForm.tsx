@@ -449,20 +449,20 @@ export default function SignInForm() {
   };
 
   return (
-    <div className="flex flex-col flex-1 lg:w-1/2 w-full">
-      <div className="flex flex-col justify-center flex-1 w-full max-w-md mx-auto">
+    <div className="flex flex-col  lg:w-1/2 w-full">
+      <div className="flex flex-col justify-center flex-1 w-full max-w-lg mx-auto">
         <div>
           <div className="mb-5 sm:mb-8">
             <h1 className="mb-2 font-semibold text-green-500 text-title-sm dark:text-white/90 sm:text-title-md">
               Welcome!
             </h1>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              Enter your email and password to sign in!
+            Please enter your login details
             </p>
           </div>
 
           <form onSubmit={onSubmit} noValidate>
-            <div className="space-y-6">
+            <div className="space-y-3">
               <div>
                 <Label>
                   Email <span className="text-error-500">*</span>{" "}
@@ -540,7 +540,7 @@ export default function SignInForm() {
             </div>
           </form>
 
-          <div className="relative py-3 sm:py-5">
+          <div className="relative ">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-charcoal-500 "></div>
             </div>

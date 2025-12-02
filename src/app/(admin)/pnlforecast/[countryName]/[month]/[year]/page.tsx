@@ -5,6 +5,8 @@ import * as XLSX from 'xlsx';
 import { useParams, useRouter } from 'next/navigation';
 import './Styles.css';
 import PnlForecastChart from '@/components/pnlforecast/PnlForecastChart';
+import { ChevronLeft, ChevronRight } from "lucide-react";
+
 
 type RowData = {
   sku?: string;
@@ -465,7 +467,7 @@ const Pnlforecast: React.FC = () => {
   };
 
   return (
-    <div>
+    <div className='flex flex-col gap-8'>
       <h2 style={{ marginBottom: 10, color: '#414042' }} className='text-2xl text-[#414042] font-bold'>
         P &amp; L Forecast -{' '}
         <span style={{ color: '#60a68e' }}>
@@ -481,21 +483,24 @@ const Pnlforecast: React.FC = () => {
       )}
 
       {data && chartData.length > 0 && (
-        <PnlForecastChart
+        <div className='border border-[#414042] rounded-sm'>
+          <PnlForecastChart
           chartData={chartData}
           currencySymbol={currencySymbol}
           selectedGraphs={selectedGraphs}
           handleCheckboxChange={handleCheckboxChange}
         />
+        </div>
+        
       )}
 {data && (
   <div>
-    <div className="overflow-x-auto">
-      <table className="w-full border-collapse">
-        <thead className="bg-[#5ea68e] text-[#f8edcf] ">
+    <div className="overflow-x-auto rounded-sm">
+      <table className="w-full border-collapse !text-sm rounded-sm">
+        <thead className="bg-[#5ea68e] text-[#f8edcf]  text-sm !rounded-sm">
           {/* Top header row with spans (matches JS version) */}
-          <tr className='!py-3'>
-            <th className="border border-black" colSpan={showamazonfee ? 3 : 2}></th>
+          <tr className='!py-3 text-sm h-10 rounded-sm'>
+            <th className="border border-black " colSpan={showamazonfee ? 3 : 2}></th>
             <th className="border border-black" colSpan={showCm1 && LosSalesUnits ? 4 : showCm1 || LosSalesUnits ? 3 : 2}>
               P&amp;L Forecast for {formatMonthYear(currentMonth, currentYear)}
             </th>
@@ -510,162 +515,268 @@ const Pnlforecast: React.FC = () => {
             </th>
           </tr>
           {/* Second header row that toggles columns same as JS */}
-          <tr>
-            <th
-              colSpan={isExpanded ? (showamazonfee ? 1 : 1) : (showamazonfee ? 3 : 2)}
-              className="border border-black bg-[#D9D9D9] text-black h-10"
-            >
-              Sno.
-            </th>
-            {isExpanded && (
-              <>
-                {showamazonfee && (
-                  <th onClick={handleAmazonFeeClick} className="border border-black bg-[#D9D9D9] text-black h-10">
-                    SKU
-                  </th>
-                )}
-                <th onClick={handleAmazonFeeClick} className="border border-black bg-[#D9D9D9] text-black h-10">
-                  <i
-                    className={`fa-solid fa-caret-left ${showamazonfee ? 'text-green-600' : 'text-gray-400'}`}
-                    aria-hidden="true"
-                  ></i>{' '}
-                  Product Name{' '}
-                  <i
-                    className={`fa-solid fa-caret-right ${!showamazonfee ? 'text-green-600' : 'text-gray-400'}`}
-                    aria-hidden="true"
-                  ></i>
-                </th>
-              </>
-            )}
-            {LosSalesUnits && (
-              <th className="border border-black bg-[#D9D9D9] text-black h-10" onClick={handleLosSalesUnitsclick}>
-                Projected Sales (Units)
-              </th>
-            )}
-            <th className="border border-black bg-[#D9D9D9] text-black h-10" onClick={handleLosSalesUnitsclick}>
-              <i
-                className={`fa-solid fa-caret-left ${LosSalesUnits ? 'text-green-600' : 'text-gray-400'}`}
-                aria-hidden="true"
-              ></i>{' '}
-              Projected Sales ({currencySymbol}){' '}
-              <i
-                className={`fa-solid fa-caret-right ${!LosSalesUnits ? 'text-green-600' : 'text-gray-400'}`}
-                aria-hidden="true"
-              ></i>
-            </th>
-            <th className="border border-black bg-[#D9D9D9] text-black h-10" onClick={handleshowCm1click}>
-              <i
-                className={`fa-solid fa-caret-left ${showCm1 ? 'text-green-600' : 'text-gray-400'}`}
-                aria-hidden="true"
-              ></i>{' '}
-              CM1 Profit/Loss({currencySymbol}){' '}
-              <i
-                className={`fa-solid fa-caret-right ${!showCm1 ? 'text-green-600' : 'text-gray-400'}`}
-                aria-hidden="true"
-              ></i>
-            </th>
-            {showCm1 && (
-              <th className="border border-black bg-[#D9D9D9] text-black h-10" onClick={handleshowCm1click}>
-                Projected CM1 Profit/Loss(%)
-              </th>
-            )}
-            {LosSalesUnits && (
-              <th className="border border-black bg-[#D9D9D9] text-black h-10" onClick={handleLosSalesUnitsclick}>
-                Projected Sales (Units)
-              </th>
-            )}
-            <th className="border border-black bg-[#D9D9D9] text-black h-10" onClick={handleLosSalesUnitsclick}>
-              <i
-                className={`fa-solid fa-caret-left ${LosSalesUnits ? 'text-green-600' : 'text-gray-400'}`}
-                aria-hidden="true"
-              ></i>{' '}
-              Projected Sales ({currencySymbol}){' '}
-              <i
-                className={`fa-solid fa-caret-right ${!LosSalesUnits ? 'text-green-600' : 'text-gray-400'}`}
-                aria-hidden="true"
-              ></i>
-            </th>
-            <th className="border border-black bg-[#D9D9D9] text-black h-10" onClick={handleshowCm1click}>
-              <i
-                className={`fa-solid fa-caret-left ${showCm1 ? 'text-green-600' : 'text-gray-400'}`}
-                aria-hidden="true"
-              ></i>{' '}
-              CM1 Profit/Loss({currencySymbol}){' '}
-              <i
-                className={`fa-solid fa-caret-right ${!showCm1 ? 'text-green-600' : 'text-gray-400'}`}
-                aria-hidden="true"
-              ></i>
-            </th>
-            {showCm1 && (
-              <th className="border border-black bg-[#D9D9D9] text-black h-10" onClick={handleshowCm1click}>
-                Projected CM1 Profit/Loss(%)
-              </th>
-            )}
-            {LosSalesUnits && (
-              <th className="border border-black bg-[#D9D9D9] text-black h-10" onClick={handleLosSalesUnitsclick}>
-                Projected Sales (Units)
-              </th>
-            )}
-            <th className="border border-black bg-[#D9D9D9] text-black h-10" onClick={handleLosSalesUnitsclick}>
-              <i
-                className={`fa-solid fa-caret-left ${LosSalesUnits ? 'text-green-600' : 'text-gray-400'}`}
-                aria-hidden="true"
-              ></i>{' '}
-              Projected Sales ({currencySymbol}){' '}
-              <i
-                className={`fa-solid fa-caret-right ${!LosSalesUnits ? 'text-green-600' : 'text-gray-400'}`}
-                aria-hidden="true"
-              ></i>
-            </th>
-            <th className="border border-black bg-[#D9D9D9] text-black h-10" onClick={handleshowCm1click}>
-              <i
-                className={`fa-solid fa-caret-left ${showCm1 ? 'text-green-600' : 'text-gray-400'}`}
-                aria-hidden="true"
-              ></i>{' '}
-              CM1 Profit/Loss({currencySymbol}){' '}
-              <i
-                className={`fa-solid fa-caret-right ${!showCm1 ? 'text-green-600' : 'text-gray-400'}`}
-                aria-hidden="true"
-              ></i>
-            </th>
-            {showCm1 && (
-              <th className="border border-black bg-[#D9D9D9] text-black h-10" onClick={handleshowCm1click}>
-                Projected CM1 Profit/Loss(%)
-              </th>
-            )}
-            {LosSalesUnits && (
-              <th className="border border-black bg-[#D9D9D9] text-black h-10" onClick={handleLosSalesUnitsclick}>
-                Projected Sales (Units)
-              </th>
-            )}
-            <th className="border border-black bg-[#D9D9D9] text-black h-10" onClick={handleLosSalesUnitsclick}>
-              <i
-                className={`fa-solid fa-caret-left ${LosSalesUnits ? 'text-green-600' : 'text-gray-400'}`}
-                aria-hidden="true"
-              ></i>{' '}
-              Projected Sales ({currencySymbol}){' '}
-              <i
-                className={`fa-solid fa-caret-right ${!LosSalesUnits ? 'text-green-600' : 'text-gray-400'}`}
-                aria-hidden="true"
-              ></i>
-            </th>
-            <th className="border border-black bg-[#D9D9D9] text-black h-10" onClick={handleshowCm1click}>
-              <i
-                className={`fa-solid fa-caret-left ${showCm1 ? 'text-green-600' : 'text-gray-400'}`}
-                aria-hidden="true"
-              ></i>{' '}
-              CM1 Profit/Loss({currencySymbol}){' '}
-              <i
-                className={`fa-solid fa-caret-right ${!showCm1 ? 'text-green-600' : 'text-gray-400'}`}
-                aria-hidden="true"
-              ></i>
-            </th>
-            {showCm1 && (
-              <th className="border border-black bg-[#D9D9D9] text-black h-10" onClick={handleshowCm1click}>
-                Projected CM1 Profit/Loss(%)
-              </th>
-            )}
-          </tr>
+<tr className="text-sm">
+  {/* SNO */}
+  <th
+    colSpan={isExpanded ? (showamazonfee ? 1 : 1) : (showamazonfee ? 3 : 2)}
+    className="border border-black bg-[#D9D9D9] text-black h-10 text-sm "
+  >
+    Sno.
+  </th>
+
+  {/* EXPANDED AREA */}
+  {isExpanded && (
+    <>
+      {/* SKU */}
+      {showamazonfee && (
+        <th
+          onClick={handleAmazonFeeClick}
+          className="border border-black bg-[#D9D9D9] text-black h-10 text-sm"
+        >
+          SKU
+        </th>
+      )}
+
+      {/* PRODUCT NAME */}
+      <th
+        onClick={handleAmazonFeeClick}
+        className="border border-black bg-[#D9D9D9] text-black h-10 text-sm"
+      >
+        <div className="flex items-center ">
+          <ChevronLeft
+            className={showamazonfee ? "text-[#414042]" : "text-[#414042]"}
+            size={16}
+          />
+          Product Name
+          <ChevronRight
+            className={!showamazonfee ? "text-[#414042]" : "text-[#414042]"}
+            size={16}
+          />
+        </div>
+      </th>
+    </>
+  )}
+
+  {/* 🔵 BLOCK 1 — PROJECTED SALES (UNITS) */}
+  {LosSalesUnits && (
+    <th
+      className="border border-black bg-[#D9D9D9] text-black h-10 text-sm"
+      onClick={handleLosSalesUnitsclick}
+    >
+      Projected Sales (Units)
+    </th>
+  )}
+
+  {/* PROJECTED SALES (CURRENCY) */}
+  <th
+    className="border border-black bg-[#D9D9D9] text-black h-10 text-sm"
+    onClick={handleLosSalesUnitsclick}
+  >
+    <div className="flex items-center ">
+      <ChevronLeft
+        className={LosSalesUnits ? "text-[#414042]" : "text-[#414042]"}
+        size={16}
+      />
+      Projected Sales ({currencySymbol})
+      <ChevronRight
+        className={!LosSalesUnits ? "text-[#414042]" : "text-[#414042]"}
+        size={16}
+      />
+    </div>
+  </th>
+
+  {/* CM1 */}
+  <th
+    className="border border-black bg-[#D9D9D9] text-black h-10 text-sm"
+    onClick={handleshowCm1click}
+  >
+    <div className="flex items-center ">
+      <ChevronLeft
+        className={showCm1 ? "text-[#414042]" : "text-[#414042]"}
+        size={16}
+      />
+      CM1 Profit/Loss ({currencySymbol})
+      <ChevronRight
+        className={!showCm1 ? "text-[#414042]" : "text-[#414042]"}
+        size={16}
+      />
+    </div>
+  </th>
+
+  {/* CM1 % */}
+  {showCm1 && (
+    <th
+      className="border border-black bg-[#D9D9D9] text-black h-10 text-sm"
+      onClick={handleshowCm1click}
+    >
+      Projected CM1 Profit/Loss (%)
+    </th>
+  )}
+
+  {/* 🔵 BLOCK 2 — PROJECTED SALES (UNITS) */}
+  {LosSalesUnits && (
+    <th
+      className="border border-black bg-[#D9D9D9] text-black h-10 text-sm"
+      onClick={handleLosSalesUnitsclick}
+    >
+      Projected Sales (Units)
+    </th>
+  )}
+
+  {/* PROJECTED SALES (CURRENCY) */}
+  <th
+    className="border border-black bg-[#D9D9D9] text-black h-10 text-sm"
+    onClick={handleLosSalesUnitsclick}
+  >
+    <div className="flex items-center ">
+      <ChevronLeft
+        className={LosSalesUnits ? "text-[#414042]" : "text-[#414042]"}
+        size={16}
+      />
+      Projected Sales ({currencySymbol})
+      <ChevronRight
+        className={!LosSalesUnits ? "text-[#414042]" : "text-[#414042]"}
+        size={16}
+      />
+    </div>
+  </th>
+
+  {/* CM1 */}
+  <th
+    className="border border-black bg-[#D9D9D9] text-black h-10 text-sm"
+    onClick={handleshowCm1click}
+  >
+    <div className="flex items-center ">
+      <ChevronLeft
+        className={showCm1 ? "text-[#414042]" : "text-[#414042]"}
+        size={16}
+      />
+      CM1 Profit/Loss ({currencySymbol})
+      <ChevronRight
+        className={!showCm1 ? "text-[#414042]" : "text-[#414042]"}
+        size={16}
+      />
+    </div>
+  </th>
+
+  {showCm1 && (
+    <th
+      className="border border-black bg-[#D9D9D9] text-black h-10 text-sm"
+      onClick={handleshowCm1click}
+    >
+      Projected CM1 Profit/Loss (%)
+    </th>
+  )}
+
+  {/* 🔵 BLOCK 3 — PROJECTED SALES (UNITS) */}
+  {LosSalesUnits && (
+    <th
+      className="border border-black bg-[#D9D9D9] text-black h-10 text-sm"
+      onClick={handleLosSalesUnitsclick}
+    >
+      Projected Sales (Units)
+    </th>
+  )}
+
+  {/* PROJECTED SALES (CURRENCY) */}
+  <th
+    className="border border-black bg-[#D9D9D9] text-black h-10 text-sm"
+    onClick={handleLosSalesUnitsclick}
+  >
+    <div className="flex items-center ">
+      <ChevronLeft
+        className={LosSalesUnits ? "text-[#414042]" : "text-[#414042]"}
+        size={16}
+      />
+      Projected Sales ({currencySymbol})
+      <ChevronRight
+        className={!LosSalesUnits ? "text-[#414042]" : "text-[#414042]"}
+        size={16}
+      />
+    </div>
+  </th>
+
+  {/* CM1 */}
+  <th
+    className="border border-black bg-[#D9D9D9] text-black h-10 text-sm"
+    onClick={handleshowCm1click}
+  >
+    <div className="flex items-center ">
+      <ChevronLeft
+        className={showCm1 ? "text-[#414042]" : "text-[#414042]"}
+        size={16}
+      />
+      CM1 Profit/Loss ({currencySymbol})
+      <ChevronRight
+        className={!showCm1 ? "text-[#414042]" : "text-[#414042]"}
+        size={16}
+      />
+    </div>
+  </th>
+
+  {showCm1 && (
+    <th
+      className="border border-black bg-[#D9D9D9] text-black h-10 text-sm"
+      onClick={handleshowCm1click}
+    >
+      Projected CM1 Profit/Loss (%)
+    </th>
+  )}
+
+  {LosSalesUnits && (
+    <th
+      className="border border-black bg-[#D9D9D9] text-black h-10 text-sm"
+      onClick={handleLosSalesUnitsclick}
+    >
+      Projected Sales (Units)
+    </th>
+  )}
+   <th
+    className="border border-black bg-[#D9D9D9] text-black h-10 text-sm"
+    onClick={handleLosSalesUnitsclick}
+  >
+    <div className="flex items-center ">
+      <ChevronLeft
+        className={LosSalesUnits ? "text-[#414042]" : "text-[#414042]"}
+        size={16}
+      />
+      Projected Sales ({currencySymbol})
+      <ChevronRight
+        className={!LosSalesUnits ? "text-[#414042]" : "text-[#414042]"}
+        size={16}
+      />
+    </div>
+  </th>
+
+  {/* CM1 */}
+  <th
+    className="border border-black bg-[#D9D9D9] text-black h-10 text-sm"
+    onClick={handleshowCm1click}
+  >
+    <div className="flex items-center ">
+      <ChevronLeft
+        className={showCm1 ? "text-[#414042]" : "text-[#414042]"}
+        size={16}
+      />
+      CM1 Profit/Loss ({currencySymbol})
+      <ChevronRight
+        className={!showCm1 ? "text-[#414042]" : "text-[#414042]"}
+        size={16}
+      />
+    </div>
+  </th>
+
+  {showCm1 && (
+    <th
+      className="border border-black bg-[#D9D9D9] text-black h-10 text-sm"
+      onClick={handleshowCm1click}
+    >
+      Projected CM1 Profit/Loss (%)
+    </th>
+  )}
+</tr>
+
+
         </thead>
         <tbody>
           {data
@@ -676,7 +787,7 @@ const Pnlforecast: React.FC = () => {
               return (
                 <tr
                   key={index}
-                  className={`odd:bg-white even:bg-green-50 ${isTotalRow ? 'bg-[#D9D9D9]/90 font-bold' : ''}`}
+                  className={` ${isTotalRow ? 'bg-[#D9D9D9]/90 font-bold' : ''}`}
                 >
                   <td className="border border-black p-3 text-center text-gray-700 text-sm h-10">
                     {isTotalRow ? (
@@ -712,7 +823,7 @@ const Pnlforecast: React.FC = () => {
               );
             })}
           {/* Additional rows below the listing (same as JS) */}
-          <tr className="odd:bg-white even:bg-green-50">
+          <tr className="">
             <td
               colSpan={showamazonfee ? 3 : 2}
               className="border border-black p-3 text-left text-gray-700 text-sm h-10"
@@ -744,7 +855,7 @@ const Pnlforecast: React.FC = () => {
             </td>
             {showCm1 && <td className="border border-black p-3 h-10"></td>}
           </tr>
-          <tr className="odd:bg-white even:bg-green-50">
+          <tr className="">
             <td
               colSpan={showamazonfee ? 3 : 2}
               className="border border-black p-3 text-left text-gray-700 text-sm h-10"
@@ -776,7 +887,7 @@ const Pnlforecast: React.FC = () => {
             </td>
             {showCm1 && <td className="border border-black p-3 h-10"></td>}
           </tr>
-          <tr className="odd:bg-white even:bg-green-50 bg-[#D9D9D9]/90 font-bold">
+          <tr className=" bg-[#D9D9D9]/90 font-bold">
             <td
               colSpan={showamazonfee ? 3 : 2}
               className="border border-black p-3 text-left text-gray-700 text-sm h-10"
@@ -808,7 +919,7 @@ const Pnlforecast: React.FC = () => {
             </td>
             {showCm1 && <td className="border border-black p-3 h-10"></td>}
           </tr>
-          <tr className="odd:bg-white even:bg-green-50">
+          <tr className="">
             <td
               onClick={toggleTacosSection}
               colSpan={showamazonfee ? 3 : 2}
@@ -850,7 +961,7 @@ const Pnlforecast: React.FC = () => {
           </tr>
           {showTacosSection && (
             <>
-              <tr className="odd:bg-white even:bg-green-50">
+              <tr className="">
                 <td
                   colSpan={showamazonfee ? 3 : 2}
                   className="border border-black p-3 text-left text-gray-700 text-sm h-10"
@@ -882,7 +993,7 @@ const Pnlforecast: React.FC = () => {
                 </td>
                 {showCm1 && <td className="border border-black p-3 h-10"></td>}
               </tr>
-              <tr className="odd:bg-white even:bg-green-50">
+              <tr className="">
                 <td
                   colSpan={showamazonfee ? 3 : 2}
                   className="border border-black p-3 text-left text-gray-700 text-sm h-10"
@@ -916,7 +1027,7 @@ const Pnlforecast: React.FC = () => {
               </tr>
             </>
           )}
-          <tr className="odd:bg-white even:bg-green-50">
+          <tr className="">
             <td
               colSpan={showamazonfee ? 3 : 2}
               className="border border-black p-3 text-left text-gray-700 text-sm h-10"
@@ -948,7 +1059,7 @@ const Pnlforecast: React.FC = () => {
             </td>
             {showCm1 && <td className="border border-black p-3 h-10"></td>}
           </tr>
-          <tr className="odd:bg-white even:bg-green-50">
+          <tr className="">
             <td
               colSpan={showamazonfee ? 3 : 2}
               className="border border-black p-3 text-left text-gray-700 text-sm h-10"
@@ -981,7 +1092,7 @@ const Pnlforecast: React.FC = () => {
             {showCm1 && <td className="border border-black p-3 h-10"></td>}
           </tr>
           {showTacosSection && (
-            <tr className="odd:bg-white even:bg-green-50">
+            <tr className="">
               <td
                 colSpan={showamazonfee ? 3 : 2}
                 className="border border-black p-3 text-left text-gray-700 text-sm h-10"

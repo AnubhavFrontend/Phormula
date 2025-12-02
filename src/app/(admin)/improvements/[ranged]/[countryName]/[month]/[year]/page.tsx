@@ -6,6 +6,10 @@ import { useParams } from 'next/navigation'; // Next.js uses next/navigation for
 import * as XLSX from 'xlsx';
 import { FaThumbsUp, FaThumbsDown } from 'react-icons/fa';
 import Productinfoinpopup from '@/components/businessInsight/Productinfoinpopup';
+import Drawer from '@mui/material/Drawer';
+import IconButton from '@mui/material/IconButton';
+import { IoDownload } from "react-icons/io5";
+import { BsStars } from "react-icons/bs";
 
 // =========================
 // Types/Interfaces
@@ -482,96 +486,242 @@ const exportToExcel = (rows: SkuItem[], filename = 'export.xlsx') => {
   // =====================
   // Insight renderer (headings + bullets)
   // =====================
-  const renderFormattedInsight = (raw: string) => {
-    if (!raw) return null;
+const highlightInsightText = (text: string) => {
+  const greenWords = [
+    'profit',
+    'profits',
+    'increase',
+    'growth',
+    'improvement',
+    'gain',
+    'gains',
+    'up',
+    'higher',
+  ];
 
-    const lines = raw
-      .split(/\r?\n/)
-      .map(l => l.trim())
-      .filter(Boolean);
+  const redWords = [
+    'loss',
+    'losses',
+    'decrease',
+    'decline',
+    'drop',
+    'down',
+    'lower',
+  ];
 
-    const SECTION_ORDER = [
-      'Details', 'Observations', 'Improvements',
-      'Unit Growth', 'ASP', 'Sales', 'Profit',
-      'Unit Profitability', 'Summary',
-    ];
+  const regex = new RegExp(
+    `\\b(${[...greenWords, ...redWords].join('|')})\\b`,
+    'gi'
+  );
 
-    const LIST_SECTIONS = new Set([
-      'Observations', 'Improvements',
-      'Unit Growth', 'ASP', 'Sales', 'Profit', 'Unit Profitability',
-    ]);
+  const parts = text.split(regex);
 
-    const headingOf = (line: string): string | null => {
-      const m =
-        line.match(/^details\s+for/i) ? ['Details'] :
-        line.match(/^(observations)\s*:?\s*$/i) ? ['Observations'] :
-        line.match(/^(improvements)\s*:?\s*$/i) ? ['Improvements'] :
-        line.match(/^(unit\s+growth)\s*:?\s*$/i) ? ['Unit Growth'] :
-        line.match(/^(asp)\s*:?\s*$/i) ? ['ASP'] :
-        line.match(/^(sales)\s*:?\s*$/i) ? ['Sales'] :
-        line.match(/^(profit)\s*:?\s*$/i) ? ['Profit'] :
-        line.match(/^(unit\s+profitability)\s*:?\s*$/i) ? ['Unit Profitability'] :
-        line.match(/^(summary)\s*:?\s*$/i) ? ['Summary'] :
-        null;
-      return m ? m[0] : null;
-    };
+  return parts.map((part, idx) => {
+    const lower = part.toLowerCase();
 
-    const sections: Record<string, string[]> = {};
-    let current: string | null = null;
-
-    for (const line of lines) {
-      const hd = headingOf(line);
-      if (hd) {
-        current = hd;
-        if (!sections[current]) sections[current] = [];
-        if (current === 'Details') sections[current].push(line); // keep full "Details for ..."
-        continue;
-      }
-      if (!current) current = 'Details';
-      if (!sections[current]) sections[current] = [];
-      // Skip duplicate labels inside content
-      const isLabel = !!line.match(/^(observations|improvements|unit\s+growth|asp|sales|profit|unit\s+profitability|summary)\s*:?\s*$/i);
-      if (isLabel) continue;
-      sections[current].push(line);
+    if (greenWords.includes(lower)) {
+      return (
+        <span key={idx} style={{ color: '#16a34a', fontWeight: 600 }}>
+          {part}
+        </span>
+      );
     }
 
-    return SECTION_ORDER.filter(sec => sections[sec]?.length).map((sec, idx) => {
+    if (redWords.includes(lower)) {
+      return (
+        <span key={idx} style={{ color: '#dc2626', fontWeight: 600 }}>
+          {part}
+        </span>
+      );
+    }
+
+    return <span key={idx}>{part}</span>;
+  });
+};
+
+
+
+  const renderFormattedInsight = (raw: string) => {
+  if (!raw) return null;
+
+  const lines = raw
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
+
+  const SECTION_ORDER = [
+    'Details',
+    'Observations',
+    'Improvements',
+    'Unit Growth',
+    'ASP',
+    'Sales',
+    'Profit',
+    'Unit Profitability',
+    'Summary',
+  ];
+
+  const LIST_SECTIONS = new Set([
+    'Observations',
+    'Improvements',
+    'Unit Growth',
+    'ASP',
+    'Sales',
+    'Profit',
+    'Unit Profitability',
+  ]);
+
+  const headingOf = (line: string): string | null => {
+    const m =
+      line.match(/^details\s+for/i) ? ['Details'] :
+      line.match(/^(observations)\s*:?\s*$/i) ? ['Observations'] :
+      line.match(/^(improvements)\s*:?\s*$/i) ? ['Improvements'] :
+      line.match(/^(unit\s+growth)\s*:?\s*$/i) ? ['Unit Growth'] :
+      line.match(/^(asp)\s*:?\s*$/i) ? ['ASP'] :
+      line.match(/^(sales)\s*:?\s*$/i) ? ['Sales'] :
+      line.match(/^(profit)\s*:?\s*$/i) ? ['Profit'] :
+      line.match(/^(unit\s+profitability)\s*:?\s*$/i) ? ['Unit Profitability'] :
+      line.match(/^(summary)\s*:?\s*$/i) ? ['Summary'] :
+      null;
+    return m ? m[0] : null;
+  };
+
+  const sections: Record<string, string[]> = {};
+  let current: string | null = null;
+
+  for (const line of lines) {
+    const hd = headingOf(line);
+    if (hd) {
+      current = hd;
+      if (!sections[current]) sections[current] = [];
+      if (current === 'Details') sections[current].push(line);
+      continue;
+    }
+    if (!current) current = 'Details';
+    if (!sections[current]) sections[current] = [];
+    const isLabel = !!line.match(
+      /^(observations|improvements|unit\s+growth|asp|sales|profit|unit\s+profitability|summary)\s*:?\s*$/i
+    );
+    if (isLabel) continue;
+    sections[current].push(line);
+  }
+
+  const clean = (s: string) =>
+    s.replace(/^[•\-\u2013\u2014]\s+/, '').replace(/^\d+\.\s+/, '');
+
+  return SECTION_ORDER.filter((sec) => sections[sec]?.length).map(
+    (sec, idx) => {
       const content = sections[sec];
-
-      const clean = (s: string) =>
-        s.replace(/^[•\-\u2013\u2014]\s+/, '').replace(/^\d+\.\s+/, '');
-
       const isList = LIST_SECTIONS.has(sec);
 
       return (
-        <div key={idx} className="insight-section" style={{ marginBottom: 12 }}>
+        <div
+          key={idx}
+          className="insight-section"
+          style={{ marginBottom: 12 }}
+        >
           {(isList || sec === 'Summary') && (
-            <strong className="insight-section-title" style={{ display: 'block', marginBottom: 6 }}>
+            <strong
+              className="insight-section-title"
+              style={{ display: 'block', marginBottom: 6 }}
+            >
               {sec}
             </strong>
           )}
 
-          {isList ? (
-            <ul className="insight-list">
-              {content.map((line, i) => (
-                <li key={i} className="insight-list-item">{clean(line)}</li>
-              ))}
-            </ul>
-          ) : (
-            <div className="insight-paragraphs">
-              {content.map((line, i) => <p key={i} className="insight-paragraph">{line}</p>)}
-            </div>
-          )}
+         {isList ? (
+  <ul className="insight-list list-disc">
+    {content.map((line, i) => {
+      const trimmed = clean(line);
+
+      // 🔹 Detect ANY subheading
+      const isSubHeading =
+        /^[A-Za-z][A-Za-z\s\/]+:?$/i.test(trimmed) &&  // text only
+        !trimmed.match(/\d|%|,/) &&                    // no numbers/percent
+        trimmed.split(/\s+/).length <= 5;              // short phrase
+
+      if (isSubHeading) {
+        const label = trimmed.replace(/:$/, '').trim();
+        return (
+          <li
+            key={i}
+            style={{
+              listStyle: 'none',
+              marginTop: 10,
+              marginBottom: 4,
+            }}
+          >
+            <span
+              style={{
+                fontWeight: 700,
+                fontSize: 14,
+                color: '#374151',
+                borderLeft: '3px solid #60a68e',
+                paddingLeft: 8,
+              }}
+            >
+              {label}
+            </span>
+          </li>
+        );
+      }
+
+      // 🔹 Normal bullet points
+      return (
+        <li
+          key={i}
+          className="insight-list-item"
+          style={{
+            marginBottom: 4,
+            lineHeight: 1.6,
+            fontSize: 13,
+          }}
+        >
+          {highlightInsightText(trimmed)}
+        </li>
+      );
+    })}
+  </ul>
+) : (
+  <div className="insight-paragraphs list-disc">
+    {content.map((line, i) => (
+      <p
+        key={i}
+        className="insight-paragraph"
+        style={{
+          margin: '4px 0',
+          lineHeight: 1.6,
+          fontSize: 13,
+        }}
+      >
+        {highlightInsightText(line)}
+      </p>
+    ))}
+  </div>
+)}
+
 
           {sec === 'Summary' && (
             <div className="feedback-container" style={{ marginTop: 10 }}>
-              <div className="feedback-buttons" style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
+              <div
+                className="feedback-buttons"
+                style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  gap: 12,
+                }}
+              >
                 <button
                   type="button"
                   className="feedback-button"
                   onClick={() => setFbType('like')}
                   title="Like"
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', opacity: fbType === 'like' ? 1 : 0.6 }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    opacity: fbType === 'like' ? 1 : 0.6,
+                  }}
                 >
                   <FaThumbsUp size={18} />
                 </button>
@@ -580,23 +730,41 @@ const exportToExcel = (rows: SkuItem[], filename = 'export.xlsx') => {
                   className="feedback-button"
                   onClick={() => setFbType('dislike')}
                   title="Dislike"
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', opacity: fbType === 'dislike' ? 1 : 0.6 }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    opacity: fbType === 'dislike' ? 1 : 0.6,
+                  }}
                 >
                   <FaThumbsDown size={18} />
                 </button>
               </div>
 
-              <div className="comment-box" style={{
-                marginTop: 10, backgroundColor: '#f1f1f1', padding: '10px 12px',
-                borderRadius: 8, display: 'flex', gap: 10, alignItems: 'center'
-              }}>
+              <div
+                className="comment-box"
+                style={{
+                  marginTop: 10,
+                  backgroundColor: '#f1f1f1',
+                  padding: '10px 12px',
+                  borderRadius: 8,
+                  display: 'flex',
+                  gap: 10,
+                  alignItems: 'center',
+                }}
+              >
                 <input
                   type="text"
                   placeholder="Add a Comment......"
                   className="comment-input"
                   value={fbText}
                   onChange={(e) => setFbText(e.target.value)}
-                  style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent' }}
+                  style={{
+                    flex: 1,
+                    border: 'none',
+                    outline: 'none',
+                    background: 'transparent',
+                  }}
                 />
                 <button
                   type="button"
@@ -610,7 +778,13 @@ const exportToExcel = (rows: SkuItem[], filename = 'export.xlsx') => {
               </div>
 
               {fbSuccess && (
-                <div style={{ color: '#2e7d32', fontWeight: 600, marginTop: 6 }}>
+                <div
+                  style={{
+                    color: '#2e7d32',
+                    fontWeight: 600,
+                    marginTop: 6,
+                  }}
+                >
                   Feedback submitted!
                 </div>
               )}
@@ -618,8 +792,9 @@ const exportToExcel = (rows: SkuItem[], filename = 'export.xlsx') => {
           )}
         </div>
       );
-    });
-  };
+    }
+  );
+};
 
   const getAllSkusForExport = (): SkuItem[] => {
   return [
@@ -825,10 +1000,12 @@ const exportToExcel = (rows: SkuItem[], filename = 'export.xlsx') => {
       {Object.values(categorizedGrowth).some(arr => arr.length > 0) && (
         <div>
           <div className='flex md:flex-row flex-col justify-between items-center mt-10'>
-            <h2 className="text-2xl font-bold text-[#414042] mb-4">Performance-based SKU split</h2>
-            <div
+            <div className='flex md:flex-row flex-col justify-between items-center w-full'>
+<h2 className="text-2xl font-bold text-[#414042] mb-4">Performance-based SKU split</h2>
+            <div className='flex justify-center gap-3'>
+  <div
               style={{
-                marginBottom: '1rem',
+               
                 border: '1px solid #D9D9D9E5',
                 borderRadius: 8,
                 display: 'inline-flex',
@@ -854,9 +1031,45 @@ const exportToExcel = (rows: SkuItem[], filename = 'export.xlsx') => {
                 </button>
               ))}
             </div>
+            <div className='flex gap-3'>
+ <button
+              onClick={analyzeSkus}
+              disabled={!Object.values(categorizedGrowth).some(a => a.length > 0)}
+              className="bg-custom-effect text-[#F8EDCE] rounded-sm px-4 flex items-center justify-end  disabled:opacity-50 disabled:cursor-not-allowed"
+               style={{
+                 boxShadow: "0px 4px 4px 0px #00000040",
+               }}
+             >
+               <BsStars 
+                 style={{ 
+                   fontSize: "12px", 
+                   color: "#F8EDCE" 
+                 }} 
+               />
+               {loadingInsight ? "Generating..." : "AI Insights"}
+            </button>
+            <button
+              onClick={() => {
+                const file = `AllSKUs-${getAbbr(month1)}'${String(year1).slice(2)}vs${getAbbr(month2)}'${String(year2).slice(2)}.xlsx`;
+const allRows = getAllSkusForExport();
+exportToExcel(allRows, file);
+              }}
+             className="bg-white border border-[#8B8585] px-1 rounded-sm"
+                            style={{
+                 boxShadow: "0px 4px 4px 0px #00000040",  
+               }}
+                         >
+                         <IoDownload size={27} />
+            </button>
+            </div>
+           
+            </div>
+            </div>
+            
+          
           </div>
 
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto pt-4">
             <table className="tablec w-full border-collapse md:text-sm text-xs">
               <thead className="theadc">
                 <tr>
@@ -875,7 +1088,7 @@ const exportToExcel = (rows: SkuItem[], filename = 'export.xlsx') => {
 
               <tbody>
                 {categorizedGrowth[activeTab]?.map((item, idx) => (
-                  <tr key={idx} className="odd:bg-white even:bg-green-50">
+                  <tr key={idx} className="">
                     <td className="border border-[#414042] px-2 py-2.5 text-center">{idx + 1}</td>
                     <td className="border border-[#414042] px-2 py-2.5 text-left">{item.product_name}</td>
                     <td className="border border-[#414042] px-2 py-2.5 text-center">
@@ -917,7 +1130,7 @@ const exportToExcel = (rows: SkuItem[], filename = 'export.xlsx') => {
                           if (entry) {
                             return (
                               <button
-                                className="styled-button"
+                                className="font-semibold underline"
                                 style={{ margin: 0 }}
                                 onClick={() => {
                                   setSelectedSku(entry[0]);
@@ -948,7 +1161,7 @@ const exportToExcel = (rows: SkuItem[], filename = 'export.xlsx') => {
               </tbody>
 
               <tfoot>
-                <tr className="odd:bg-white even:bg-green-50 ">
+                <tr className="bg-[#D9D9D9E5]">
                   <td className="border border-[#414042] px-2 py-2.5 text-center"></td>
                   <td className="border border-[#414042] px-2 py-2.5 text-left font-bold"><strong>Total</strong></td>
                   <td className="border border-[#414042] px-2 py-2.5 text-center font-bold">
@@ -965,64 +1178,85 @@ const exportToExcel = (rows: SkuItem[], filename = 'export.xlsx') => {
               </tfoot>
             </table>
           </div>
-
-          <div className='flex justify-end' style={{ gap:10, marginTop:12 }}>
-            <button
-              onClick={analyzeSkus}
-              disabled={!Object.values(categorizedGrowth).some(a => a.length > 0)}
-              className="styled-button"
-            >
-              {loadingInsight ? 'Generating...' : 'Generate AI Insights'}
-            </button>
-
-            <button
-              onClick={() => {
-                const file = `AllSKUs-${getAbbr(month1)}'${String(year1).slice(2)}vs${getAbbr(month2)}'${String(year2).slice(2)}.xlsx`;
-const allRows = getAllSkusForExport();
-exportToExcel(allRows, file);
-              }}
-              className="styled-button"
-            >
-              Download (.xlsx)
-            </button>
-          </div>
         </div>
       )}
 
       {/* Insight Modal */}
-      {modalOpen && selectedSku && (() => {
-        const insightData = skuInsights[selectedSku as keyof typeof skuInsights] || getInsightByProductName(selectedSku as string)?.[1];
-        if (!insightData) return null;
+{(() => {
+  if (!modalOpen || !selectedSku) return null;
 
-        return (
-          <div
+  const insightData =
+    skuInsights[selectedSku as keyof typeof skuInsights] ||
+    getInsightByProductName(selectedSku as string)?.[1];
+
+  if (!insightData) return null;
+
+  return (
+    <Drawer
+      anchor="right"
+      open={modalOpen}
+      onClose={() => setModalOpen(false)}
+      PaperProps={{
+        sx: {
+          width: { xs: '100vw', sm: '80vw', md: '60vw', lg: '50vw' },
+          maxWidth: 900,
+          padding: 2,
+        },
+      }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 12,
+          height: '100%',
+        }}
+      >
+        {/* Header */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: 8,
+          }}
+        >
+          <h2 style={{ margin: 0, fontSize: 18 }}>
+            AI Insight for{' '}
+            <span style={{ color: '#60a68e' }}>
+              {insightData.product_name || selectedSku}
+            </span>
+          </h2>
+
+          <IconButton
+            size="small"
             onClick={() => setModalOpen(false)}
-            style={{
-              position:'fixed', top:0, left:0, width:'100vw', height:'100vh',
-              background:'rgba(0,0,0,0.5)', display:'flex', alignItems:'center',
-              justifyContent:'center', zIndex:9999
-            }}
+            aria-label="Close"
           >
-            <div
-              onClick={(e)=>e.stopPropagation()}
-              style={{
-                background:'#fff', padding:20, width:'45vw', maxHeight:'90vh', overflowY:'auto',
-                borderRadius:8, boxShadow:'0 2px 12px rgba(0,0,0,.3)', color:'#414042'
-              }}
-            >
-              <h2 style={{ margin:0, marginBottom:10 }}>
-                AI Insight for <span style={{ color:'#60a68e' }}>{insightData.product_name || selectedSku}</span>
-              </h2>
+           x
+          </IconButton>
+        </div>
 
-              <Productinfoinpopup productname={insightData.product_name} />
+        {/* Chart */}
+        <div style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: 8 }}>
+          <Productinfoinpopup productname={insightData.product_name} />
+        </div>
 
-              <div style={{ fontSize:14, lineHeight:1.6 }}>
-                {renderFormattedInsight(insightData.insight)}
-              </div>
-            </div>
-          </div>
-        );
-      })()}
+        {/* Insights text with bullets & colors */}
+        <div
+          style={{
+            flex: 1,
+            overflowY: 'auto',
+            marginTop: 8,
+            paddingRight: 4,
+          }}
+        >
+          {renderFormattedInsight(insightData.insight)}
+        </div>
+      </div>
+    </Drawer>
+  );
+})()}
     </>
   );
 };

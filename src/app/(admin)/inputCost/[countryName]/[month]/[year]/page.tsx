@@ -5,6 +5,7 @@ import * as XLSX from 'xlsx';
 import '@/app/(admin)/pnlforecast/[countryName]/[month]/[year]/Styles.css';
 import Modalmsg from '@/components/ui/modal/Modalmsg';
 import SkuMultiuseCountryUpload from '@/components/ui/modal/SkuMultiCountryUpload';
+import { IoDownload } from "react-icons/io5";
 
 // Types
 interface Params {
@@ -587,10 +588,15 @@ font-weight: bold;
         </div>
 
         <div>
-          <button className="styled-button" onClick={handleDownloadXLSX}>
-            Download (.xlsx) &nbsp;
-            <i className="fa-solid fa-download fa-beat"></i>
-          </button>
+           <button
+                    onClick={handleDownloadXLSX}
+                  className="bg-white border border-[#8B8585] px-1 rounded-sm py-1"
+                                              style={{
+                                   boxShadow: "0px 4px 4px 0px #00000040",  
+                                 }}
+                                           >
+                                           <IoDownload size={27} />
+                  </button>
         </div>
       </div>
 
