@@ -3004,7 +3004,7 @@ function SalesTargetCard({
     (badgeIsUp ? "▲ " : "▼ ") + `${Math.abs(deltaPct).toFixed(2)}%`;
 
   return (
-    <div className="h-full rounded-2xl border bg-white p-5 shadow-sm flex flex-col">
+    <div className="h-full rounded-2xl border bg-white py-5 px-2 shadow-sm flex flex-col">
       {/* Header with tabs */}
       <div className="flex flex-col items-center justify-between gap-2">
         <PageBreadcrumb

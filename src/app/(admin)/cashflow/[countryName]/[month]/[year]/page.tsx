@@ -959,6 +959,7 @@ import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import Button from "@/components/ui/button/Button";
 import PeriodFiltersTable from "@/components/filters/PeriodFiltersTable";
 import Loader from "@/components/loader/Loader";
+import "@/lib/chartSetup";
 import {
   Chart as ChartJS,
   BarElement,

@@ -937,7 +937,7 @@ const ProductwisePerformance: React.FC<ProductwisePerformanceProps> = ({
 
               {/* Legend / toggles */}
               <div className="flex flex-wrap items-center gap-3">
-                {["global", ...nonEmptyCountriesFromApi].map((country) => {
+                {/* {["global", ...nonEmptyCountriesFromApi].map((country) => {
                   const color = getCountryColor(country);
                   const isSelected = selectedCountries[country] ?? true;
 
@@ -973,7 +973,61 @@ const ProductwisePerformance: React.FC<ProductwisePerformanceProps> = ({
                       </span>
                     </button>
                   );
-                })}
+                })} */}
+
+                 {["global", ...nonEmptyCountriesFromApi].map((country) => {
+    const color = getCountryColor(country);
+    const isChecked = selectedCountries[country] ?? true;
+    const label = country.toUpperCase();
+
+    return (
+      <label
+        key={country}
+        className={[
+          "shrink-0",
+          "flex items-center gap-1 sm:gap-1.5",
+          "font-semibold select-none whitespace-nowrap",
+          "text-[9px] sm:text-[10px] md:text-[11px] lg:text-xs xl:text-sm",
+          "text-charcoal-500",
+          isChecked ? "opacity-100" : "opacity-40",
+          "cursor-pointer",
+        ].join(" ")}
+        onClick={() => handleCountryChange(country)}
+      >
+        <span
+          className="
+            flex items-center justify-center
+            h-3 w-3 sm:h-3.5 sm:w-3.5
+            rounded-sm border transition
+          "
+          style={{
+            borderColor: color,
+            backgroundColor: isChecked ? color : "white",
+          }}
+        >
+          {isChecked && (
+            <svg
+              viewBox="0 0 24 24"
+              width="14"
+              height="14"
+              className="text-white"
+            >
+              <path
+                fill="currentColor"
+                d="M20.285 6.709a1 1 0 0 0-1.414-1.414L9 15.168l-3.879-3.88a1 1 0 0 0-1.414 1.415l4.586 4.586a1 1 0 0 0 1.414 0l10-10Z"
+              />
+            </svg>
+          )}
+        </span>
+
+        <span
+          className="uppercase text-charcoal-500"
+        >
+          {label}
+        </span>
+      </label>
+    );
+  })}
               </div>
             </div>
           </div>
