@@ -106,7 +106,7 @@
 
 
 //   // Current route params for dynamic paths
-  
+
 //   const onRegionChange = (val: string) => {
 //   // Special case: Shopify
 //   if (val === "shopify") {
@@ -132,7 +132,7 @@
 //   });
 // };
 
-  
+
 //   const routeParams = useParams();
 //   const defaultRanged = "QTD";
 //   const defaultMonth = "NA";
@@ -458,13 +458,13 @@ import { BiBrain } from "react-icons/bi";
 type NavSubItem = {
   name: string;
   path:
-    | string
-    | ((params: {
-        ranged: string;
-        countryName: string;
-        month: string;
-        year: string;
-      }) => string);
+  | string
+  | ((params: {
+    ranged: string;
+    countryName: string;
+    month: string;
+    year: string;
+  }) => string);
   onClick?: () => void;    // ✅ yeh line add karo
 };
 
@@ -483,15 +483,15 @@ const AppSidebar: React.FC = () => {
     isHovered,
     setIsHovered,
     setIsMobileOpen,
-    toggleSidebar,        
-    toggleMobileSidebar,  
+    toggleSidebar,
+    toggleMobileSidebar,
   } = useSidebar();
   const pathname = usePathname();
   const router = useRouter();
 
   useEffect(() => {
-  setIsMobileOpen(false);
-}, [pathname]);
+    setIsMobileOpen(false);
+  }, [pathname]);
 
   useEffect(() => {
     if (typeof document === "undefined") return;
@@ -556,16 +556,63 @@ const AppSidebar: React.FC = () => {
   }, [regionOptions, selectedPlatform]);
 
   // ===== Handle platform change from RegionSelect =====
+  // const onRegionChange = (val: string) => {
+  //   const platform = val as PlatformId;
+
+  //   // Shopify → redirect with query params if available
+  //   if (platform === "shopify") {
+  //     console.log("Shopify selected, store:", shopifyStore);
+
+  //     if (shopifyStore?.shop && shopifyStore?.token && shopifyStore?.email) {
+  //       const params = new URLSearchParams({
+  //         shop: shopifyStore.shop, // e.g. "skin-elements.myshopify.com"
+  //         token: shopifyStore.token,
+  //         email: shopifyStore.email,
+  //       });
+
+  //       router.push(`/orders?${params.toString()}`);
+  //     } else {
+  //       console.warn(
+  //         "Shopify store details missing, falling back to /orders",
+  //         shopifyStore
+  //       );
+  //       router.push("/orders");
+  //     }
+  //     return;
+  //   }
+
+  //   // Non-Shopify platforms
+  //   setSelectedPlatform(val);
+  //   const countryNameForRoutes = platformToCountryName(platform);
+
+  //   if (typeof window !== "undefined") {
+  //     localStorage.setItem("selectedPlatform", val);
+  //     localStorage.removeItem("chatHistory");
+  //   }
+
+
+
+
+  //   handleRegionChangeNext({
+  //     value: countryNameForRoutes,
+  //     ranged: undefined,
+  //     uploadHistory,
+  //     push: router.push,
+  //     onAddMore: () => router.push("/settings/countries"),
+  //     onBeforeNavigate: () => localStorage.removeItem("chatHistory"),
+  //   });
+  // };
+
   const onRegionChange = (val: string) => {
     const platform = val as PlatformId;
 
-    // Shopify → redirect with query params if available
+    // Shopify → keep your special redirect
     if (platform === "shopify") {
       console.log("Shopify selected, store:", shopifyStore);
 
       if (shopifyStore?.shop && shopifyStore?.token && shopifyStore?.email) {
         const params = new URLSearchParams({
-          shop: shopifyStore.shop, // e.g. "skin-elements.myshopify.com"
+          shop: shopifyStore.shop,
           token: shopifyStore.token,
           email: shopifyStore.email,
         });
@@ -581,33 +628,35 @@ const AppSidebar: React.FC = () => {
       return;
     }
 
-    // Non-Shopify platforms
+    // 🔹 Non-Shopify platforms → just set global selection
     setSelectedPlatform(val);
-    const countryNameForRoutes = platformToCountryName(platform);
 
     if (typeof window !== "undefined") {
       localStorage.setItem("selectedPlatform", val);
       localStorage.removeItem("chatHistory");
     }
 
-     
-
-
-    handleRegionChangeNext({
-      value: countryNameForRoutes,
-      ranged: undefined,
-      uploadHistory,
-      push: router.push,
-      onAddMore: () => router.push("/settings/countries"),
-      onBeforeNavigate: () => localStorage.removeItem("chatHistory"),
-    });
+    // ❌ NO handleRegionChangeNext here
   };
+
 
   // ===== Current route params for dynamic paths =====
   const routeParams = useParams();
-  const defaultRanged = "QTD";
-  const defaultMonth = "NA";
-  const defaultYear = "NA";
+  // const defaultRanged = "QTD";
+  // const defaultMonth = "NA";
+  // const defaultYear = "NA";
+
+const today = new Date();
+
+const monthNames = [
+  "january", "february", "march", "april", "may", "june",
+  "july", "august", "september", "october", "november", "december"
+];
+
+const defaultRanged = "QTD";
+const defaultMonth = monthNames[today.getMonth()]; 
+const defaultYear = String(today.getFullYear());    
+
 
   const currentPlatform =
     (routeParams?.platform as string) || selectedPlatform || "global";
@@ -617,7 +666,7 @@ const AppSidebar: React.FC = () => {
 
   const tokenOrFail = () => {
     const token = typeof window !== "undefined" ? localStorage.getItem("jwtToken") : null;
-    if(!token) throw new Error("No auth token found");
+    if (!token) throw new Error("No auth token found");
     return token;
   };
 
@@ -629,34 +678,54 @@ const AppSidebar: React.FC = () => {
   };
 
   const handleFetchCurrentInventory = async () => {
-  try {
-    const token = tokenOrFail();
-    const res = await fetch("http://localhost:5000/amazon_api/inventory", {
-      method: "GET",
-      headers: { 
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-       },
-    });
+    try {
+      const token = tokenOrFail();
+      const res = await fetch("http://localhost:5000/amazon_api/inventory", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
 
-    if (!res.ok) {
-      throw new Error(`API Error: ${res.status}`);
+      if (!res.ok) {
+        throw new Error(`API Error: ${res.status}`);
+      }
+
+      const data = await res.json();
+      console.log("Inventory API Response:", data);
+
+      // TODO: Data ko Redux / Zustand / Context me store kar sakte ho
+    } catch (err) {
+      console.error("Inventory Fetch Error:", err);
     }
-
-    const data = await res.json();
-    console.log("Inventory API Response:", data);
-
-    // TODO: Data ko Redux / Zustand / Context me store kar sakte ho
-  } catch (err) {
-    console.error("Inventory Fetch Error:", err);
-  }
-};
+  };
 
   // ===== Navigation sections =====
   const sections: NavSection[] = [
     {
+      key: "Live Analytics",
+      name: "LIVE ANALYTICS",
+      icon: <Image
+        src="/images/brand/business.png"
+        alt="Logo"
+        width={20}
+        height={20}
+      />,
+      subItems: [
+        {
+          name: "Real-Time Dashboard",
+          path: `/`,
+        },
+        {
+          name: "Live AI Insights",
+          path: `/live-business-insight/${currentParams.ranged}/${currentParams.countryName}/${currentParams.month}/${currentParams.year}`,
+        },
+      ],
+    },
+    {
       key: "dashboard",
-      name: "Dashboard",
+      name: "HISTORICAL DASHBOARD",
       icon: <LuLayoutDashboard className="h-6 w-6" />,
       subItems: [
         {
@@ -672,8 +741,7 @@ const AppSidebar: React.FC = () => {
             month: string;
             year: string;
           }) =>
-            `/productwiseperformance/${
-              params.productname ?? "Classic"
+            `/productwiseperformance/${params.productname ?? "Classic"
             }/${params.countryName}/${params.month}/${params.year}`,
         },
         {
@@ -695,21 +763,17 @@ const AppSidebar: React.FC = () => {
     },
     {
       key: "business-intelligence",
-      name: "Business Intelligence",
-      icon:  <Image
-                src="/images/brand/business.png"
-                alt="Logo"
-                width={20}
-                height={20}
-              />,
+      name: "BUSINESS INTELLIGENCE",
+      icon: <Image
+        src="/images/brand/business.png"
+        alt="Logo"
+        width={20}
+        height={20}
+      />,
       subItems: [
         {
           name: "Business Insights",
           path: `/improvements/${currentParams.ranged}/${currentParams.countryName}/${currentParams.month}/${currentParams.year}`,
-        },
-         {
-          name: "Live Business Insights",
-          path: `/live-business-insight/${currentParams.ranged}/${currentParams.countryName}/${currentParams.month}/${currentParams.year}`,
         },
         {
           name: "Chatbot",
@@ -727,19 +791,19 @@ const AppSidebar: React.FC = () => {
     },
     {
       key: "inventory",
-      name: "Inventory",
+      name: "INVENTORY",
       icon: <Image
-                src="/images/brand/inventory.png"
-                alt="Logo"
-                width={20}
-                height={20}
-              />,
+        src="/images/brand/inventory.png"
+        alt="Logo"
+        width={20}
+        height={20}
+      />,
       subItems: [
         {
           name: "Input Cost",
           path: `/inputCost/${currentParams.countryName}/${currentParams.month}/${currentParams.year}`,
         },
-       {
+        {
           name: "Current Inventory",
           path: `/currentInventory/${currentParams.countryName}/${currentParams.month}/${currentParams.year}`,
           onClick: handleFetchCurrentInventory,   // ✅ yeh add karo
@@ -756,13 +820,13 @@ const AppSidebar: React.FC = () => {
     },
     {
       key: "recon",
-      name: "Recon",
+      name: "RECON",
       icon: <Image
-                src="/images/brand/recon.png"
-                alt="Logo"
-                width={20}
-                height={20}
-              />,
+        src="/images/brand/recon.png"
+        alt="Logo"
+        width={20}
+        height={20}
+      />,
       subItems: [
         {
           name: "Referral Fees",
@@ -789,6 +853,7 @@ const AppSidebar: React.FC = () => {
 
   // ===== Section open/close state =====
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
+    "Live Analytics": true,
     dashboard: true,
     "business-intelligence": true,
     inventory: true,
@@ -822,23 +887,22 @@ const AppSidebar: React.FC = () => {
         />
       )} */}
 
-    <aside
-  className={`fixed mt-16 flex flex-col lg:mt-0 top-0 px-4 left-0 bg-white text-gray-900 h-screen overflow-y-auto transition-all duration-300 ease-in-out z-[1100] 
+      <aside
+        className={`fixed mt-16 flex flex-col lg:mt-0 top-0 px-4 left-0 bg-white text-gray-900 h-screen overflow-y-auto transition-all duration-300 ease-in-out z-[1100] 
     ${isMobileOpen
-      ? "w-full" // 📱 mobile pe full width
-      : isExpanded || isHovered
-        ? "w-[290px]" // 🖥️ desktop expanded
-        : "w-[90px]"} // 🖥️ desktop collapsed
+            ? "w-full" // 📱 mobile pe full width
+            : isExpanded || isHovered
+              ? "w-[290px]" // 🖥️ desktop expanded
+              : "w-[90px]"} // 🖥️ desktop collapsed
     ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
     lg:translate-x-0 font-lato`}
-  onMouseEnter={() => !isExpanded && setIsHovered(true)}
-  onMouseLeave={() => setIsHovered(false)}
->
+        onMouseEnter={() => !isExpanded && setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
         {/* Logo */}
- <div
-          className={`py-8 flex gap-2 items-center border-0 ${
-            !isExpanded && !isHovered ? "lg:justify-between" : "justify-between"
-          }`}
+        <div
+          className={`py-8 flex gap-2 items-center border-0 ${!isExpanded && !isHovered ? "lg:justify-between" : "justify-between"
+            }`}
         >
           <Link href="/" className="flex items-center gap-2">
             {isExpanded || isHovered || isMobileOpen ? (
@@ -915,8 +979,8 @@ const AppSidebar: React.FC = () => {
         {/* Platform Select */}
         {(isExpanded || isHovered || isMobileOpen) && regionOptions.length > 0 && (
           <RegionSelect
-           label="Platform"
-selectedCountry={selectedPlatform}
+            label="Platform"
+            selectedCountry={selectedPlatform}
             options={regionOptions}
             onChange={onRegionChange}
             className="mb-2 px-2 py-1 rounded text-sm bg-transparent text-gray-800 focus:outline-none focus:ring-1 focus:ring-[#5EA68E]"
@@ -928,7 +992,7 @@ selectedCountry={selectedPlatform}
           <nav className="mb-6">
             <div className="flex flex-col gap-1">
               {sections.map((section) => {
-                const resolvedSubPaths = section.subItems.map(sub => 
+                const resolvedSubPaths = section.subItems.map(sub =>
                   typeof sub.path === 'function' ? sub.path(currentParams) : sub.path
                 );
                 const isSectionActive = resolvedSubPaths.some(path => isActive(path as any));
@@ -938,9 +1002,8 @@ selectedCountry={selectedPlatform}
                     {/* Section Header */}
                     <button
                       onClick={() => toggleSection(section.key)}
-                      className={`flex items-center justify-between w-full px-2 py-2 text-sm text-left text-[#5EA68E] font-semibold rounded hover:bg-[#5EA68E]/20 transition-colors cursor-pointer group ${
-                        isSectionActive ? 'bg-[#5EA68E]/10' : ''
-                      }`}
+                      className={`flex items-center justify-between w-full px-2 py-2 text-sm text-left text-[#5EA68E] font-semibold rounded hover:bg-[#5EA68E]/20 transition-colors cursor-pointer group ${isSectionActive ? 'bg-[#5EA68E]/10' : ''
+                        }`}
                     >
                       <div className="flex items-center">
                         {section.icon}
@@ -949,10 +1012,9 @@ selectedCountry={selectedPlatform}
                         )}
                       </div>
                       {(isExpanded || isHovered || isMobileOpen) && (
-                        <FaChevronDown 
-                          className={`h-3 w-3 transition-transform duration-200 ${
-                            openSections[section.key] ? 'rotate-0' : 'rotate-90'
-                          }`} 
+                        <FaChevronDown
+                          className={`h-3 w-3 transition-transform duration-200 ${openSections[section.key] ? 'rotate-0' : 'rotate-90'
+                            }`}
                         />
                       )}
                     </button>
@@ -964,19 +1026,18 @@ selectedCountry={selectedPlatform}
                           const resolvedPath = typeof subItem.path === 'function' ? subItem.path(currentParams) : subItem.path;
                           return (
                             <Link
-  key={idx}
-  href={resolvedPath}
-  onClick={() => {
-    if (subItem.onClick) subItem.onClick();   // 🔥 API chal jaayegi
-  }}
-  className={`block px-2 py-1.5 text-sm text-gray-700 hover:bg-[#5EA68E]/20 rounded transition-colors ${
-    isActive(subItem.path as any)
-      ? "bg-[#5EA68E]/20 text-[#5EA68E] font-medium"
-      : ""
-  }`}
->
-  {subItem.name}
-</Link>
+                              key={idx}
+                              href={resolvedPath}
+                              onClick={() => {
+                                if (subItem.onClick) subItem.onClick();   // 🔥 API chal jaayegi
+                              }}
+                              className={`block px-2 py-1.5 text-sm text-gray-700 hover:bg-[#5EA68E]/20 rounded transition-colors ${isActive(subItem.path as any)
+                                ? "bg-[#5EA68E]/20 text-[#5EA68E] font-medium"
+                                : ""
+                                }`}
+                            >
+                              {subItem.name}
+                            </Link>
 
                           );
                         })}

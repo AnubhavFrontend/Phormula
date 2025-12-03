@@ -2695,9 +2695,12 @@ const API_URL = `${baseURL}/amazon_api/orders`;
 const SHOPIFY_ENDPOINT = `${baseURL}/shopify/get_monthly_data`;
 const SHOPIFY_DROPDOWN_ENDPOINT = `${baseURL}/shopify/dropdown`;
 
-/** 💵 FX rates */
-const GBP_TO_USD = Number(process.env.NEXT_PUBLIC_GBP_TO_USD || "1.31");
-const INR_TO_USD = Number(process.env.NEXT_PUBLIC_INR_TO_USD || "0.01128");
+// your Flask route path
+const FX_ENDPOINT = `${baseURL}/currency-rate`;
+
+/** 💵 FX defaults (used until backend answers) */
+const GBP_TO_USD_ENV = Number(process.env.NEXT_PUBLIC_GBP_TO_USD || "1.31");
+const INR_TO_USD_ENV = Number(process.env.NEXT_PUBLIC_INR_TO_USD || "0.01128");
 
 const USE_MANUAL_LAST_MONTH =
   (process.env.NEXT_PUBLIC_USE_MANUAL_LAST_MONTH || "false").toLowerCase() ===
@@ -3149,28 +3152,6 @@ function SalesTargetCard({
         </div>
       </div>
 
-      {/* Bottom KPIs stay pinned near bottom of card */}
-      {/* <div className="border border-red-700 mt-3 md:mt-12 mb-12 grid grid-cols-4 gap-4 text-sm">
-        <div className="flex flex-col text-center items-center justify-between rounded-xl bg-gray-50 p-3">
-          <div className="text-gray-500">Today's Sale</div>
-          <div className="mt-0.5 font-semibold">{fmtUSDk(todayApprox)}</div>
-        </div>
-        <div className="flex flex-col text-center items-center justify-between rounded-xl bg-gray-50 p-3">
-          <div className="text-gray-500">MTD Sales</div>
-          <div className="mt-0.5 font-semibold">{fmtUSDk(mtdUSD)}</div>
-        </div>
-        <div className="flex flex-col  text-center items-center justify-between rounded-xl bg-gray-50 p-3">
-          <div className="text-gray-500">Sales Target</div>
-          <div className="mt-0.5 font-semibold">{fmtUSDk(targetUSD)}</div>
-        </div>
-        <div className="flex flex-col  text-center items-center justify-between rounded-xl bg-gray-50 p-3">
-          <div className="text-gray-500">{prevLabel} Sales</div>
-          <div className="mt-0.5 font-semibold">
-            {fmtUSDk(lastMonthTotalUSD)}
-          </div>
-        </div>
-      </div> */}
-
       <div className="mt-3 md:mt-12 mb-3 grid grid-cols-2 gap-4 text-sm">
         <div className="flex flex-col text-center items-center justify-between rounded-xl bg-gray-50 p-3">
           <div className="text-gray-500">Today's Sale</div>
@@ -3387,7 +3368,6 @@ export default function DashboardPage() {
   // Amazon connections (real integration status)
   const { connections: amazonConnections } = useAmazonConnections();
 
-
   // Shopify (current month)
   const [shopifyLoading, setShopifyLoading] = useState(false);
   const [shopifyError, setShopifyError] = useState<string | null>(null);
@@ -3406,11 +3386,96 @@ export default function DashboardPage() {
   // which region is selected in the P&L graph
   const [graphRegion, setGraphRegion] = useState<RegionKey>("Global");
 
+
+    // FX rates: GBP→USD (Amazon UK) and INR→USD (Shopify India)
+  const [gbpToUsd, setGbpToUsd] = useState(GBP_TO_USD_ENV);
+  const [inrToUsd, setInrToUsd] = useState(INR_TO_USD_ENV);
+  const [fxLoading, setFxLoading] = useState(false);
+
+  const fetchFxRates = useCallback(async () => {
+    try {
+      setFxLoading(true);
+
+      const token =
+        typeof window !== "undefined" ? localStorage.getItem("jwtToken") : null;
+
+      const headers: HeadersInit = {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      };
+      if (token) {
+        (headers as any).Authorization = `Bearer ${token}`;
+      }
+
+      // Use IST month/year (same helpers you already have)
+      const { monthName, year } = getISTYearMonth();
+      const month = monthName.toLowerCase();
+
+      const commonBody = {
+        month,
+        year,
+        fetch_if_missing: true,
+      };
+
+      // 1) Amazon UK: GBP → USD, country='uk'
+      // 2) Shopify India: INR → USD, country='india'
+      const [ukRes, inrRes] = await Promise.all([
+        fetch(FX_ENDPOINT, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            ...commonBody,
+            user_currency: "GBP",
+            country: "uk",
+            selected_currency: "USD",
+          }),
+        }),
+        fetch(FX_ENDPOINT, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            ...commonBody,
+            user_currency: "INR",
+            country: "india",
+            selected_currency: "USD",
+          }),
+        }),
+      ]);
+
+      if (ukRes.ok) {
+        const json = await ukRes.json();
+        const rate = json?.record?.conversion_rate;
+        if (json?.success && rate != null) {
+          setGbpToUsd(Number(rate));
+        }
+      } else {
+        console.warn("UK FX fetch failed:", ukRes.status);
+      }
+
+      if (inrRes.ok) {
+        const json = await inrRes.json();
+        const rate = json?.record?.conversion_rate;
+        if (json?.success && rate != null) {
+          setInrToUsd(Number(rate));
+        }
+      } else {
+        console.warn("INR FX fetch failed:", inrRes.status);
+      }
+    } catch (err) {
+      console.error("Failed to fetch FX rates", err);
+    } finally {
+      setFxLoading(false);
+    }
+  }, []);
+
+    useEffect(() => {
+    fetchFxRates();
+  }, [fetchFxRates]);
+
+
   const brandName = useSelector(
     (state: RootState) => state.auth.user?.brand_name
   );
-
-  console.log("brandName", brandName)
 
   const fetchAmazon = useCallback(async () => {
     setLoading(true);
@@ -3713,28 +3778,38 @@ export default function DashboardPage() {
     return { netSales };
   }, [shopifyPrevRows]);
 
-  const amazonUK_USD = useMemo(() => {
+  // const amazonUK_USD = useMemo(() => {
+  //   const amazonUK_GBP = toNumberSafe(uk.netSalesGBP);
+  //   return amazonUK_GBP * GBP_TO_USD;
+  // }, [uk.netSalesGBP]);
+
+    const amazonUK_USD = useMemo(() => {
     const amazonUK_GBP = toNumberSafe(uk.netSalesGBP);
-    return amazonUK_GBP * GBP_TO_USD;
-  }, [uk.netSalesGBP]);
+    return amazonUK_GBP * gbpToUsd;
+  }, [uk.netSalesGBP, gbpToUsd]);
+
 
   const combinedUSD = useMemo(() => {
     const aUK = amazonUK_USD;
-    const shopifyUSD = toNumberSafe(shopifyDeriv?.netSales) * INR_TO_USD;
+    const shopifyUSD =
+      toNumberSafe(shopifyDeriv?.netSales) * inrToUsd;
     return aUK + shopifyUSD;
-  }, [amazonUK_USD, shopifyDeriv?.netSales]);
+  }, [amazonUK_USD, shopifyDeriv?.netSales, inrToUsd]);
+
 
   const prevAmazonUKTotalUSD = useMemo(() => {
     const prevTotalGBP = toNumberSafe(
       data?.previous_month_total_net_sales?.total
     );
-    return prevTotalGBP * GBP_TO_USD;
-  }, [data?.previous_month_total_net_sales?.total]);
+    return prevTotalGBP * gbpToUsd;
+  }, [data?.previous_month_total_net_sales?.total, gbpToUsd]);
+
 
   const prevShopifyTotalUSD = useMemo(() => {
     const prevINRTotal = toNumberSafe(shopifyPrevDeriv?.netSales);
-    return prevINRTotal * INR_TO_USD;
-  }, [shopifyPrevDeriv]);
+    return prevINRTotal * inrToUsd;
+  }, [shopifyPrevDeriv, inrToUsd]);
+
 
   const globalPrevTotalUSD = prevShopifyTotalUSD + prevAmazonUKTotalUSD;
 
@@ -3870,7 +3945,7 @@ export default function DashboardPage() {
     const aspUSD = totalUnits > 0 ? totalSalesUSD / totalUnits : 0;
 
     const amazonProfitUSD =
-      uk.profitGBP != null ? toNumberSafe(uk.profitGBP) * GBP_TO_USD : 0;
+      uk.profitGBP != null ? toNumberSafe(uk.profitGBP) * gbpToUsd : 0;
     const profitPct =
       totalSalesUSD > 0 ? (amazonProfitUSD / totalSalesUSD) * 100 : 0;
 

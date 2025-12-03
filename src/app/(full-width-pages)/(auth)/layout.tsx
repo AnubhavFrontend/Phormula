@@ -77,20 +77,20 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           </Link>
 
           {/* Centered content */}
-          <div className="flex flex-col text-right">
+          <div className="flex flex-col gap-14 text-right ">
             {/* Heading */}
-            <h1 className="text-[#414042] text-xl sm:text-xl lg:text-4xl xl:text-5xl font-semibold leading-tight ">
+            <h1 className="text-[#414042] text-xl sm:text-xl lg:text-4xl xl:text-6xl font-medium leading-tight pr-10 ">
               Trusted Finance Partner
               <br />
               for <span className="text-[#F8EDCE]">D2C Entrepreneurs</span>
             </h1>
 
             {/* Illustration */}
-            <div className=" w-full  flex items-center justify-center overflow-hidden">
+            <div className=" w-full  flex items-center justify-center overflow-hidden pt-10">
               <Image
                 src="/images/auth/signup.png"
                 alt="Trusted Finance partner for D2C Entrepreneur"
-                width={800}
+                width={700}
                 height={500}
                 className="object-contain w-auto h-full"
                 priority
@@ -154,8 +154,8 @@ if (
           {/* Logo - top left */}
           <Link href="/" className="fixed left-3 top-3 z-20">
             <Image
-              width={150}
-              height={40}
+              width={220}
+              height={50}
               src="/images/auth/Phormula.png"
               alt="Phormula"
               priority
@@ -163,9 +163,9 @@ if (
           </Link>
 
           {/* Heading */}
-          <div className="flex flex-col text-right">
+          <div className="flex flex-col text-right pr-10">
             {/* Heading */}
-            <h1 className="text-[#414042] text-xl sm:text-xl lg:text-4xl xl:text-5xl font-semibold leading-tight">
+            <h1 className="text-[#414042] text-xl sm:text-xl lg:text-4xl xl:text-6xl font-medium leading-tight">
               Built for Founders,
               <br />
               Powered by <span className="text-[#F8EDCE]">Insight</span>
@@ -173,12 +173,12 @@ if (
           </div>
 
           {/* Illustration below heading */}
-          <div className="">
+          <div className="pt-14">
             <div className=" w-full  flex items-center justify-center overflow-hidden">
               <Image
                 src="/images/auth/signin.png"
                 alt="Performance Analysis dashboard"
-                 width={800}
+                 width={700}
                 height={500}
                 className="object-contain"
                 priority
@@ -197,8 +197,8 @@ if (
           {/* Logo - top left */}
           <Link href="/" className="fixed left-3 top-3 z-20">
             <Image
-              width={150}
-              height={40}
+              width={220}
+              height={50}
               src="/images/auth/Phormula.png"
               alt="Phormula"
               priority
@@ -206,9 +206,9 @@ if (
           </Link>
 
           {/* Heading */}
-          <div className="flex flex-col text-right">
+          <div className="flex flex-col text-right pr-10">
             {/* Heading */}
-            <h1 className="text-[#414042] text-xl sm:text-xl lg:text-4xl xl:text-5xl font-semibold leading-tight">
+            <h1 className="text-[#414042] text-xl sm:text-xl lg:text-4xl xl:text-6xl font-medium leading-tight">
              Control Expenses with
               <br />
               <span className="text-[#F8EDCE]">Auto Marketplace Recons</span>
@@ -216,14 +216,14 @@ if (
           </div>
 
           {/* Illustration below heading */}
-          <div className="">
+          <div className="pt-16">
             <div className="w-full  flex items-center justify-center overflow-hidden">
               <Image
-                src="/images/auth/choosecountry.png"
+                src="/images/auth/country.png"
                 alt="Performance Analysis dashboard"
                  width={800}
                 height={500}
-                className="object-contain"
+                className="object-contain "
                 priority
               />
             </div>
@@ -239,8 +239,8 @@ if (
           {/* Logo - top left */}
           <Link href="/" className="fixed left-3 top-3 z-20">
             <Image
-              width={150}
-              height={40}
+              width={220}
+              height={50}
               src="/images/auth/Phormula.png"
               alt="Phormula"
               priority
@@ -248,16 +248,16 @@ if (
           </Link>
 
           {/* Heading */}
-          <div className="flex flex-col text-right">
+          <div className="flex flex-col text-right pr-10">
             {/* Heading */}
-            <h1 className="text-[#414042] text-xl sm:text-xl lg:text-4xl xl:text-5xl font-semibold leading-tight">
+            <h1 className="text-[#414042] text-xl sm:text-xl lg:text-4xl xl:text-6xl font-medium leading-tight">
              CXO’s tool for&nbsp; 
-              <span className="text-[#F8EDCE]">Faster Decisions</span>
+              <span className="text-[#F8EDCE]">Faster<br/> Decisions</span>
             </h1>
           </div>
 
           {/* Illustration below heading */}
-          <div className="mt-10">
+          <div className="mt-20">
             <div className="w-full  flex items-center justify-center overflow-hidden">
               <Image
                 src="/images/auth/brand.png"
@@ -280,8 +280,8 @@ if (
           {/* Logo - top left */}
           <Link href="/" className="fixed left-3 top-3 z-20">
             <Image
-              width={150}
-              height={40}
+              width={220}
+              height={50}
               src="/images/auth/Phormula.png"
               alt="Phormula"
               priority
@@ -289,15 +289,15 @@ if (
           </Link>
 
           {/* Heading */}
-          <div className="flex flex-col text-right">
+          <div className="flex flex-col text-right pr-10">
             {/* Heading */}
-            <h1 className="text-[#414042] text-xl sm:text-xl lg:text-4xl xl:text-5xl font-semibold leading-tight">
+            <h1 className="text-[#414042] text-xl sm:text-xl lg:text-4xl xl:text-6xl font-medium leading-tight">
              See. <span className="text-[#F8EDCE]">Forecast. </span>Win.
             </h1>
           </div>
 
           {/* Illustration below heading */}
-          <div className="">
+          <div className="pt-20">
             <div className="w-full  flex items-center justify-center overflow-hidden">
               <Image
                 src="/images/auth/revenue.png"

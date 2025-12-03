@@ -851,7 +851,7 @@ const SKUtable: React.FC<SKUtableProps> = ({
                                         )}
                                     </tr>
 
-                                    <tr className="font-bold">
+                                    <tr className="font-bold text-center">
                                         <td className="border border-gray-300 px-2 py-2 text-[clamp(12px,0.729vw,16px)]" />
                                         <td className="border border-gray-300 px-2 py-2 text-[clamp(12px,0.729vw,16px)]" />
                                         <td className="border border-gray-300 px-2 py-2 text-[clamp(12px,0.729vw,16px)]" />

@@ -315,6 +315,7 @@ import { FaLink } from "react-icons/fa";
 import AmazonConnectLegacy from "./AmazonConnectLegacy";
 import Button from "@/components/ui/button/Button";
 import { TiTick } from "react-icons/ti";
+import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:5000";
@@ -501,7 +502,7 @@ export default function AmazonConnect({
           </div>
         </div>
 
-        <h2
+        {/* <h2
           id="amazon-connect-title"
           className="
             mt-2 sm:mt-3 text-center
@@ -510,7 +511,9 @@ export default function AmazonConnect({
           "
         >
           Connect Amazon Account
-        </h2>
+        </h2> */}
+
+        <PageBreadcrumb pageTitle="Connect Amazon Account" align="center" variant="table" textSize="2xl" />
 
         <p
           className="

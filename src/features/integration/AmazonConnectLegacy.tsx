@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import AmazonFinancialDashboard from "./AmazonFinancialDashboard";
 import Button from "@/components/ui/button/Button";
+import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 
 
 const API_BASE =
@@ -356,12 +357,13 @@ const handleStatusPollWinAndRoute = async () => {
           </div>
         </div>
 
-          <h2
+          {/* <h2
             id="amazon-connect-title"
             className="mb-1 text-center text-2xl sm:text-3xl md:text-4xl font-semibold text-[#5EA68E]"
           >
             Connect Amazon Account
-          </h2>
+          </h2> */}
+          <PageBreadcrumb pageTitle="Connect Amazon Account" align="center" variant="table" textSize="2xl" />
           <p className="mb-5 text-center text-xs sm:text-sm md:text-base text-[#414042]">
             Link your Amazon Seller Central to sync your sales data
           </p>
