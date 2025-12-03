@@ -60,7 +60,7 @@ export default function FeepreviewUpload({ country: initialCountry, onClose }: F
   // ⬇️ Form view (shown until "Next")
   return (
     <div className="w-full">
-      <PageBreadcrumb pageTitle="Fee Preview Upload" variant="table"/>
+      <PageBreadcrumb pageTitle="Fee Preview Upload" variant="table" />
 
       <form onSubmit={onSubmit} className="space-y-4" encType="multipart/form-data">
         <div>
@@ -150,25 +150,25 @@ export default function FeepreviewUpload({ country: initialCountry, onClose }: F
           <p className="mt-2 text-sm text-[#5EA68E] font-semibold">
             Amazon → Seller Central → Reports → Fulfillment → Fee Preview
             <br /> <span className="text-[#414042]"> Download <b>.xlsx</b> (or .xls) for current FBA inventory</span>
-           
+
           </p>
         </div>
 
-        
-   <div className=" flex items-center justify-end gap-3 ">
-    <button
+
+        <div className=" flex items-center justify-center gap-3 ">
+          {/* <button
       type="button"
       onClick={onClose}
       className="inline-flex justify-center rounded-lg bg-gray-200 px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-300 dark:bg-white/10 dark:text-gray-200 dark:hover:bg-white/15"
     >
       Back
-    </button>
-    <button
-      type="submit"
-      className="inline-flex justify-center rounded-lg bg-[#2c3854] px-4 py-2 text-sm font-semibold text-[#f8edcf] hover:opacity-95 disabled:opacity-60"
-    >
-     Next
-    </button>
+    </button> */}
+          <button
+            type="submit"
+            className="inline-flex justify-center rounded-lg bg-[#2c3854] px-4 py-2 text-sm font-semibold text-[#f8edcf] hover:opacity-95 disabled:opacity-60"
+          >
+            Next
+          </button>
         </div>
       </form>
     </div>

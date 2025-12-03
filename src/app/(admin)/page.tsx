@@ -3032,7 +3032,7 @@ function SalesTargetCard({
       </div>
 
       {/* Legend */}
-      <div className="mt-5 mb-2 flex items-center justify-between gap-2 text-xs">
+      {/* <div className="mt-5 mb-2 flex items-center justify-between gap-2 text-xs">
         <div className="flex items-center gap-2">
           <span
             className="inline-block h-3 w-3 rounded-sm"
@@ -3054,7 +3054,36 @@ function SalesTargetCard({
           />
           <span className="text-gray-600">{prevLabel} MTD</span>
         </div>
-      </div>
+      </div> */}
+
+{/* Legend */}
+<div className="mt-5 mb-2 flex items-center gap-2 text-xs">
+  <div className="flex flex-1 items-center justify-center gap-2">
+    <span
+      className="block h-3 w-3 rounded-sm shrink-0"
+      style={{ backgroundColor: "#5EA68E" }}
+    />
+    <span className="text-gray-600">MTD Sales</span>
+  </div>
+
+  <div className="flex flex-1 items-center justify-center gap-2">
+    <span
+      className="block h-3 w-3 rounded-sm shrink-0"
+      style={{ backgroundColor: "#9ca3af" }}
+    />
+    <span className="text-gray-600">This Month Target</span>
+  </div>
+
+  <div className="flex flex-1 items-center justify-center gap-2">
+    <span
+      className="block h-3 w-3 rounded-sm shrink-0"
+      style={{ backgroundColor: "#FFBE25" }}
+    />
+    <span className="text-gray-600">{prevLabel} MTD</span>
+  </div>
+</div>
+
+
 
       {/* 🔹 Middle section grows to fill available height */}
       <div className="flex-1 flex flex-col items-center justify-center mt-4 md:mt-10 ">

@@ -1801,12 +1801,12 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Modal } from "@/components/ui/modal"; 
+import { Modal } from "@/components/ui/modal";
 
 interface FileUploadFormProps {
-    initialCountry: string;
-    onClose: () => void;
-    onComplete: () => void;
+  initialCountry: string;
+  onClose: () => void;
+  onComplete: () => void;
 }
 
 const FileUploadForm = ({ initialCountry, onClose, onComplete }: FileUploadFormProps) => {
@@ -1947,6 +1947,22 @@ const FileUploadForm = ({ initialCountry, onClose, onComplete }: FileUploadFormP
     updateSubcategories();
   }, [category]);
 
+  useEffect(() => {
+  if (isUploading) {
+    // Disable scroll
+    document.body.style.overflow = "hidden";
+  } else {
+    // Restore scroll
+    document.body.style.overflow = "";
+  }
+
+  // Cleanup on unmount
+  return () => {
+    document.body.style.overflow = "";
+  };
+}, [isUploading]);
+
+
   // ---------------- Modal ----------------
   const confirmWithModal = (message: React.ReactNode) =>
     new Promise<boolean>((resolve) => {
@@ -1955,195 +1971,195 @@ const FileUploadForm = ({ initialCountry, onClose, onComplete }: FileUploadFormP
       setModalPromise(() => resolve);
     });
 
-const handleCombinedSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setError("");
+  const handleCombinedSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
 
-  // 1) Basic file/country guards
-  if (!file1 || !file2) {
-    setError("Please upload both files.");
-    return;
-  }
-  if (!effectiveCountry) {
-    setError("Country is missing. Please open this page with a country selected.");
-    return;
-  }
+    // 1) Basic file/country guards
+    if (!file1 || !file2) {
+      setError("Please upload both files.");
+      return;
+    }
+    if (!effectiveCountry) {
+      setError("Country is missing. Please open this page with a country selected.");
+      return;
+    }
 
-  // 2) Ensure month/year (fallback to parsed CSV hints if user didn't choose)
-  let finalMonth = month?.toLowerCase() || "";
-  let finalYear = (year || "").toString();
+    // 2) Ensure month/year (fallback to parsed CSV hints if user didn't choose)
+    let finalMonth = month?.toLowerCase() || "";
+    let finalYear = (year || "").toString();
 
-  if (!finalMonth) {
-    finalMonth = (file1Month || file2Month || "").toLowerCase();
-  }
-  if (!finalYear) {
-    finalYear = (file1Year || file2Year || "").toString();
-  }
+    if (!finalMonth) {
+      finalMonth = (file1Month || file2Month || "").toLowerCase();
+    }
+    if (!finalYear) {
+      finalYear = (file1Year || file2Year || "").toString();
+    }
 
-  if (!finalMonth || !finalYear) {
-    setError("Please select a Month and Year (or upload files that contain them).");
-    return;
-  }
+    if (!finalMonth || !finalYear) {
+      setError("Please select a Month and Year (or upload files that contain them).");
+      return;
+    }
 
-  // 3) Optional: normalize month spelling just in case
-  const allowedMonths = [
-    "january","february","march","april","may","june",
-    "july","august","september","october","november","december"
-  ];
-  if (!allowedMonths.includes(finalMonth)) {
-    setError(`Invalid month: ${finalMonth}. Please re-select.`);
-    return;
-  }
+    // 3) Optional: normalize month spelling just in case
+    const allowedMonths = [
+      "january", "february", "march", "april", "may", "june",
+      "july", "august", "september", "october", "november", "december"
+    ];
+    if (!allowedMonths.includes(finalMonth)) {
+      setError(`Invalid month: ${finalMonth}. Please re-select.`);
+      return;
+    }
 
-  // 4) Token guard (your API requires it)
-  const token = localStorage.getItem("jwtToken");
-  if (!token) {
-    setError("You are not logged in. Please log in and try again.");
-    return;
-  }
+    // 4) Token guard (your API requires it)
+    const token = localStorage.getItem("jwtToken");
+    if (!token) {
+      setError("You are not logged in. Please log in and try again.");
+      return;
+    }
 
-  try {
-    // 5) Check if the period already exists (only if we have M/Y)
-    let existingUpload: any = null;
     try {
-      const historyResponse = await fetch("http://127.0.0.1:5000/upload_history", {
-        method: "GET",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      // tolerate non-200 here; we'll just skip the replace-confirm
-      if (historyResponse.ok) {
-        const historyData = await historyResponse.json();
-        existingUpload = Array.isArray(historyData?.uploads)
-          ? historyData.uploads.find(
+      // 5) Check if the period already exists (only if we have M/Y)
+      let existingUpload: any = null;
+      try {
+        const historyResponse = await fetch("http://127.0.0.1:5000/upload_history", {
+          method: "GET",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        // tolerate non-200 here; we'll just skip the replace-confirm
+        if (historyResponse.ok) {
+          const historyData = await historyResponse.json();
+          existingUpload = Array.isArray(historyData?.uploads)
+            ? historyData.uploads.find(
               (u: any) =>
                 String(u?.year) === String(finalYear) &&
                 String(u?.month || "").toLowerCase() === finalMonth &&
                 String(u?.country || "").toLowerCase() === effectiveCountry
             )
-          : null;
+            : null;
+        }
+      } catch {
+        // ignore history errors; continue with upload
       }
-    } catch {
-      // ignore history errors; continue with upload
-    }
 
-    if (existingUpload) {
-      const confirmed = await confirmWithModal(
-        <>
-          You have already uploaded data for {capitalizeFirstLetter(finalMonth)}/{finalYear} in{" "}
-          {effectiveCountry.toUpperCase()}.
-          <br />
-          Do you want to replace the previous file?
-        </>
-      );
-      if (!confirmed) {
-        // User cancelled — keep the page as is
-        return;
+      if (existingUpload) {
+        const confirmed = await confirmWithModal(
+          <>
+            You have already uploaded data for {capitalizeFirstLetter(finalMonth)}/{finalYear} in{" "}
+            {effectiveCountry.toUpperCase()}.
+            <br />
+            Do you want to replace the previous file?
+          </>
+        );
+        if (!confirmed) {
+          // User cancelled — keep the page as is
+          return;
+        }
       }
-    }
 
-    // 6) Call your existing upload
-    setIsUploading(true);
-    // Make sure your submitForm uses the component's current state (month/year)
-    // If submitForm reads from state, sync it before calling:
-    if (finalMonth !== month) setMonth(finalMonth);
-    if (finalYear !== year) setYear(finalYear);
+      // 6) Call your existing upload
+      setIsUploading(true);
+      // Make sure your submitForm uses the component's current state (month/year)
+      // If submitForm reads from state, sync it before calling:
+      if (finalMonth !== month) setMonth(finalMonth);
+      if (finalYear !== year) setYear(finalYear);
 
-    const responseData = await submitForm(); // <-- your working upload function
+      const responseData = await submitForm(); // <-- your working upload function
 
-    // 7) Redirect to the stats page
-    const ranged = "MTD"; // or "QTD" if that's the active tab in your UI
-    await router.push(`/country/${ranged}/${effectiveCountry}/${finalMonth}/${finalYear}`);
-  } catch (err) {
-    console.error("There was a problem with the file upload:", err);
-    setError("Upload failed. Please try again.");
-  } finally {
-    setIsUploading(false);
-  }
-};
-
-
-  // ---------------- SubmitForm ----------------
-const submitForm = async () => {
-  if (!file1 || !file2) throw new Error("Both files are required");
-
-  // --- Find a profile_id robustly ---
-  const safeGetJwtPayload = () => {
-    try {
-      const token = localStorage.getItem("jwtToken");
-      if (!token) return null;
-      const [, payloadB64] = token.split(".");
-      if (!payloadB64) return null;
-      const json = atob(payloadB64.replace(/-/g, "+").replace(/_/g, "/"));
-      return JSON.parse(json);
-    } catch {
-      return null;
+      // 7) Redirect to the stats page
+      const ranged = "MTD"; // or "QTD" if that's the active tab in your UI
+      await router.push(`/country/${ranged}/${effectiveCountry}/${finalMonth}/${finalYear}`);
+    } catch (err) {
+      console.error("There was a problem with the file upload:", err);
+      setError("Upload failed. Please try again.");
+    } finally {
+      setIsUploading(false);
     }
   };
 
-  const jwtPayload = safeGetJwtPayload();
-  const profileIdFromProfile = (profile as any)?.id;
-  const profileIdFromJwt =
-    (jwtPayload && (jwtPayload.profile_id ?? jwtPayload.user_id)) || null;
 
-  // Final fallback so backend never KeyErrors
-  const finalProfileId = String(
-    profileIdFromProfile ?? profileIdFromJwt ?? "0"
-  );
+  // ---------------- SubmitForm ----------------
+  const submitForm = async () => {
+    if (!file1 || !file2) throw new Error("Both files are required");
 
-  const formData = new FormData();
-  formData.append("file1", file1);
-  formData.append("file2", file2);
-  formData.append("transit_time", String(transitTime));
-  formData.append("stock_unit", String(stockUnit));
-  formData.append("country", effectiveCountry);
-  formData.append("category", category);
-  formData.append("subcategory", subcategory);
-  formData.append("year", year);
-  formData.append("month", month);
-  formData.append("profile_id", finalProfileId);
-
-  const token = typeof window !== "undefined" ? localStorage.getItem("jwtToken") : null;
-
-  try {
-    const response = await fetch("http://127.0.0.1:5000/upload", {
-      method: "POST",
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-      body: formData,
-    });
-
-    const contentType = response.headers.get("Content-Type") || "";
-    if (contentType.includes("application/json")) {
-      const responseData = await response.json();
-
-      localStorage.setItem("excelFileData", responseData.excel_file ?? "");
-      localStorage.setItem("pnlReport", responseData.pnl_report ?? "");
-      localStorage.setItem("totalSales", responseData.total_sales ?? "");
-      localStorage.setItem("totalProfit", responseData.total_profit ?? "");
-      localStorage.setItem("totalFbaFees", responseData.total_fba_fees ?? "");
-      localStorage.setItem("totalExpense", responseData.total_expense ?? "");
-      localStorage.setItem(
-        "platformfee",
-        responseData.platform_fee ?? responseData.otherwplatform ?? ""
-      );
-      localStorage.setItem("expenseChart", responseData.expense_chart_img ?? "");
-      localStorage.setItem("salesChart", responseData.sales_chart_img ?? "");
-
-      if (countryName) {
-        localStorage.removeItem(`forecast-${countryName}`);
-        localStorage.removeItem(`forecast-time-${countryName}`);
+    // --- Find a profile_id robustly ---
+    const safeGetJwtPayload = () => {
+      try {
+        const token = localStorage.getItem("jwtToken");
+        if (!token) return null;
+        const [, payloadB64] = token.split(".");
+        if (!payloadB64) return null;
+        const json = atob(payloadB64.replace(/-/g, "+").replace(/_/g, "/"));
+        return JSON.parse(json);
+      } catch {
+        return null;
       }
-      localStorage.removeItem("mergedInventoryData");
+    };
 
-      return responseData;
+    const jwtPayload = safeGetJwtPayload();
+    const profileIdFromProfile = (profile as any)?.id;
+    const profileIdFromJwt =
+      (jwtPayload && (jwtPayload.profile_id ?? jwtPayload.user_id)) || null;
+
+    // Final fallback so backend never KeyErrors
+    const finalProfileId = String(
+      profileIdFromProfile ?? profileIdFromJwt ?? "0"
+    );
+
+    const formData = new FormData();
+    formData.append("file1", file1);
+    formData.append("file2", file2);
+    formData.append("transit_time", String(transitTime));
+    formData.append("stock_unit", String(stockUnit));
+    formData.append("country", effectiveCountry);
+    formData.append("category", category);
+    formData.append("subcategory", subcategory);
+    formData.append("year", year);
+    formData.append("month", month);
+    formData.append("profile_id", finalProfileId);
+
+    const token = typeof window !== "undefined" ? localStorage.getItem("jwtToken") : null;
+
+    try {
+      const response = await fetch("http://127.0.0.1:5000/upload", {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData,
+      });
+
+      const contentType = response.headers.get("Content-Type") || "";
+      if (contentType.includes("application/json")) {
+        const responseData = await response.json();
+
+        localStorage.setItem("excelFileData", responseData.excel_file ?? "");
+        localStorage.setItem("pnlReport", responseData.pnl_report ?? "");
+        localStorage.setItem("totalSales", responseData.total_sales ?? "");
+        localStorage.setItem("totalProfit", responseData.total_profit ?? "");
+        localStorage.setItem("totalFbaFees", responseData.total_fba_fees ?? "");
+        localStorage.setItem("totalExpense", responseData.total_expense ?? "");
+        localStorage.setItem(
+          "platformfee",
+          responseData.platform_fee ?? responseData.otherwplatform ?? ""
+        );
+        localStorage.setItem("expenseChart", responseData.expense_chart_img ?? "");
+        localStorage.setItem("salesChart", responseData.sales_chart_img ?? "");
+
+        if (countryName) {
+          localStorage.removeItem(`forecast-${countryName}`);
+          localStorage.removeItem(`forecast-time-${countryName}`);
+        }
+        localStorage.removeItem("mergedInventoryData");
+
+        return responseData;
+      }
+
+      const text = await response.text();
+      throw new Error(text || "Unexpected response from server");
+    } catch (err) {
+      console.error("There was a problem with the file upload:", err);
+      throw err;
     }
-
-    const text = await response.text();
-    throw new Error(text || "Unexpected response from server");
-  } catch (err) {
-    console.error("There was a problem with the file upload:", err);
-    throw err;
-  }
-};
+  };
 
 
   // ---------------- Render ----------------
@@ -2162,9 +2178,8 @@ const submitForm = async () => {
                 <div className="space-y-1.5">
                   <label className="block text-xs font-medium">Month to Date Amazon Report:</label>
                   <div
-                    className={`relative h-[160px] md:h-[170px] w-full border border-neutral-700 rounded-xl bg-white flex items-center justify-center overflow-hidden ${
-                      file1 ? "ring-2 ring-emerald-500" : ""
-                    }`}
+                    className={`relative h-[160px] md:h-[170px] w-full border border-neutral-700 rounded-xl bg-white flex items-center justify-center overflow-hidden ${file1 ? "ring-2 ring-emerald-500" : ""
+                      }`}
                   >
                     <input
                       type="file"
@@ -2186,7 +2201,7 @@ const submitForm = async () => {
                       </p>
                     )}
                   </div>
-                   <p className="text-[#5EA68E] font-semibold text-[11px] md:text-xs m-0">
+                  <p className="text-[#5EA68E] font-semibold text-[11px] md:text-xs m-0">
                     Amazon → Seller Central → Payments → Reports Repository → Report Type Transactions → Select Month
                   </p>
                 </div>
@@ -2194,9 +2209,8 @@ const submitForm = async () => {
                 <div className="space-y-1.5">
                   <label className="block text-xs font-medium">Monthly End Inventory File:</label>
                   <div
-                    className={`relative h-[160px] md:h-[170px] w-full border border-neutral-700 rounded-xl bg-white flex items-center justify-center overflow-hidden ${
-                      file2 ? "ring-2 ring-emerald-500" : ""
-                    }`}
+                    className={`relative h-[160px] md:h-[170px] w-full border border-neutral-700 rounded-xl bg-white flex items-center justify-center overflow-hidden ${file2 ? "ring-2 ring-emerald-500" : ""
+                      }`}
                   >
                     <input
                       type="file"
@@ -2218,7 +2232,7 @@ const submitForm = async () => {
                       </p>
                     )}
                   </div>
-                   <p className="text-[#5EA68E] font-semibold text-[11px] md:text-xs m-0">
+                  <p className="text-[#5EA68E] font-semibold text-[11px] md:text-xs m-0">
                     Amazon → Seller Central → Reports → Fulfilment by amazon → Inventory Ledger → Download
                   </p>
                   <p className="italic text-neutral-600 text-[11px] md:text-xs m-0">
@@ -2282,7 +2296,7 @@ const submitForm = async () => {
                 Upload
               </button>
 
-              {isUploading && (
+              {/* {isUploading && (
                 <div className="absolute inset-0 z-20 flex flex-col items-center justify-center backdrop-blur-md bg-black/30">
                   <video
                     src="/infinity2.webm"
@@ -2294,7 +2308,23 @@ const submitForm = async () => {
                   />
                   <div className="mt-4 text-white text-sm md:text-base">Uploading...</div>
                 </div>
+              )} */}
+              {isUploading && (
+                <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black/40 backdrop-blur-md">
+                  <video
+                    src="/infinity2.webm"
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    className="w-[120px] md:w-[140px]"
+                  />
+                  <div className="mt-4 text-white text-sm md:text-base">
+                    Uploading...
+                  </div>
+                </div>
               )}
+
             </form>
           </div>
         </div>

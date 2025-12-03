@@ -57,7 +57,7 @@ const REGION_LABELS: Record<string, string> = {
 };
 
 const ICONS = {
-  amazonLogo: "/amazon_small.png",
+  amazonLogo: "/amazon.png",
   back: "/BackArrow.png",
   shield: "/secure.png",
   caret: "/caret-down.svg",
@@ -342,9 +342,19 @@ const handleStatusPollWinAndRoute = async () => {
         </button> */}
 
         <div className="max-h-[90vh] overflow-y-auto px-4 sm:px-6 md:px-8 pb-6 pt-5 sm:pt-8">
-          <div className="mx-auto mb-3 sm:mb-4 flex h-10 w-10 items-center justify-center">
+          {/* <div className="mx-auto mb-3 sm:mb-4 flex h-10 w-10 items-center justify-center">
             <img src={ICONS.amazonLogo} alt="Amazon" className="h-10 w-10 sm:h-12 sm:w-12 mx-auto" />
+          </div> */}
+
+          <div className="flex items-center justify-between relative">
+          <div className="flex justify-center w-full mt-1 sm:mt-2">
+            <img
+              src={ICONS.amazonLogo}
+              alt="Amazon"
+              className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 mx-auto"
+            />
           </div>
+        </div>
 
           <h2
             id="amazon-connect-title"

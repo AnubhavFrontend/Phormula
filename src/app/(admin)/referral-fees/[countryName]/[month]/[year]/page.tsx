@@ -2316,8 +2316,8 @@ function Donut({ label, pct, amount, color = "#60A68E" }: DonutProps) {
   } as const;
 
   return (
-    <div className="bg-white rounded-2xl p-3 sm:p-4 flex flex-col items-center">
-      <h3 className="text-xs sm:text-sm font-semibold text-slate-700 mb-1 sm:mb-2">
+    <div className="bg-white p-3 sm:p-4 flex flex-col items-center">
+      <h3 className="text-base sm:text-lg md:text-lg font-semibold text-slate-700 mb-1 sm:mb-2">
         {label}
       </h3>
 
@@ -2961,7 +2961,7 @@ export default function ReferralFeesDashboard(): JSX.Element {
           </div>
 
           {/* Donuts */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-9 rounded-xl border border-slate-200 shadow-sm">
             {feeDonuts.map((d, index) => (
               <Donut
                 key={d.label}
@@ -2974,7 +2974,7 @@ export default function ReferralFeesDashboard(): JSX.Element {
           </div>
 
           {/* SKU-wise table */}
-          <div className="bg-white rounded-2xl shadow px-2 md:px-4 pb-2 md:pb-4 w-full overflow-x-auto">
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm px-2 md:px-4 pb-2 md:pb-4 w-full overflow-x-auto">
             <div className="flex flex-col md:flex-row items-center justify-between gap-2 flex-wrap w-full mb-2 md:mb-0">
               <PageBreadcrumb
                 pageTitle="Product-wise Details of Overcharged Ref Fees"
