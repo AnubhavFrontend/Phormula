@@ -2912,6 +2912,16 @@ const toNumberSafe = (v: any) => {
   return isNaN(n) ? 0 : n;
 };
 
+const calcDeltaPct = (current: number, previous: number | null | undefined) => {
+  const prev = Number(previous ?? 0);
+  const curr = Number(current ?? 0);
+
+  if (!prev || !Number.isFinite(prev)) return null; // avoid divide-by-zero
+  const pct = ((curr - prev) / prev) * 100;
+  return pct;
+};
+
+
 /* ===================== SALES TARGET CARD ===================== */
 type RegionKey = "Global" | "UK" | "US" | "CA";
 
@@ -2920,6 +2930,16 @@ type RegionMetrics = {
   lastMonthToDateUSD: number;
   lastMonthTotalUSD: number;
   targetUSD: number;
+};
+
+type AmazonStatCardProps = {
+  label: string;
+  current: number | null | undefined;
+  previous: number | null | undefined;
+  loading: boolean;
+  formatter?: (v: any) => string;
+  bottomLabel: string; // e.g. "Nov'25"
+  className?: string;  // color styles per card
 };
 
 function SalesTargetCard({
@@ -3173,6 +3193,69 @@ function SalesTargetCard({
 }
 
 
+function AmazonStatCard({
+  label,
+  current,
+  previous,
+  loading,
+  formatter = fmtGBP,
+  bottomLabel,
+  className,
+}: AmazonStatCardProps) {
+  const currVal = toNumberSafe(current);
+  const prevVal = previous != null ? toNumberSafe(previous) : 0;
+
+  const delta = calcDeltaPct(currVal, prevVal); // may be null
+  const isUp = delta != null && delta >= 0;
+
+  const deltaText =
+    delta == null ? "—" : `${isUp ? "+" : ""}${delta.toFixed(2)}%`;
+
+  const deltaColor =
+    delta == null
+      ? "text-gray-500"
+      : isUp
+        ? "text-emerald-600"
+        : "text-rose-600";
+
+  return (
+    <div
+      className={`rounded-2xl border bg-white p-4 shadow-sm flex flex-col justify-between ${className || ""}`}
+    >
+      {/* label */}
+      <div className="text-xs font-medium text-charcoal-500">{label}</div>
+
+      {/* current value */}
+      <div className="mt-1 text-lg font-semibold">
+        <ValueOrSkeleton loading={loading} mode="inline" compact>
+          {formatter(currVal)}
+        </ValueOrSkeleton>
+      </div>
+
+      {/* last month + % change */}
+      <div className="mt-3 flex items-center justify-between text-[11px]">
+        <div className="flex flex-col">
+          <span className="text-gray-400">{bottomLabel}</span>
+          <span className="font-medium text-gray-700">
+            {previous == null ? "—" : formatter(prevVal)}
+          </span>
+        </div>
+
+        <div
+          className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ${delta == null
+              ? "bg-gray-50"
+              : isUp
+                ? "bg-emerald-50"
+                : "bg-rose-50"
+            } ${deltaColor}`}
+        >
+          {deltaText}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ===================== SIMPLE BAR CHART ===================== */
 function SimpleBarChart({
   items,
@@ -3347,6 +3430,13 @@ function SimpleBarChart({
 }
 
 
+const parsePercentToNumber = (value: string | number | null | undefined): number | null => {
+  if (value == null) return null;
+  const raw = typeof value === "number" ? String(value) : value;
+  const cleaned = raw.replace("%", "").trim(); // handles "+21.43%", "-0.19%", etc.
+  const n = Number(cleaned);
+  return Number.isNaN(n) ? null : n;
+};
 
 
 /* ===================== MAIN PAGE ===================== */
@@ -3378,6 +3468,7 @@ export default function DashboardPage() {
   // which region is selected in the P&L graph
   const [graphRegion, setGraphRegion] = useState<RegionKey>("Global");
 
+ const prevLabel = useMemo(() => getPrevMonthShortLabel(), []);
 
   // FX rates: GBP→USD (Amazon UK) and INR→USD (Shopify India)
   const [gbpToUsd, setGbpToUsd] = useState(GBP_TO_USD_ENV);
@@ -3717,6 +3808,82 @@ export default function DashboardPage() {
     };
   }, [cms, cmp, skuTotals]);
 
+const ukPrev = useMemo(() => {
+  const prevTotals = data?.previous_month_same_day_user_totals || null;
+  const prevMonthCompare = data?.previous_month_vs_current_percentages || null;
+  const prevProfitCompare = data?.profit_percentage_comparison || null;
+
+  // Sales (product_sales), Units (quantity), ASP, Profit
+  const prevNetSalesGBP = prevTotals
+    ? toNumberSafe(prevTotals.product_sales)
+    : 0;
+
+  const prevUnitsGBP = prevTotals
+    ? toNumberSafe(prevTotals.quantity)
+    : 0;
+
+  const prevAspGBP = prevTotals
+    ? toNumberSafe(prevTotals.asp)
+    : prevUnitsGBP > 0
+    ? prevNetSalesGBP / prevUnitsGBP
+    : 0;
+
+  const prevProfitGBP = prevTotals
+    ? toNumberSafe(prevTotals.profit)
+    : 0;
+
+  // ─────────────────────────────────────────
+  // Profit % (absolute previous month %)
+  // ─────────────────────────────────────────
+  let prevProfitPctGBP: number | null = null;
+  if (prevProfitCompare?.profit_percentage_previous_month != null) {
+    const raw = String(prevProfitCompare.profit_percentage_previous_month).replace("%", "");
+    const n = Number(raw);
+    prevProfitPctGBP = Number.isNaN(n) ? null : n;
+  } else if (prevNetSalesGBP > 0 && Number.isFinite(prevProfitGBP)) {
+    prevProfitPctGBP = (prevProfitGBP / prevNetSalesGBP) * 100;
+  }
+
+  // ─────────────────────────────────────────
+  // Percentage changes vs current month
+  // ─────────────────────────────────────────
+  const pctSalesVsCurrent = prevMonthCompare
+    ? parsePercentToNumber(prevMonthCompare.percentage_sales)     // "+20.22%"
+    : null;
+
+  const pctUnitsVsCurrent = prevMonthCompare
+    ? parsePercentToNumber(prevMonthCompare.percentage_quantity)  // "-1.00%"
+    : null;
+
+  const pctAspVsCurrent = prevMonthCompare
+    ? parsePercentToNumber(prevMonthCompare.percentage_asp)       // "+21.43%"
+    : null;
+
+  const pctProfitVsCurrent = prevMonthCompare
+    ? parsePercentToNumber(prevMonthCompare.percentage_profit)    // "+19.82%"
+    : null;
+
+  const pctProfitPctVsCurrent = prevProfitCompare
+    ? parsePercentToNumber(prevProfitCompare.percentage_profit_percentage) // "-0.19%"
+    : null;
+
+  return {
+    // raw previous-month values
+    netSalesGBP: prevNetSalesGBP,
+    unitsGBP: prevUnitsGBP,
+    aspGBP: prevAspGBP,
+    profitGBP: prevProfitGBP,
+    profitPctGBP: prevProfitPctGBP,
+
+    // % vs current month (deltas)
+    pctNetSalesVsCurrent: pctSalesVsCurrent,
+    pctUnitsVsCurrent: pctUnitsVsCurrent,
+    pctAspVsCurrent: pctAspVsCurrent,
+    pctProfitVsCurrent: pctProfitVsCurrent,
+    pctProfitPctVsCurrent: pctProfitPctVsCurrent,
+  };
+}, [data]);
+
   const shopifyNotConnected =
     !shopifyStore?.shop_name ||
     !shopifyStore?.access_token ||
@@ -3999,21 +4166,6 @@ export default function DashboardPage() {
     ];
   }, [graphRegion, combinedUSD, uk]);
 
-  // ✅ Now that ALL hooks are declared, it's safe to early-return
-  // if (initialLoading) {
-  //   return (
-  //     <Loader
-  //       src="/infinity-unscreen.gif"
-  //       label="Loading sales dashboard…"
-  //       fullscreen
-  //       size={120}
-  //       roundedClass="rounded-none"
-  //       backgroundClass="bg-transparent"
-  //       respectReducedMotion
-  //     />
-  //   );
-  // }
-
   useEffect(() => {
     if (initialLoading) {
       const prev = document.body.style.overflow;
@@ -4027,13 +4179,10 @@ export default function DashboardPage() {
 
   return (
     <div className="relative">
-      {/* Overlay that covers ONLY this page’s content area */}
       {initialLoading && (
         <>
-          {/* dim just the content area */}
           <div className="fixed inset-0 z-40 bg-white/70" />
 
-          {/* centered loader */}
           <div className="fixed inset-0 z-50 flex items-center justify-center">
             <Loader
               src="/infinity-unscreen.gif"
@@ -4047,17 +4196,12 @@ export default function DashboardPage() {
         </>
       )}
 
-      {/* Actual page content (what you already have) */}
       <div
         className={initialLoading ? "pointer-events-none opacity-40" : ""}
       >
-
-
         <div className="mx-auto max-w-7xl">
-          {/* Top header */}
           <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
 
-            {/* LEFT SIDE: Title block */}
             <div className="flex flex-col leading-tight">
               <p className="text-lg text-charcoal-500 mb-1">
                 Let's get started, <span className="text-green-500">{brandName}!</span>
@@ -4285,52 +4429,112 @@ export default function DashboardPage() {
                     </p>
                   </div>
                 ) : (
+                  // <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                  //   <div className="rounded-2xl border border-[#87AD12] bg-[#87AD1226] p-5 shadow-sm">
+                  //     <div className="text-sm text-charcoal-500">Sales</div>
+                  //     <div className="mt-2 text-lg font-semibold">
+                  //       <ValueOrSkeleton loading={loading} mode="inline">
+                  //         {fmtGBP(uk.netSalesGBP)}
+                  //       </ValueOrSkeleton>
+                  //     </div>
+                  //   </div>
+
+                  //   <div className="rounded-2xl border border-[#F47A00] bg-[#F47A0026] p-5 shadow-sm">
+                  //     <div className="text-sm text-charcoal-500">Units</div>
+                  //     <div className="mt-2 text-lg font-semibold">
+                  //       <ValueOrSkeleton loading={loading} mode="inline" compact>
+                  //         {fmtInt(cms?.total_quantity ?? 0)}
+                  //       </ValueOrSkeleton>
+                  //     </div>
+                  //   </div>
+
+                  //   <div className="rounded-2xl border border-[#2CA9E0] bg-[#2CA9E026] p-5 shadow-sm">
+                  //     <div className="text-sm text-charcoal-500">ASP</div>
+                  //     <div className="mt-2 text-lg font-semibold">
+                  //       <ValueOrSkeleton loading={loading} mode="inline" compact>
+                  //         {fmtGBP(uk.aspGBP)}
+                  //       </ValueOrSkeleton>
+                  //     </div>
+                  //   </div>
+
+                  //   <div className="rounded-2xl border border-[#AB64B5] bg-[#AB64B526] p-5 shadow-sm">
+                  //     <div className="text-sm text-charcoal-500">Profit</div>
+                  //     <div className="mt-2 text-lg font-semibold">
+                  //       <ValueOrSkeleton loading={loading} mode="inline" compact>
+                  //         {fmtGBP(uk.profitGBP)}
+                  //       </ValueOrSkeleton>
+                  //     </div>
+                  //   </div>
+
+                  //   <div className="rounded-2xl border border-[#00627B] bg-[#00627B26] p-5 shadow-sm">
+                  //     <div className="text-sm text-charcoal-500">Profit %</div>
+                  //     <div className="mt-2 text-lg font-semibold">
+                  //       <ValueOrSkeleton loading={loading} mode="inline" compact>
+                  //         {fmtPct(uk.profitPctGBP)}
+                  //       </ValueOrSkeleton>
+                  //     </div>
+                  //   </div>
+                  // </div>
+
+
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-5">
-                    <div className="rounded-2xl border border-[#87AD12] bg-[#87AD1226] p-5 shadow-sm">
-                      <div className="text-sm text-charcoal-500">Sales</div>
-                      <div className="mt-2 text-lg font-semibold">
-                        <ValueOrSkeleton loading={loading} mode="inline">
-                          {fmtGBP(uk.netSalesGBP)}
-                        </ValueOrSkeleton>
-                      </div>
-                    </div>
+                    {/* Sales */}
+                    <AmazonStatCard
+                      label="Sales"
+                      current={uk.netSalesGBP}
+                      previous={ukPrev.netSalesGBP}
+                      loading={loading}
+                      formatter={fmtGBP}
+                      bottomLabel={prevLabel}
+                      className="border-[#87AD12] bg-[#87AD1226]"
+                    />
 
-                    <div className="rounded-2xl border border-[#F47A00] bg-[#F47A0026] p-5 shadow-sm">
-                      <div className="text-sm text-charcoal-500">Units</div>
-                      <div className="mt-2 text-lg font-semibold">
-                        <ValueOrSkeleton loading={loading} mode="inline" compact>
-                          {fmtInt(cms?.total_quantity ?? 0)}
-                        </ValueOrSkeleton>
-                      </div>
-                    </div>
+                    {/* Units */}
+                    <AmazonStatCard
+                      label="Units"
+                      current={cms?.total_quantity ?? 0}
+                      previous={ukPrev.unitsGBP}
+                      loading={loading}
+                      formatter={fmtInt}
+                      bottomLabel={prevLabel}
+                      className="border-[#F47A00] bg-[#F47A0026]"
+                    />
 
-                    <div className="rounded-2xl border border-[#2CA9E0] bg-[#2CA9E026] p-5 shadow-sm">
-                      <div className="text-sm text-charcoal-500">ASP</div>
-                      <div className="mt-2 text-lg font-semibold">
-                        <ValueOrSkeleton loading={loading} mode="inline" compact>
-                          {fmtGBP(uk.aspGBP)}
-                        </ValueOrSkeleton>
-                      </div>
-                    </div>
+                    {/* ASP */}
+                    <AmazonStatCard
+                      label="ASP"
+                      current={uk.aspGBP}
+                      previous={ukPrev.aspGBP}
+                      loading={loading}
+                      formatter={fmtGBP}
+                      bottomLabel={prevLabel}
+                      className="border-[#2CA9E0] bg-[#2CA9E026]"
+                    />
 
-                    <div className="rounded-2xl border border-[#AB64B5] bg-[#AB64B526] p-5 shadow-sm">
-                      <div className="text-sm text-charcoal-500">Profit</div>
-                      <div className="mt-2 text-lg font-semibold">
-                        <ValueOrSkeleton loading={loading} mode="inline" compact>
-                          {fmtGBP(uk.profitGBP)}
-                        </ValueOrSkeleton>
-                      </div>
-                    </div>
+                    {/* Profit */}
+                    <AmazonStatCard
+                      label="Profit"
+                      current={uk.profitGBP}
+                      previous={ukPrev.profitGBP}
+                      loading={loading}
+                      formatter={fmtGBP}
+                      bottomLabel={prevLabel}
+                      className="border-[#AB64B5] bg-[#AB64B526]"
+                    />
 
-                    <div className="rounded-2xl border border-[#00627B] bg-[#00627B26] p-5 shadow-sm">
-                      <div className="text-sm text-charcoal-500">Profit %</div>
-                      <div className="mt-2 text-lg font-semibold">
-                        <ValueOrSkeleton loading={loading} mode="inline" compact>
-                          {fmtPct(uk.profitPctGBP)}
-                        </ValueOrSkeleton>
-                      </div>
-                    </div>
+                    {/* Profit % */}
+                    <AmazonStatCard
+                      label="Profit %"
+                      current={uk.profitPctGBP}
+                      previous={ukPrev.profitPctGBP}
+                      loading={loading}
+                      formatter={fmtPct}
+                      bottomLabel={prevLabel}
+                      className="border-[#00627B] bg-[#00627B26]"
+                    />
                   </div>
+
+
                 )}
               </div>
 
