@@ -450,13 +450,13 @@ export default function SignInForm() {
 
   return (
     <div className="flex flex-col  lg:w-1/2 w-full">
-      <div className="flex flex-col justify-center flex-1 w-full max-w-lg mx-auto">
+      <div className="flex flex-col justify-center  flex-1 w-full max-w-lg mx-auto">
         <div>
           <div className="mb-5 sm:mb-8">
-            <h1 className="mb-2 font-semibold text-green-500 text-title-sm dark:text-white/90 sm:text-title-md">
+            <h1 className="mb-2  text-green-500 text-title-sm dark:text-white/90 sm:text-title-lg">
               Welcome!
             </h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="text-base text-gray-500 dark:text-gray-400">
             Please enter your login details
             </p>
           </div>
@@ -465,7 +465,7 @@ export default function SignInForm() {
             <div className="space-y-3">
               <div>
                 <Label>
-                  Email <span className="text-error-500">*</span>{" "}
+                  Email <span className="text-error-500 ">*</span>{" "}
                 </Label>
                 <Input
                   placeholder="info@gmail.com"
@@ -508,14 +508,14 @@ export default function SignInForm() {
               <div className="flex items-center justify-between">
                 <label className="inline-flex items-center gap-3 cursor-pointer">
                   <Checkbox checked={isChecked} onChange={setIsChecked} />
-                  <span className="block font-normal text-gray-700 text-theme-sm dark:text-gray-400">
+                  <span className="block font-normal text-gray-700 text-theme-base dark:text-gray-400">
                     Keep me logged in
                   </span>
                 </label>
                 <button
                   type="button"
                   onClick={() => setShowForgotModal(true)}
-                  className="text-sm text-blue-700"
+                  className="text-base text-blue-700"
                 >
                   Forgot password?
                 </button>
@@ -556,7 +556,7 @@ export default function SignInForm() {
             <button
               type="button"
               disabled
-              className="w-full inline-flex items-center justify-center gap-3 px-4 py-3
+              className="w-full inline-flex items-center justify-center gap-3 px-4 py-2.5
                text-charcoal-500  rounded-lg transition-colors
                 text-md font-bold
                dark:bg-white/5 dark:text-white/90 dark:hover:bg-white/10
@@ -574,7 +574,7 @@ export default function SignInForm() {
           </div>
 
           <div className="mt-5 max-w-fit mx-auto">
-            <p className="text-sm font-normal text-center text-gray-700 dark:text-gray-400 sm:text-start">
+            <p className="text-base font-normal text-center text-gray-700 dark:text-gray-400 sm:text-start">
               Don&apos;t have an account ?{" "}
               <Link
                 href="/signup"

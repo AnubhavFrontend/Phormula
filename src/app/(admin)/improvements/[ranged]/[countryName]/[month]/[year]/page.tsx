@@ -1034,6 +1034,7 @@ const highlightInsightText = (text: string) => {
                 </button>
               ))}
             </div>
+            
             <div className='flex gap-3'>
  <button
               onClick={analyzeSkus}

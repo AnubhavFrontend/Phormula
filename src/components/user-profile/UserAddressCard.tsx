@@ -118,7 +118,7 @@ useEffect(() => {
       </div>
 
       {/* 🔵 Fee Preview Modal */}
-      <Modal isOpen={feeModal.isOpen} onClose={closeFeePreview} className="m-4 max-w-[800px]">
+      <Modal isOpen={feeModal.isOpen} onClose={closeFeePreview} className="m-4 max-w-[800px] shadow-[6px_6px_7px_0px_#00000026] border border-[#D9D9D9]">
         <div className="relative w-full rounded-3xl bg-white p-4 no-scrollbar dark:bg-gray-900 lg:p-11">
           {selectedCountry ? (
             <FeepreviewUpload country={selectedCountry} onClose={closeFeePreview} />
@@ -129,8 +129,8 @@ useEffect(() => {
       </Modal>
 
       {/* 🟣 SKU Upload Modal */}
-      <Modal isOpen={skuModal.isOpen} onClose={skuModal.closeModal} className="m-4 max-w-[900px]">
-        <div className="relative w-full rounded-3xl bg-white p-4 no-scrollbar dark:bg-gray-900 lg:p-11">
+      <Modal isOpen={skuModal.isOpen} onClose={skuModal.closeModal} className="m-4 max-w-[500px] shadow-[6px_6px_7px_0px_#00000026] border border-[#D9D9D9]">
+        <div className="relative w-full rounded-xl bg-white/30 p-4 no-scrollbar dark:bg-gray-900 lg:p-9">
           <SkuMultiCountryUpload onClose={skuModal.closeModal} />
         </div>
       </Modal>

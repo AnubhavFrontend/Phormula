@@ -163,17 +163,17 @@ export default function SkuMultiCountryUpload({ onClose, onComplete }: Props) {
     <div className="w-full ">
       {/* Step 1: uploader */}
       {!showConfirm && (
-        <div className="w-full max-w-[520px] mx-auto">
+        <div className="w-full max-w-[520px] mx-auto flex flex-col gap-3">
           {/* <h2 className="text-center text-[28px] font-semibold text-[#5EA68E] mb-5">
             Upload SKU Data
           </h2> */}
           <PageBreadcrumb pageTitle="Upload SKU Data" variant="table" />
 
-          <div className="rounded-2xl p-3">
+          <div className="rounded-2xl p-3 ">
             <div className="flex items-center gap-2 rounded-md border border-gray-300 bg-white px-2 py-1.5">
               <label
                 htmlFor="sku-file"
-                className="shrink-0 cursor-pointer rounded-md bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-200"
+                className="shrink-0 cursor-pointer rounded-md bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-200 "
               >
                 Upload File
               </label>
@@ -182,9 +182,10 @@ export default function SkuMultiCountryUpload({ onClose, onComplete }: Props) {
                 type="file"
                 accept=".csv,.xlsx,.xls"
                 onChange={onFileChange}
-                className="hidden"
+                className="hidden "
+              
               />
-              <span className="block w-full truncate px-2 text-xs text-gray-500">
+              <span className="block w-full truncate px-2 text-xs text-gray-500 ">
                 {fileName}
               </span>
             </div>
@@ -192,7 +193,7 @@ export default function SkuMultiCountryUpload({ onClose, onComplete }: Props) {
             <button
               type="button"
               onClick={onDownloadTemplate}
-              className="mx-auto mt-3 flex items-center gap-1 text-[13px] font-medium text-[#5EA68E] hover:text-[#4a907a]"
+              className="mx-auto mt-6 flex items-center gap-1 text-[13px] font-medium text-[#5EA68E] hover:text-[#4a907a]"
             >
               Download format here <FiDownload className="relative top-[1px]" />
             </button>
@@ -208,9 +209,9 @@ export default function SkuMultiCountryUpload({ onClose, onComplete }: Props) {
 
       {/* Step 2: confirmation modal with reusable DataTable */}
       {showConfirm && (
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-white/60 p-4">
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
           <div
-            className="w- max-w-4xl rounded-xl bg-white p-5 shadow-xl"
+            className="w- max-w-4xl rounded-xl bg-white p-5 shadow-[6px_6px_7px_0px_#00000026]  border border-[#D9D9D9]"
             onClick={(e) => e.stopPropagation()}
           >
             {/* <h3 className="mb-3 text-center text-2xl font-semibold text-[#5EA68E]">

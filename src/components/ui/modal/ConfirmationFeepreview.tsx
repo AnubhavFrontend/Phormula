@@ -226,7 +226,7 @@ export default function ConfirmationFeepreview({
         <PageBreadcrumb pageTitle="Amazon Fee Preview Information" variant="table" />
 
         {/* ✅ DataTable replaces the manual <table> */}
-        <div className="mt-2">
+        <div className="mt-5">
           <DataTable
             columns={columns}
             data={dataRows}

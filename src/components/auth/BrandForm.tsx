@@ -388,7 +388,7 @@ export default function BrandForm() {
     <div className="flex flex-col flex-1 lg:w-1/2 w-full">
       
 
-      <div className="flex flex-col justify-center flex-1 w-full max-w-xl mx-auto">
+      <div className="flex flex-col justify-center flex-1 w-full 2xl:max-w-xl max-w-lg mx-auto">
         <div>
           <div className="mb-5 sm:mb-8">
             <h1 className="mb-2 font-semibold text-[#414042] text-title-sm dark:text-white/90 sm:text-title-md">
@@ -397,13 +397,13 @@ export default function BrandForm() {
           </div>
 
           <form onSubmit={onSubmit} className="space-y-5">
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-charcoal-500 dark:text-gray-300">
+            <div className="flex flex-col gap-1">
+              <label className="text-base font-medium text-charcoal-500 dark:text-gray-300">
                 Company Name<span className="text-error-500">*</span>
               </label>
               <input
                 type="text"
-                className="h-12 w-full rounded-lg border border-charcoal-500 bg-white px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+                className="h-12 w-full rounded-lg border border-charcoal-500 bg-white px-4 py-2.5 text-sm  placeholder:text-gray-400 outline-green-500"
                 placeholder="Acme Corp"
                 value={companyName}
                 onChange={(e) => setCompanyName(e.target.value)}
@@ -412,13 +412,13 @@ export default function BrandForm() {
               />
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-charcoal-500 dark:text-gray-300">
+            <div className="flex flex-col gap-1">
+              <label className="text-base font-medium text-charcoal-500 dark:text-gray-300">
                 Brand Name<span className="text-error-500">*</span>
               </label>
               <input
                 type="text"
-                className="h-12 w-full rounded-lg border border-charcoal-500 bg-white px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+                className="h-12 w-full rounded-lg border border-charcoal-500 bg-white px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 outline-green-500 "
                 placeholder="Acme"
                 value={brandName}
                 onChange={(e) => setBrandName(e.target.value)}

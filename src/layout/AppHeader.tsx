@@ -314,7 +314,7 @@ const AppHeader: React.FC = () => {
       {/* Amazon Financial Dashboard as a modal */}
       {openAmazonFinance && (
         <div className="fixed inset-0 z-[100000] flex items-center justify-center p-4" role="dialog" aria-modal="true">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setOpenAmazonFinance(false)} />
+          <div className="absolute inset-0 bg-white/60 backdrop-blur-sm" onClick={() => setOpenAmazonFinance(false)} />
           <div className="relative w-full max-w-xl rounded-xl border border-gray-200 bg-white p-4 shadow-2xl dark:border-gray-800 dark:bg-gray-900">
             <div className="mt-3">
               <AmazonFinancialDashboard onClose={() => setOpenAmazonFinance(false)} />

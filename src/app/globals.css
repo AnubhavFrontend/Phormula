@@ -752,6 +752,10 @@ span.flatpickr-weekday,
   transition: all 0.2s ease; /* Smooth transition for visual effects */
 }
 
+.bg-custom-effect {
+    background-image:  linear-gradient(99.81deg, #5EA68E 0%, #37455F 97.72%);
+}
+
 .task {
   border-radius: 0.75rem;
   box-shadow: 0 1px 3px 0 rgba(16, 24, 40, 0.1),
