@@ -2689,6 +2689,8 @@ import { useSelector } from "react-redux";
 import SegmentedToggle from "@/components/ui/SegmentedToggle";
 import DashboardBargraphCard from "@/components/dashboard/DashboardBargraphCard";
 import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
+import { saveAs } from "file-saver";
 
 
 /* ===================== ENV & ENDPOINTS ===================== */
@@ -3298,7 +3300,7 @@ function AmazonStatCard({
         }`}
     >
       {/* label */}
-      <div className="text-xs font-medium text-charcoal-500">{label}</div>
+      <div className="text-sm font-medium text-charcoal-500">{label}</div>
 
       {/* current value */}
       <div className="mt-1 text-lg font-semibold">
@@ -3308,10 +3310,11 @@ function AmazonStatCard({
       </div>
 
       {/* last month + % change */}
-      <div className="mt-3 flex items-center justify-between text-[11px]">
+      <div className="mt-3 flex 
+      items-center justify-between text-xs text-charcoal-500">
         <div className="flex flex-col">
-          <span className="text-gray-400">{bottomLabel}</span>
-          <span className="font-medium text-gray-700">
+          <span className="">{bottomLabel}:</span>
+          <span className="font-medium ">
             {previous == null ? "—" : formatter(prevVal)}
           </span>
         </div>
@@ -3572,6 +3575,8 @@ export default function DashboardPage() {
 
   // which region is selected in the P&L graph
   const [graphRegion, setGraphRegion] = useState<RegionKey>("Global");
+
+  const chartRef = React.useRef<HTMLDivElement | null>(null);
 
   const prevLabel = useMemo(() => getPrevMonthShortLabel(), []);
 
@@ -4271,16 +4276,18 @@ export default function DashboardPage() {
     ];
   }, [graphRegion, combinedUSD, uk]);
 
-  // ---------- Props for DashboardBargraphCard (Amazon graph) ----------
+  
 
-  // 1) Country name for card header
+    // ---------- Props & Excel export for Amazon bar graph ----------
+
+  // 1) Country used in the graph header
   const countryNameForGraph =
     graphRegion === "Global" ? "global" : graphRegion.toLowerCase();
 
-  // 2) Currency symbol (based on countryNameForGraph)
+  // 2) Currency symbol based on country
   const currencySymbol = getCurrencySymbol(countryNameForGraph);
 
-  // 3) Formatted month label like "Nov'25"
+  // 3) Current month label like "Dec'25"
   const { monthName: currMonthName, year: currYear } = getISTYearMonth();
   const shortMonForGraph = new Date(
     `${currMonthName} 1, ${currYear}`
@@ -4288,33 +4295,185 @@ export default function DashboardPage() {
     month: "short",
     timeZone: "Asia/Kolkata",
   });
-  const formattedMonthYear = `${shortMonForGraph}'${String(currYear).slice(-2)}`;
+  const formattedMonthYear = `${shortMonForGraph}'${String(currYear).slice(
+    -2
+  )}`;
 
-  // 4) Labels & values for the bar chart
+  // 4) Labels & values for chart
   const labels = plItems.map((i) => i.label);
   const values = plItems.map((i) => i.raw);
 
-  // 5) Colors (reuse Bargraph palette mapping)
+  // 5) Colors (reuse your palette)
   const colorMapping: Record<string, string> = {
     Sales: "#2CA9E0",
-    COGS: "#AB64B5",
     "Amazon Fees": "#ff5c5c",
-    "Taxes & Credits": "#154B9B",
-    "Advertisements": "#F47A00",
+    COGS: "#AB64B5",
+    Advertisements: "#F47A00",
     "Other Charges": "#00627D",
     "Platform Fees": "#154B9B",
     Profit: "#87AD12",
   };
   const colors = labels.map((label) => colorMapping[label] || "#2CA9E0");
 
-  // 6) Fade chart when everything is zero (sample state)
+  // 6) True if all chart data is zero
   const allValuesZero = values.every((v) => !v || v === 0);
 
-  // 7) (Optional) Download handler – implement Excel export later
-  const handleDownload = () => {
-    // TODO: plug in export logic similar to Bargraph if you want
-    console.log("Download clicked for Amazon P&L bar graph");
-  };
+// --- Helper: capture chart as PNG data URL (canvas or svg) ---
+const captureChartPng = React.useCallback(async (): Promise<string | null> => {
+  const container = chartRef.current;
+  if (!container) return null;
+
+  // 1) If DashboardBargraphCard uses <canvas> (e.g. Chart.js), use it directly
+  const canvas = container.querySelector("canvas") as HTMLCanvasElement | null;
+  if (canvas) {
+    try {
+      // make sure background is white (optional – depends on your chart lib)
+      const tmpCanvas = document.createElement("canvas");
+      tmpCanvas.width = canvas.width;
+      tmpCanvas.height = canvas.height;
+      const ctx = tmpCanvas.getContext("2d");
+      if (!ctx) return null;
+
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, tmpCanvas.width, tmpCanvas.height);
+      ctx.drawImage(canvas, 0, 0);
+
+      return tmpCanvas.toDataURL("image/png");
+    } catch (e) {
+      console.error("Failed to capture canvas chart", e);
+      return null;
+    }
+  }
+
+  // 2) Fallback: if it's an <svg> chart, convert svg → png (your previous logic)
+  const svg = container.querySelector("svg");
+  if (!svg) return null;
+
+  const serializer = new XMLSerializer();
+  let svgString = serializer.serializeToString(svg);
+
+  if (!svgString.includes('xmlns="http://www.w3.org/2000/svg"')) {
+    svgString = svgString.replace(
+      "<svg",
+      '<svg xmlns="http://www.w3.org/2000/svg"'
+    );
+  }
+
+  const svgBlob = new Blob([svgString], {
+    type: "image/svg+xml;charset=utf-8",
+  });
+  const url = URL.createObjectURL(svgBlob);
+
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const rect = svg.getBoundingClientRect();
+      const canvasEl = document.createElement("canvas");
+      canvasEl.width = rect.width || 1000;
+      canvasEl.height = rect.height || 500;
+
+      const ctx = canvasEl.getContext("2d");
+      if (!ctx) {
+        URL.revokeObjectURL(url);
+        resolve(null);
+        return;
+      }
+
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, canvasEl.width, canvasEl.height);
+      ctx.drawImage(img, 0, 0, canvasEl.width, canvasEl.height);
+
+      const pngDataUrl = canvasEl.toDataURL("image/png");
+      URL.revokeObjectURL(url);
+      resolve(pngDataUrl);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve(null);
+    };
+    img.src = url;
+  });
+}, []);
+
+  // --- Download: Excel + chart image ---
+  const handleDownload = React.useCallback(async () => {
+    try {
+      // 1) Capture chart image
+      const pngDataUrl = await captureChartPng();
+
+      // 2) Create workbook/worksheet
+      const workbook = new ExcelJS.Workbook();
+      const sheet = workbook.addWorksheet("Amazon P&L");
+
+      // Extra header rows
+      sheet.addRow([brandName || "Brand"]);
+      sheet.addRow([`Amazon P&L - ${formattedMonthYear}`]);
+      sheet.addRow([`Country: ${countryNameForGraph.toUpperCase()}`]);
+      sheet.addRow([`Currency: ${currencySymbol}`]);
+      sheet.addRow([""]); // blank gap
+
+      // Table header
+      sheet.addRow(["Metric", "", `Amount (${currencySymbol})`]);
+
+      const signs: Record<string, string> = {
+        Sales: "(+)",
+        "Amazon Fees": "(-)",
+        COGS: "(-)",
+        Advertisements: "(-)",
+        "Other Charges": "(-)",
+        "Platform Fees": "(-)",
+        Profit: "",
+      };
+
+      values.forEach((v, idx) => {
+        const label = labels[idx];
+        const sign = signs[label] || "";
+        const num = Number(v || 0);
+        sheet.addRow([label, sign, Number(num.toFixed(2))]);
+      });
+
+      const totalValue = values.reduce(
+        (acc, v) => acc + (Number(v) || 0),
+        0
+      );
+      sheet.addRow(["Total", "", Number(totalValue.toFixed(2))]);
+
+      // 3) Insert chart image if available
+      if (pngDataUrl) {
+        const base64 = pngDataUrl.replace(/^data:image\/png;base64,/, "");
+        const imageId = workbook.addImage({
+          base64,
+          extension: "png",
+        });
+
+        // Place image somewhere below the table (e.g., A10 -> H30)
+        sheet.addImage(imageId, {
+          tl: { col: 0, row: 9 },   // top-left
+          br: { col: 8, row: 28 },  // bottom-right
+          editAs: "oneCell",
+        });
+      }
+
+      // 4) Generate & download file
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], {
+        type:
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      saveAs(blob, `Amazon-PnL-${formattedMonthYear}.xlsx`);
+    } catch (err) {
+      console.error("Error generating Excel with chart", err);
+    }
+  }, [
+    labels,
+    values,
+    brandName,
+    formattedMonthYear,
+    countryNameForGraph,
+    currencySymbol,
+    captureChartPng,
+  ]);
+
 
 
   useEffect(() => {
@@ -4857,7 +5016,6 @@ export default function DashboardPage() {
               />
             </div>
           )} */}
-
           {amazonIntegrated && (
             <div className="mt-8 rounded-2xl border bg-[#D9D9D933] p-5 shadow-sm">
               <div className="mb-3 flex items-center justify-between">
@@ -4874,7 +5032,6 @@ export default function DashboardPage() {
                   </p>
                 </div>
 
-                {/* RIGHT: Download + region toggle */}
                 <div className="flex items-center gap-3">
                   <DownloadIconButton onClick={handleDownload} />
                   <SegmentedToggle<RegionKey>
@@ -4885,19 +5042,21 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              <DashboardBargraphCard
-                countryName={countryNameForGraph}
-                formattedMonthYear={formattedMonthYear}
-                currencySymbol={currencySymbol}
-                labels={labels}
-                values={values}
-                colors={colors}
-                loading={loading}
-                allValuesZero={allValuesZero}
-              />
+              {/* ⬇️ wrap card in ref so we can find the SVG inside */}
+              <div ref={chartRef}>
+                <DashboardBargraphCard
+                  countryName={countryNameForGraph}
+                  formattedMonthYear={formattedMonthYear}
+                  currencySymbol={currencySymbol}
+                  labels={labels}
+                  values={values}
+                  colors={colors}
+                  loading={loading}
+                  allValuesZero={allValuesZero}
+                />
+              </div>
             </div>
           )}
-
 
         </div>
       </div>
