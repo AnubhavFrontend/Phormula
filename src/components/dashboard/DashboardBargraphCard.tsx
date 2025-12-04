@@ -35,27 +35,24 @@ const DashboardBargraphCard: React.FC<DashboardBargraphCardProps> = ({
             : "opacity-100"
         }
       >
-        {/* Chart container */}
-        <div className="mt-4 w-full overflow-x-auto">
-          <div className="min-w-[1100px] h-[46vh] sm:h-[48vh] md:h-[50vh] transition-opacity duration-300">
-            {loading ? (
-              <div className="flex h-full items-center justify-center">
-                <div className="flex items-center justify-center text-sm text-gray-500">
-                  Loading chart…
-                </div>
+        <div className="mt-4 w-full h-[46vh] sm:h-[48vh] md:h-[50vh] transition-opacity duration-300">
+          {loading ? (
+            <div className="flex h-full items-center justify-center">
+              {/* Reuse your Loader */}
+              <div className="flex items-center justify-center text-sm text-gray-500">
+                Loading chart…
               </div>
-            ) : (
-              <SimpleBarChart
-                labels={labels}
-                values={values}
-                colors={colors}
-                xTitle={formattedMonthYear}
-                yTitle={`Amount (${currencySymbol})`}
-              />
-            )}
-          </div>
+            </div>
+          ) : (
+            <SimpleBarChart
+              labels={labels}
+              values={values}
+              colors={colors}
+              xTitle={formattedMonthYear}
+              yTitle={`Amount (${currencySymbol})`}
+            />
+          )}
         </div>
-
       </div>
     </div>
   );
