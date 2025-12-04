@@ -2687,6 +2687,9 @@ import { useAmazonConnections } from "@/lib/utils/useAmazonConnections";
 import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { useSelector } from "react-redux";
 import SegmentedToggle from "@/components/ui/SegmentedToggle";
+import DashboardBargraphCard from "@/components/dashboard/DashboardBargraphCard";
+import * as XLSX from "xlsx";
+
 
 /* ===================== ENV & ENDPOINTS ===================== */
 const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:5000";
@@ -3193,6 +3196,69 @@ function SalesTargetCard({
 }
 
 
+// function AmazonStatCard({
+//   label,
+//   current,
+//   previous,
+//   loading,
+//   formatter = fmtGBP,
+//   bottomLabel,
+//   className,
+// }: AmazonStatCardProps) {
+//   const currVal = toNumberSafe(current);
+//   const prevVal = previous != null ? toNumberSafe(previous) : 0;
+
+//   const delta = calcDeltaPct(currVal, prevVal); // may be null
+//   const isUp = delta != null && delta >= 0;
+
+//   const deltaText =
+//     delta == null ? "—" : `${isUp ? "+" : ""}${delta.toFixed(2)}%`;
+
+//   const deltaColor =
+//     delta == null
+//       ? "text-gray-500"
+//       : isUp
+//         ? "text-emerald-600"
+//         : "text-rose-600";
+
+//   return (
+//     <div
+//       className={`rounded-2xl border bg-white p-4 shadow-sm flex flex-col justify-between ${className || ""}`}
+//     >
+//       {/* label */}
+//       <div className="text-xs font-medium text-charcoal-500">{label}</div>
+
+//       {/* current value */}
+//       <div className="mt-1 text-lg font-semibold">
+//         <ValueOrSkeleton loading={loading} mode="inline" compact>
+//           {formatter(currVal)}
+//         </ValueOrSkeleton>
+//       </div>
+
+//       {/* last month + % change */}
+//       <div className="mt-3 flex items-center justify-between text-[11px]">
+//         <div className="flex flex-col">
+//           <span className="text-gray-400">{bottomLabel}</span>
+//           <span className="font-medium text-gray-700">
+//             {previous == null ? "—" : formatter(prevVal)}
+//           </span>
+//         </div>
+
+//         <div
+//           className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ${delta == null
+//               ? "bg-gray-50"
+//               : isUp
+//                 ? "bg-emerald-50"
+//                 : "bg-rose-50"
+//             } ${deltaColor}`}
+//         >
+//           {deltaText}
+//         </div>
+//       </div>
+//     </div>
+//   );
+// }
+
 function AmazonStatCard({
   label,
   current,
@@ -3208,8 +3274,16 @@ function AmazonStatCard({
   const delta = calcDeltaPct(currVal, prevVal); // may be null
   const isUp = delta != null && delta >= 0;
 
-  const deltaText =
-    delta == null ? "—" : `${isUp ? "+" : ""}${delta.toFixed(2)}%`;
+  // caret + % text
+  let deltaContent: React.ReactNode = "—";
+  if (delta != null) {
+    deltaContent = (
+      <>
+        <span className="mr-0.5">{isUp ? "▲" : "▼"}</span>
+        {Math.abs(delta).toFixed(2)}%
+      </>
+    );
+  }
 
   const deltaColor =
     delta == null
@@ -3220,7 +3294,8 @@ function AmazonStatCard({
 
   return (
     <div
-      className={`rounded-2xl border bg-white p-4 shadow-sm flex flex-col justify-between ${className || ""}`}
+      className={`rounded-2xl border p-4 shadow-sm flex flex-col justify-between ${className || ""
+        }`}
     >
       {/* label */}
       <div className="text-xs font-medium text-charcoal-500">{label}</div>
@@ -3241,20 +3316,15 @@ function AmazonStatCard({
           </span>
         </div>
 
-        <div
-          className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ${delta == null
-              ? "bg-gray-50"
-              : isUp
-                ? "bg-emerald-50"
-                : "bg-rose-50"
-            } ${deltaColor}`}
-        >
-          {deltaText}
+        {/* JUST bold colored text, no bg pill */}
+        <div className={`inline-flex items-center text-[11px] font-semibold ${deltaColor}`}>
+          {deltaContent}
         </div>
       </div>
     </div>
   );
 }
+
 
 /* ===================== SIMPLE BAR CHART ===================== */
 function SimpleBarChart({
@@ -3438,6 +3508,41 @@ const parsePercentToNumber = (value: string | number | null | undefined): number
   return Number.isNaN(n) ? null : n;
 };
 
+const renderPercentage = (value: number | null) => {
+  if (value == null) return null;
+
+  const isPositive = value > 0;
+  const isNegative = value < 0;
+
+  const icon = isPositive ? "▲" : isNegative ? "▼" : "";
+  const color = isPositive ? "green" : isNegative ? "red" : "inherit";
+
+  return (
+    <span style={{ color, fontWeight: "bold" }}>
+      {icon} {Math.abs(value).toFixed(1)}%
+    </span>
+  );
+};
+
+
+const getCurrencySymbol = (country: string) => {
+  switch (country.toLowerCase()) {
+    case "uk":
+      return "£";
+    case "india":
+      return "₹";
+    case "us":
+      return "$";
+    case "europe":
+    case "eu":
+      return "€";
+    case "global":
+      return "$";
+    default:
+      return "¤";
+  }
+};
+
 
 /* ===================== MAIN PAGE ===================== */
 export default function DashboardPage() {
@@ -3468,7 +3573,7 @@ export default function DashboardPage() {
   // which region is selected in the P&L graph
   const [graphRegion, setGraphRegion] = useState<RegionKey>("Global");
 
- const prevLabel = useMemo(() => getPrevMonthShortLabel(), []);
+  const prevLabel = useMemo(() => getPrevMonthShortLabel(), []);
 
   // FX rates: GBP→USD (Amazon UK) and INR→USD (Shopify India)
   const [gbpToUsd, setGbpToUsd] = useState(GBP_TO_USD_ENV);
@@ -3808,81 +3913,81 @@ export default function DashboardPage() {
     };
   }, [cms, cmp, skuTotals]);
 
-const ukPrev = useMemo(() => {
-  const prevTotals = data?.previous_month_same_day_user_totals || null;
-  const prevMonthCompare = data?.previous_month_vs_current_percentages || null;
-  const prevProfitCompare = data?.profit_percentage_comparison || null;
+  const ukPrev = useMemo(() => {
+    const prevTotals = data?.previous_month_same_day_user_totals || null;
+    const prevMonthCompare = data?.previous_month_vs_current_percentages || null;
+    const prevProfitCompare = data?.profit_percentage_comparison || null;
 
-  // Sales (product_sales), Units (quantity), ASP, Profit
-  const prevNetSalesGBP = prevTotals
-    ? toNumberSafe(prevTotals.product_sales)
-    : 0;
+    // Sales (product_sales), Units (quantity), ASP, Profit
+    const prevNetSalesGBP = prevTotals
+      ? toNumberSafe(prevTotals.product_sales)
+      : 0;
 
-  const prevUnitsGBP = prevTotals
-    ? toNumberSafe(prevTotals.quantity)
-    : 0;
+    const prevUnitsGBP = prevTotals
+      ? toNumberSafe(prevTotals.quantity)
+      : 0;
 
-  const prevAspGBP = prevTotals
-    ? toNumberSafe(prevTotals.asp)
-    : prevUnitsGBP > 0
-    ? prevNetSalesGBP / prevUnitsGBP
-    : 0;
+    const prevAspGBP = prevTotals
+      ? toNumberSafe(prevTotals.asp)
+      : prevUnitsGBP > 0
+        ? prevNetSalesGBP / prevUnitsGBP
+        : 0;
 
-  const prevProfitGBP = prevTotals
-    ? toNumberSafe(prevTotals.profit)
-    : 0;
+    const prevProfitGBP = prevTotals
+      ? toNumberSafe(prevTotals.profit)
+      : 0;
 
-  // ─────────────────────────────────────────
-  // Profit % (absolute previous month %)
-  // ─────────────────────────────────────────
-  let prevProfitPctGBP: number | null = null;
-  if (prevProfitCompare?.profit_percentage_previous_month != null) {
-    const raw = String(prevProfitCompare.profit_percentage_previous_month).replace("%", "");
-    const n = Number(raw);
-    prevProfitPctGBP = Number.isNaN(n) ? null : n;
-  } else if (prevNetSalesGBP > 0 && Number.isFinite(prevProfitGBP)) {
-    prevProfitPctGBP = (prevProfitGBP / prevNetSalesGBP) * 100;
-  }
+    // ─────────────────────────────────────────
+    // Profit % (absolute previous month %)
+    // ─────────────────────────────────────────
+    let prevProfitPctGBP: number | null = null;
+    if (prevProfitCompare?.profit_percentage_previous_month != null) {
+      const raw = String(prevProfitCompare.profit_percentage_previous_month).replace("%", "");
+      const n = Number(raw);
+      prevProfitPctGBP = Number.isNaN(n) ? null : n;
+    } else if (prevNetSalesGBP > 0 && Number.isFinite(prevProfitGBP)) {
+      prevProfitPctGBP = (prevProfitGBP / prevNetSalesGBP) * 100;
+    }
 
-  // ─────────────────────────────────────────
-  // Percentage changes vs current month
-  // ─────────────────────────────────────────
-  const pctSalesVsCurrent = prevMonthCompare
-    ? parsePercentToNumber(prevMonthCompare.percentage_sales)     // "+20.22%"
-    : null;
+    // ─────────────────────────────────────────
+    // Percentage changes vs current month
+    // ─────────────────────────────────────────
+    const pctSalesVsCurrent = prevMonthCompare
+      ? parsePercentToNumber(prevMonthCompare.percentage_sales)     // "+20.22%"
+      : null;
 
-  const pctUnitsVsCurrent = prevMonthCompare
-    ? parsePercentToNumber(prevMonthCompare.percentage_quantity)  // "-1.00%"
-    : null;
+    const pctUnitsVsCurrent = prevMonthCompare
+      ? parsePercentToNumber(prevMonthCompare.percentage_quantity)  // "-1.00%"
+      : null;
 
-  const pctAspVsCurrent = prevMonthCompare
-    ? parsePercentToNumber(prevMonthCompare.percentage_asp)       // "+21.43%"
-    : null;
+    const pctAspVsCurrent = prevMonthCompare
+      ? parsePercentToNumber(prevMonthCompare.percentage_asp)       // "+21.43%"
+      : null;
 
-  const pctProfitVsCurrent = prevMonthCompare
-    ? parsePercentToNumber(prevMonthCompare.percentage_profit)    // "+19.82%"
-    : null;
+    const pctProfitVsCurrent = prevMonthCompare
+      ? parsePercentToNumber(prevMonthCompare.percentage_profit)    // "+19.82%"
+      : null;
 
-  const pctProfitPctVsCurrent = prevProfitCompare
-    ? parsePercentToNumber(prevProfitCompare.percentage_profit_percentage) // "-0.19%"
-    : null;
+    const pctProfitPctVsCurrent = prevProfitCompare
+      ? parsePercentToNumber(prevProfitCompare.percentage_profit_percentage) // "-0.19%"
+      : null;
 
-  return {
-    // raw previous-month values
-    netSalesGBP: prevNetSalesGBP,
-    unitsGBP: prevUnitsGBP,
-    aspGBP: prevAspGBP,
-    profitGBP: prevProfitGBP,
-    profitPctGBP: prevProfitPctGBP,
+    return {
+      // raw previous-month values
+      netSalesGBP: prevNetSalesGBP,
+      unitsGBP: prevUnitsGBP,
+      aspGBP: prevAspGBP,
+      profitGBP: prevProfitGBP,
+      profitPctGBP: prevProfitPctGBP,
 
-    // % vs current month (deltas)
-    pctNetSalesVsCurrent: pctSalesVsCurrent,
-    pctUnitsVsCurrent: pctUnitsVsCurrent,
-    pctAspVsCurrent: pctAspVsCurrent,
-    pctProfitVsCurrent: pctProfitVsCurrent,
-    pctProfitPctVsCurrent: pctProfitPctVsCurrent,
-  };
-}, [data]);
+      // % vs current month (deltas)
+      pctNetSalesVsCurrent: pctSalesVsCurrent,
+      pctUnitsVsCurrent: pctUnitsVsCurrent,
+      pctAspVsCurrent: pctAspVsCurrent,
+      pctProfitVsCurrent: pctProfitVsCurrent,
+      pctProfitPctVsCurrent: pctProfitPctVsCurrent,
+    };
+  }, [data]);
 
   const shopifyNotConnected =
     !shopifyStore?.shop_name ||
@@ -4165,6 +4270,52 @@ const ukPrev = useMemo(() => {
       },
     ];
   }, [graphRegion, combinedUSD, uk]);
+
+  // ---------- Props for DashboardBargraphCard (Amazon graph) ----------
+
+  // 1) Country name for card header
+  const countryNameForGraph =
+    graphRegion === "Global" ? "global" : graphRegion.toLowerCase();
+
+  // 2) Currency symbol (based on countryNameForGraph)
+  const currencySymbol = getCurrencySymbol(countryNameForGraph);
+
+  // 3) Formatted month label like "Nov'25"
+  const { monthName: currMonthName, year: currYear } = getISTYearMonth();
+  const shortMonForGraph = new Date(
+    `${currMonthName} 1, ${currYear}`
+  ).toLocaleString("en-US", {
+    month: "short",
+    timeZone: "Asia/Kolkata",
+  });
+  const formattedMonthYear = `${shortMonForGraph}'${String(currYear).slice(-2)}`;
+
+  // 4) Labels & values for the bar chart
+  const labels = plItems.map((i) => i.label);
+  const values = plItems.map((i) => i.raw);
+
+  // 5) Colors (reuse Bargraph palette mapping)
+  const colorMapping: Record<string, string> = {
+    Sales: "#2CA9E0",
+    COGS: "#AB64B5",
+    "Amazon Fees": "#ff5c5c",
+    "Taxes & Credits": "#154B9B",
+    "Advertisements": "#F47A00",
+    "Other Charges": "#00627D",
+    "Platform Fees": "#154B9B",
+    Profit: "#87AD12",
+  };
+  const colors = labels.map((label) => colorMapping[label] || "#2CA9E0");
+
+  // 6) Fade chart when everything is zero (sample state)
+  const allValuesZero = values.every((v) => !v || v === 0);
+
+  // 7) (Optional) Download handler – implement Excel export later
+  const handleDownload = () => {
+    // TODO: plug in export logic similar to Bargraph if you want
+    console.log("Download clicked for Amazon P&L bar graph");
+  };
+
 
   useEffect(() => {
     if (initialLoading) {
@@ -4596,7 +4747,7 @@ const ukPrev = useMemo(() => {
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-5">
 
 
-                    <div className="rounded-2xl border border-[#F47A00] bg-[#F47A0026] p-5 shadow-sm">
+                    <div className="rounded-2xl border border-[#87AD12] bg-[#87AD1226] p-5 shadow-sm">
                       <div className="text-sm text-charcoal-500">Total Sales</div>
                       <div className="mt-1 text-lg font-bold tracking-tight text-gray-900">
                         <ValueOrSkeleton loading={shopifyLoading} mode="inline">
@@ -4606,7 +4757,8 @@ const ukPrev = useMemo(() => {
                     </div>
 
 
-                    <div className="rounded-2xl border border-[#2CA9E0] bg-[#2CA9E026] p-5 shadow-sm">
+
+                    <div className="rounded-2xl border border-[#F47A00] bg-[#F47A0026] p-5 shadow-sm">
                       <div className="text-sm text-charcoal-500">Units</div>
                       <div className="mt-1 text-lg font-semibold text-gray-900">
                         <ValueOrSkeleton
@@ -4619,7 +4771,8 @@ const ukPrev = useMemo(() => {
                       </div>
                     </div>
 
-                    <div className="rounded-2xl border border-[#87AD12] bg-[#87AD1226] p-5 shadow-sm">
+
+                    <div className="rounded-2xl border border-[#2CA9E0] bg-[#2CA9E026] p-5 shadow-sm">
                       <div className="text-sm text-gray-500">ASP</div>
                       <div className="mt-1 text-lg font-semibold text-gray-900">
                         <ValueOrSkeleton
@@ -4675,7 +4828,7 @@ const ukPrev = useMemo(() => {
             </aside>
           </div>
 
-          {amazonIntegrated && (
+          {/* {amazonIntegrated && (
             <div className="mt-8 rounded-2xl border bg-[#D9D9D933] p-5 shadow-sm">
               <div className="mb-3 flex items-center justify-between">
                 <div className="text-sm text-gray-500">
@@ -4683,24 +4836,7 @@ const ukPrev = useMemo(() => {
                   <p className="text-charcoal-500">Real-time data from Amazon Global </p>
                 </div>
 
-                {/* 🔹 Global + integrated countries toggle */}
-                {/* <div className="inline-flex rounded-lg border bg-gray-50 p-1 text-xs">
-                  {graphRegions.map((key) => (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => setGraphRegion(key)}
-                      className={`px-3 py-1 rounded-lg ${key === graphRegion
-                        ? "bg-[#C7E6D7] text-gray-900 shadow-sm"
-                        : "text-gray-600 hover:text-gray-900"
-                        }`}
-                    >
-                      {key}
-                    </button>
-                  ))}
-                </div> */}
-
-                <SegmentedToggle<RegionKey>
+                               <SegmentedToggle<RegionKey>
                   value={graphRegion}
                   options={graphRegions.map((r) => ({ value: r }))}
                   onChange={setGraphRegion}
@@ -4708,8 +4844,60 @@ const ukPrev = useMemo(() => {
               </div>
 
               <SimpleBarChart items={plItems} />
+              <DashboardBargraphCard
+                countryName={countryName}
+                formattedMonthYear={formattedMonthYear}
+                currencySymbol={currencySymbol}
+                labels={labels}
+                values={values}
+                colors={colors}
+                loading={loading}
+                allValuesZero={allValuesZero}
+                onDownload={handleDownload}
+              />
+            </div>
+          )} */}
+
+          {amazonIntegrated && (
+            <div className="mt-8 rounded-2xl border bg-[#D9D9D933] p-5 shadow-sm">
+              <div className="mb-3 flex items-center justify-between">
+                <div className="text-sm text-gray-500">
+                  <PageBreadcrumb
+                    pageTitle="Amazon"
+                    align="left"
+                    textSize="2xl"
+                    variant="page"
+                  />
+                  <p className="text-charcoal-500">
+                    Real-time data from Amazon{" "}
+                    {graphRegion === "Global" ? "Global" : graphRegion}
+                  </p>
+                </div>
+
+                {/* RIGHT: Download + region toggle */}
+                <div className="flex items-center gap-3">
+                  <DownloadIconButton onClick={handleDownload} />
+                  <SegmentedToggle<RegionKey>
+                    value={graphRegion}
+                    options={graphRegions.map((r) => ({ value: r }))}
+                    onChange={setGraphRegion}
+                  />
+                </div>
+              </div>
+
+              <DashboardBargraphCard
+                countryName={countryNameForGraph}
+                formattedMonthYear={formattedMonthYear}
+                currencySymbol={currencySymbol}
+                labels={labels}
+                values={values}
+                colors={colors}
+                loading={loading}
+                allValuesZero={allValuesZero}
+              />
             </div>
           )}
+
 
         </div>
       </div>
