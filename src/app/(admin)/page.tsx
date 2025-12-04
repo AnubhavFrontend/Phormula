@@ -5033,12 +5033,12 @@ const captureChartPng = React.useCallback(async (): Promise<string | null> => {
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <DownloadIconButton onClick={handleDownload} />
                   <SegmentedToggle<RegionKey>
                     value={graphRegion}
                     options={graphRegions.map((r) => ({ value: r }))}
                     onChange={setGraphRegion}
                   />
+                  <DownloadIconButton onClick={handleDownload} />
                 </div>
               </div>
 
