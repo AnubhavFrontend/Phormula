@@ -2686,6 +2686,7 @@ import { RootState, useAppSelector } from "@/lib/store";
 import { useAmazonConnections } from "@/lib/utils/useAmazonConnections";
 import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { useSelector } from "react-redux";
+import SegmentedToggle from "@/components/ui/SegmentedToggle";
 
 /* ===================== ENV & ENDPOINTS ===================== */
 const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:5000";
@@ -3017,21 +3018,12 @@ function SalesTargetCard({
           align="center"
         />
 
-        <div className="inline-flex rounded-lg border bg-gray-50 p-1 text-xs my-1 md:my-8">
-          {availableRegions.map((key) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => setTab(key)}
-              className={`px-3 py-1 rounded-lg ${key === tab
-                ? "bg-[#C7E6D7] text-gray-900 shadow-sm"
-                : "text-gray-600 hover:text-gray-900"
-                }`}
-            >
-              {key}
-            </button>
-          ))}
-        </div>
+        <SegmentedToggle<RegionKey>
+          value={tab}
+          options={availableRegions.map((r) => ({ value: r }))}
+          onChange={setTab}
+          className="my-1 md:my-8"
+        />
       </div>
 
       {/* Legend */}
@@ -3059,32 +3051,32 @@ function SalesTargetCard({
         </div>
       </div> */}
 
-{/* Legend */}
-<div className="mt-5 mb-2 flex items-center gap-2 text-xs">
-  <div className="flex flex-1 items-center justify-center gap-2">
-    <span
-      className="block h-3 w-3 rounded-sm shrink-0"
-      style={{ backgroundColor: "#5EA68E" }}
-    />
-    <span className="text-gray-600">MTD Sales</span>
-  </div>
+      {/* Legend */}
+      <div className="mt-5 mb-2 flex items-center gap-2 text-xs">
+        <div className="flex flex-1 items-center justify-center gap-2">
+          <span
+            className="block h-3 w-3 rounded-sm shrink-0"
+            style={{ backgroundColor: "#5EA68E" }}
+          />
+          <span className="text-gray-600">MTD Sales</span>
+        </div>
 
-  <div className="flex flex-1 items-center justify-center gap-2">
-    <span
-      className="block h-3 w-3 rounded-sm shrink-0"
-      style={{ backgroundColor: "#9ca3af" }}
-    />
-    <span className="text-gray-600">This Month Target</span>
-  </div>
+        <div className="flex flex-1 items-center justify-center gap-2">
+          <span
+            className="block h-3 w-3 rounded-sm shrink-0"
+            style={{ backgroundColor: "#9ca3af" }}
+          />
+          <span className="text-gray-600">This Month Target</span>
+        </div>
 
-  <div className="flex flex-1 items-center justify-center gap-2">
-    <span
-      className="block h-3 w-3 rounded-sm shrink-0"
-      style={{ backgroundColor: "#FFBE25" }}
-    />
-    <span className="text-gray-600">{prevLabel} MTD</span>
-  </div>
-</div>
+        <div className="flex flex-1 items-center justify-center gap-2">
+          <span
+            className="block h-3 w-3 rounded-sm shrink-0"
+            style={{ backgroundColor: "#FFBE25" }}
+          />
+          <span className="text-gray-600">{prevLabel} MTD</span>
+        </div>
+      </div>
 
 
 
@@ -3186,7 +3178,7 @@ function SimpleBarChart({
   items,
   height = 300,
   padding = { top: 28, right: 24, bottom: 56, left: 24 },
-  colors = ["#2CA9E0", "#ff5c5c", "#AB64B5", "#F47A00", "#00627D","#87AD12"],
+  colors = ["#2CA9E0", "#ff5c5c", "#AB64B5", "#F47A00", "#00627D", "#87AD12"],
 }: {
   items: Array<{ label: string; raw: number; display: string }>;
   height?: number;
@@ -3387,7 +3379,7 @@ export default function DashboardPage() {
   const [graphRegion, setGraphRegion] = useState<RegionKey>("Global");
 
 
-    // FX rates: GBP→USD (Amazon UK) and INR→USD (Shopify India)
+  // FX rates: GBP→USD (Amazon UK) and INR→USD (Shopify India)
   const [gbpToUsd, setGbpToUsd] = useState(GBP_TO_USD_ENV);
   const [inrToUsd, setInrToUsd] = useState(INR_TO_USD_ENV);
   const [fxLoading, setFxLoading] = useState(false);
@@ -3468,7 +3460,7 @@ export default function DashboardPage() {
     }
   }, []);
 
-    useEffect(() => {
+  useEffect(() => {
     fetchFxRates();
   }, [fetchFxRates]);
 
@@ -3783,7 +3775,7 @@ export default function DashboardPage() {
   //   return amazonUK_GBP * GBP_TO_USD;
   // }, [uk.netSalesGBP]);
 
-    const amazonUK_USD = useMemo(() => {
+  const amazonUK_USD = useMemo(() => {
     const amazonUK_GBP = toNumberSafe(uk.netSalesGBP);
     return amazonUK_GBP * gbpToUsd;
   }, [uk.netSalesGBP, gbpToUsd]);
@@ -4022,7 +4014,7 @@ export default function DashboardPage() {
   //   );
   // }
 
-    useEffect(() => {
+  useEffect(() => {
     if (initialLoading) {
       const prev = document.body.style.overflow;
       document.body.style.overflow = "hidden";
@@ -4247,7 +4239,7 @@ export default function DashboardPage() {
                   </div>
 
                   {/* Right: region tabs */}
-                  {amazonTabs.length > 0 && (
+                  {/* {amazonTabs.length > 0 && (
                     <div className="mt-1 md:mt-0 self-start md:self-center">
                       <div className="inline-flex flex-wrap gap-1 rounded-lg border bg-gray-50 p-1 text-xs">
                         {amazonTabs.map((key) => (
@@ -4265,7 +4257,18 @@ export default function DashboardPage() {
                         ))}
                       </div>
                     </div>
+                  )} */}
+
+                  {amazonTabs.length > 0 && (
+                    <div className="mt-1 md:mt-0 self-start md:self-center">
+                      <SegmentedToggle<RegionKey>
+                        value={amazonRegion}
+                        options={amazonTabs.map((r) => ({ value: r }))}
+                        onChange={setAmazonRegion}
+                      />
+                    </div>
                   )}
+
                 </div>
 
 
@@ -4477,7 +4480,7 @@ export default function DashboardPage() {
                 </div>
 
                 {/* 🔹 Global + integrated countries toggle */}
-                <div className="inline-flex rounded-lg border bg-gray-50 p-1 text-xs">
+                {/* <div className="inline-flex rounded-lg border bg-gray-50 p-1 text-xs">
                   {graphRegions.map((key) => (
                     <button
                       key={key}
@@ -4491,7 +4494,13 @@ export default function DashboardPage() {
                       {key}
                     </button>
                   ))}
-                </div>
+                </div> */}
+
+                <SegmentedToggle<RegionKey>
+                  value={graphRegion}
+                  options={graphRegions.map((r) => ({ value: r }))}
+                  onChange={setGraphRegion}
+                />
               </div>
 
               <SimpleBarChart items={plItems} />

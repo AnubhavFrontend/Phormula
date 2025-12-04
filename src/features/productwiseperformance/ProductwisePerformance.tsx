@@ -18,6 +18,7 @@ import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import PeriodFiltersTable from "@/components/filters/PeriodFiltersTable";
 import ProductSearchDropdown from "@/components/products/ProductSearchDropdown";
 import Loader from "@/components/loader/Loader";
+import DownloadIconButton from "@/components/ui/button/DownloadIconButton";
 
 const Line = dynamic(() => import("react-chartjs-2").then((m) => m.Line), {
   ssr: false,
@@ -83,6 +84,13 @@ const normalizeProductSlug = (slug?: string) => {
     return fromSlug(slug);
   }
 };
+
+const formatCountryLabel = (country: string) => {
+  const lower = country.toLowerCase();
+  if (lower === "global") return "Global"; // special case
+  return country.toUpperCase(); // UK, US, etc.
+};
+
 
 // ----------------------
 // Currency helpers
@@ -214,8 +222,8 @@ const ProductwisePerformance: React.FC<ProductwisePerformanceProps> = ({
         range === "yearly"
           ? "Yearly"
           : range === "quarterly"
-          ? "Quarterly"
-          : "Monthly";
+            ? "Quarterly"
+            : "Monthly";
 
       const payload: any = {
         product_name: productname,
@@ -458,7 +466,7 @@ const ProductwisePerformance: React.FC<ProductwisePerformanceProps> = ({
       const isGlobal = lower === "global";
 
       return {
-        label: `${country.toUpperCase()} ${labelSuffix}`,
+        label: `${formatCountryLabel(country)} ${labelSuffix}`,
         data: dataSeries,
         borderColor: getCountryColor(country),
         backgroundColor: getCountryColor(country),
@@ -842,8 +850,7 @@ const ProductwisePerformance: React.FC<ProductwisePerformanceProps> = ({
 
   return (
     <div className="w-full">
-      {/* Header */}
-      <div className="mb-4 flex flex-wrap items-start justify-between gap-4">
+      {/* <div className="mb-4 flex flex-wrap items-start justify-between gap-4">
         <PageBreadcrumb
           pageTitle="Performance Analysis"
           variant="page"
@@ -851,14 +858,12 @@ const ProductwisePerformance: React.FC<ProductwisePerformanceProps> = ({
           textSize="2xl"
         />
 
-        {/* Search + Dropdown */}
         <ProductSearchDropdown
           authToken={authToken}
           onProductSelect={handleProductSelect}
         />
       </div>
 
-      {/* Filters – using PeriodFiltersTable */}
       <div className="mb-5">
         <div className="flex flex-col md:flex-row items-center justify-between gap-[0.5vw]">
           <PeriodFiltersTable
@@ -877,7 +882,46 @@ const ProductwisePerformance: React.FC<ProductwisePerformanceProps> = ({
             allowedRanges={["quarterly", "yearly"]}
           />
         </div>
+      </div> */}
+
+
+      {/* Header */}
+      <div className="mb-4">
+        <PageBreadcrumb
+          pageTitle="Performance Analysis"
+          variant="page"
+          align="left"
+          textSize="2xl"
+        />
       </div>
+
+      {/* Search + Filters in SAME ROW */}
+      <div className="mb-5 flex flex-col md:flex-row items-center justify-between gap-4">
+        {/* Period Filters */}
+        <PeriodFiltersTable
+          range={range}
+          selectedMonth={selectedMonth}
+          selectedQuarter={`Q${selectedQuarter}`}
+          selectedYear={selectedYear}
+          yearOptions={years}
+          onRangeChange={(v: Range) => setRange(v)}
+          onMonthChange={(val) => setSelectedMonth(val)}
+          onQuarterChange={(val) => {
+            const num = val.replace("Q", "");
+            setSelectedQuarter(num || "1");
+          }}
+          onYearChange={(val) => setSelectedYear(Number(val) || initialYear)}
+          allowedRanges={["quarterly", "yearly"]}
+        />
+
+
+        {/* Search Bar */}
+        <ProductSearchDropdown
+          authToken={authToken}
+          onProductSelect={handleProductSelect}
+        />
+      </div>
+
 
       {/* Alert Box - Only show when no product or period is selected */}
       {!canShowResults && (
@@ -915,203 +959,169 @@ const ProductwisePerformance: React.FC<ProductwisePerformanceProps> = ({
         </div>
       )}
 
-      {/* Results */}
       {canShowResults && data && !loading && (
         <div className="flex flex-col">
-          {/* Chart Header */}
-          <div className="mb-3 w-full">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div>
+          <div className="w-full rounded-md border border-charcoal-500 bg-[#D9D9D933] p-4 sm:p-5 shadow-sm">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
                 <h3 className="m-0 text-xl font-bold text-[#414042]">
                   {currentIndex === 0
                     ? "Net Sales Trend"
                     : currentIndex === 1
-                    ? "Units Trend"
-                    : "CM1 Profit Trend"}{" "}
+                      ? "Units Trend"
+                      : "CM1 Profit Trend"}{" "}
                   -{" "}
                   <b className="text-green-500 capitalize">
                     {productname} ({getTitle()})
                   </b>
                 </h3>
-              </div>
 
-              {/* Legend / toggles */}
-              <div className="flex flex-wrap items-center gap-3">
-                {/* {["global", ...nonEmptyCountriesFromApi].map((country) => {
-                  const color = getCountryColor(country);
-                  const isSelected = selectedCountries[country] ?? true;
+                <p className="mt-1 text-xs sm:text-sm text-gray-500">
+                  Year-over-year performance comparison across regions.
+                </p>
 
-                  return (
-                    <button
-                      key={country}
-                      type="button"
-                      onClick={() => handleCountryChange(country)}
-                      className={`flex items-center gap-2 rounded-full px-2 py-1 text-sm font-semibold border transition
-                        ${
-                          isSelected
-                            ? "bg-white border-transparent"
-                            : "bg-gray-100 border-gray-300 opacity-60"
-                        }`}
-                    >
-                      <span
-                        className="flex h-3 w-3 items-center justify-center rounded-sm border text-[10px]"
-                        style={{
-                          borderColor: color,
-                          backgroundColor: isSelected ? color : "transparent",
-                          color: isSelected ? "#ffffff" : "transparent",
-                        }}
-                      >
-                        ✓
-                      </span>
-                      <span
-                        className="underline decoration-1 underline-offset-[2px]"
-                        style={{
-                          color: isSelected ? color : "#6b7280",
-                        }}
-                      >
-                        {country.toUpperCase()}
-                      </span>
-                    </button>
-                  );
-                })} */}
+                <div className="my-4 flex flex-wrap items-center gap-3">
+              {["global", ...nonEmptyCountriesFromApi].map((country) => {
+  const color = getCountryColor(country);
+  const isChecked = selectedCountries[country] ?? true;
+  const label = formatCountryLabel(country);
 
-                 {["global", ...nonEmptyCountriesFromApi].map((country) => {
-    const color = getCountryColor(country);
-    const isChecked = selectedCountries[country] ?? true;
-    const label = country.toUpperCase();
-
-    return (
-      <label
-        key={country}
-        className={[
-          "shrink-0",
-          "flex items-center gap-1 sm:gap-1.5",
-          "font-semibold select-none whitespace-nowrap",
-          "text-[9px] sm:text-[10px] md:text-[11px] lg:text-xs xl:text-sm",
-          "text-charcoal-500",
-          isChecked ? "opacity-100" : "opacity-40",
-          "cursor-pointer",
-        ].join(" ")}
-        onClick={() => handleCountryChange(country)}
+  return (
+    <label
+      key={country}
+      className={[
+        "shrink-0",
+        "flex items-center gap-1 sm:gap-1.5",
+        "font-semibold select-none whitespace-nowrap",
+        "text-[9px] sm:text-[10px] md:text-[11px] lg:text-xs xl:text-sm",
+        "text-charcoal-500",
+        isChecked ? "opacity-100" : "opacity-40",
+        "cursor-pointer",
+      ].join(" ")}
+      onClick={() => handleCountryChange(country as CountryKey)}
+    >
+      <span
+        className="
+          flex items-center justify-center
+          h-3 w-3 sm:h-3.5 sm:w-3.5
+          rounded-sm border transition
+        "
+        style={{
+          borderColor: color,
+          backgroundColor: isChecked ? color : "white",
+        }}
       >
-        <span
-          className="
-            flex items-center justify-center
-            h-3 w-3 sm:h-3.5 sm:w-3.5
-            rounded-sm border transition
-          "
-          style={{
-            borderColor: color,
-            backgroundColor: isChecked ? color : "white",
-          }}
-        >
-          {isChecked && (
-            <svg
-              viewBox="0 0 24 24"
-              width="14"
-              height="14"
-              className="text-white"
-            >
-              <path
-                fill="currentColor"
-                d="M20.285 6.709a1 1 0 0 0-1.414-1.414L9 15.168l-3.879-3.88a1 1 0 0 0-1.414 1.415l4.586 4.586a1 1 0 0 0 1.414 0l10-10Z"
-              />
-            </svg>
-          )}
-        </span>
+        {isChecked && (
+          <svg
+            viewBox="0 0 24 24"
+            width="14"
+            height="14"
+            className="text-white"
+          >
+            <path
+              fill="currentColor"
+              d="M20.285 6.709a1 1 0 0 0-1.414-1.414L9 15.168l-3.879-3.88a1 1 0 0 0-1.414 1.415l4.586 4.586a1 1 0 0 0 1.414 0l10-10Z"
+            />
+          </svg>
+        )}
+      </span>
 
-        <span
-          className="uppercase text-charcoal-500"
-        >
-          {label}
-        </span>
-      </label>
-    );
-  })}
+      <span className="text-charcoal-500">
+        {label}
+      </span>
+    </label>
+  );
+})}
+
+                </div>
               </div>
+
+              {/* Download icon in top-right */}
+              <div className="shrink-0">
+                <DownloadIconButton />
+                {/* if your component needs props like onClick, pass them here */}
+              </div>
+            </div>
+
+            {/* Chart */}
+            <div className="flex h-[40vw] min-h-[260px] items-center justify-between">
+              {chartDataList ? (
+                <>
+                  <button
+                    className="ml-1 flex h-7 w-7 items-center justify-center rounded-full bg-[#2c3e50] text-[#f8edcf] shadow transition active:scale-95"
+                    onClick={handlePrev}
+                    aria-label="Previous chart"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                      className="h-4 w-4"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M15.78 4.22a.75.75 0 010 1.06L9.06 12l6.72 6.72a.75.75 0 11-1.06 1.06l-7.25-7.25a.75.75 0 010-1.06l7.25-7.25a.75.75 0 011.06 0z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </button>
+
+                  {chartDataList[currentIndex] ? (
+                    <div className="mx-2 w-full">
+                      <Line
+                        data={chartDataList[currentIndex] as any}
+                        options={chartOptions as any}
+                      />
+                    </div>
+                  ) : (
+                    <p className="mx-auto">No chart data available.</p>
+                  )}
+
+                  <button
+                    className="mr-2 flex h-7 w-7 items-center justify-center rounded-full bg-[#2c3e50] text-[#f8edcf] shadow transition active:scale-95"
+                    onClick={handleNext}
+                    aria-label="Next chart"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                      className="h-4 w-4"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M8.22 19.78a.75.75 0 010-1.06L14.94 12 8.22 5.28a.75.75 0 111.06-1.06l7.25 7.25a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </button>
+                </>
+              ) : (
+                <p>No chart data available</p>
+              )}
+            </div>
+
+            {/* Dots */}
+            <div className="mt-3 flex items-center justify-center gap-2">
+              {[0, 1, 2].map((idx) => (
+                <span
+                  key={idx}
+                  className={`h-2 w-2 rounded-full border ${currentIndex === idx
+                    ? "border-gray-300 bg-gray-300"
+                    : "border-[#414042] bg-white"
+                    }`}
+                />
+              ))}
             </div>
           </div>
 
-          {/* Chart */}
-          <div className="flex h-[40vw] items-center justify-between">
-            {chartDataList ? (
-              <>
-                <button
-                  className="ml-1 flex h-7 w-7 items-center justify-center rounded-full bg-[#2c3e50] text-[#f8edcf] shadow transition active:scale-95"
-                  onClick={handlePrev}
-                  aria-label="Previous chart"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                    className="h-4 w-4"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M15.78 4.22a.75.75 0 010 1.06L9.06 12l6.72 6.72a.75.75 0 11-1.06 1.06l-7.25-7.25a.75.75 0 010-1.06l7.25-7.25a.75.75 0 011.06 0z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </button>
-
-                {chartDataList[currentIndex] ? (
-                  <div className="mx-2 w-full">
-                    <Line
-                      data={chartDataList[currentIndex] as any}
-                      options={chartOptions as any}
-                    />
-                  </div>
-                ) : (
-                  <p className="mx-auto">No chart data available.</p>
-                )}
-
-                <button
-                  className="mr-2 flex h-7 w-7 items-center justify-center rounded-full bg-[#2c3e50] text-[#f8edcf] shadow transition active:scale-95"
-                  onClick={handleNext}
-                  aria-label="Next chart"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                    className="h-4 w-4"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M8.22 19.78a.75.75 0 010-1.06L14.94 12 8.22 5.28a.75.75 0 111.06-1.06l7.25 7.25a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </button>
-              </>
-            ) : (
-              <p>No chart data available</p>
-            )}
-          </div>
-
-          {/* Dots */}
-          <div className="mt-3 flex items-center justify-center gap-2">
-            {[0, 1, 2].map((idx) => (
-              <span
-                key={idx}
-                className={`h-2 w-2 rounded-full border ${
-                  currentIndex === idx
-                    ? "border-gray-300 bg-gray-300"
-                    : "border-[#414042] bg-white"
-                }`}
-              />
-            ))}
-          </div>
-
-          {/* Summary Cards – global always, others if they have data (toggles ignored) */}
+          {/* Summary Cards – unchanged, just below the chart card */}
           <div className="mt-8">
             <div className="grid gap-5 grid-cols-1 md:grid-cols-[repeat(auto-fit,minmax(260px,1fr))]">
               {orderedCards.map((card) => {
                 const key = card.country.toLowerCase();
                 const isGlobal = key === "global";
 
-                // hide purely zero non-global countries (e.g. US not integrated yet)
                 if (
                   !isGlobal &&
                   card.stats.totalSales === 0 &&
@@ -1133,6 +1143,7 @@ const ProductwisePerformance: React.FC<ProductwisePerformanceProps> = ({
           </div>
         </div>
       )}
+
     </div>
   );
 };
