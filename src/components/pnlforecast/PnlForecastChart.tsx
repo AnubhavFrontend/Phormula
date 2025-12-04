@@ -13,7 +13,6 @@ import {
   Tooltip,
   Legend,
   ChartOptions,
-  ScriptableContext,
 } from 'chart.js';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
@@ -48,11 +47,14 @@ const PnlForecastChart: React.FC<PnlForecastChartProps> = ({
   handleCheckboxChange
 }) => {
 
+  // ✅ NEW: Forecast/Current+Forecast region should start from first NON-historical month (e.g. Dec)
+  const forecastStartIndex = chartData.findIndex(d => !d.isHistorical);
+
   const labels = chartData.map(item => {
     let suffix = '';
     if (item.isForecast) suffix = ' (F)';
     else if (item.isHistorical) suffix = '';
-    else suffix = ' (F)'; // Current & Forecast
+    else suffix = ' (F)'; // Current & Forecast (as your original logic)
     return `${item.month}${suffix}`;
   });
 
@@ -70,14 +72,14 @@ const PnlForecastChart: React.FC<PnlForecastChartProps> = ({
     //   label: 'COGS',
     //   borderColor: '#AB64B5',
     //   backgroundColor: '#AB64B5',
-    // },   
+    // },
     {
       key: 'CM1 PROFIT',
       label: 'CM1 Profit',
       borderColor: '#5EA49B',
       backgroundColor: '#5EA49B',
     },
-     {
+    {
       key: 'ADVERTISING COSTS',
       label: 'Advertising Costs',
       borderColor: '#F47A00',
@@ -96,12 +98,6 @@ const PnlForecastChart: React.FC<PnlForecastChartProps> = ({
     .map(dataset => {
       const values = chartData.map(d => d[dataset.key]);
 
-      // Dotted line from "(Current & Forecast)"
-      const forecastTransitionIndex = Math.max(
-        chartData.findIndex(d => !d.isForecast && !d.isHistorical) - 1,
-        0
-      );
-
       return {
         label: dataset.label,
         data: values.map(v => Math.abs(Number(v || 0))),
@@ -112,8 +108,12 @@ const PnlForecastChart: React.FC<PnlForecastChartProps> = ({
         fill: false,
         pointRadius: 3,
         segment: {
-          borderDash: (ctx: any) =>
-            ctx.p1DataIndex >= forecastTransitionIndex ? [5, 5] : undefined
+          // ✅ FIX: use p0DataIndex so Nov→Dec segment stays solid.
+          // Dotted line starts visually from Dec→Jan when forecastStartIndex is Dec.
+          borderDash: (ctx: any) => {
+            if (forecastStartIndex === -1) return undefined;
+            return ctx.p0DataIndex >= forecastStartIndex ? [5, 5] : undefined;
+          }
         }
       };
     });
@@ -126,7 +126,6 @@ const PnlForecastChart: React.FC<PnlForecastChartProps> = ({
   const options: ChartOptions<'line'> = {
     responsive: true,
     plugins: {
-      // forecastBackground: true, // Removed - plugin is passed separately via props
       legend: {
         display: false,
       },
@@ -167,25 +166,19 @@ const PnlForecastChart: React.FC<PnlForecastChartProps> = ({
           text: `Amount (${currencySymbol})`
         },
         ticks: {
-          callback: function(tickValue: string | number) {
-            return typeof tickValue === 'number' ? tickValue.toLocaleString() : tickValue
+          callback: function (tickValue: string | number) {
+            return typeof tickValue === 'number' ? tickValue.toLocaleString() : tickValue;
           }
         }
       }
     }
   };
 
-  const forecastTransitionIndex = Math.max(
-    chartData.findIndex(d => !d.isForecast && !d.isHistorical) - 1,
-    0
-  );
-
+  // ✅ FIX: remove old forecastTransitionIndex logic and use forecastStartIndex for background too
   const forecastBackgroundPlugin = {
     id: 'forecastBackground',
     beforeDraw: (chart: any) => {
-      const { ctx, chartArea: { left, top, bottom }, scales: { x } } = chart;
-
-      const forecastStartIndex = forecastTransitionIndex;
+      const { ctx, chartArea: { top, bottom }, scales: { x } } = chart;
 
       if (forecastStartIndex === -1) return;
 
@@ -199,15 +192,14 @@ const PnlForecastChart: React.FC<PnlForecastChartProps> = ({
   };
 
   return (
-    <div className="chart-container" >
+   <div className="chart-container" >
        <style>{`
 .checkbox-group {
         display: flex;
         flex-wrap: wrap;
         justify-content: space-between;
         align-items: center;
-        width: 80%;
-        margin: 0 auto 2vh auto;
+        width: 40%;
         gap: 0.4vh;
       }
 
@@ -284,7 +276,6 @@ const PnlForecastChart: React.FC<PnlForecastChartProps> = ({
   justify-content: center;
   align-items: center;
   gap: 24px;
-  margin: 20px 0 10px 0;
   padding: 16px 20px;
   // background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
   // border: 1px solid #dee2e6;
@@ -393,7 +384,18 @@ const PnlForecastChart: React.FC<PnlForecastChartProps> = ({
       `}</style>
 
 <br/>
-      <div className="checkbox-group">
+<div className='flex justify-between items-center mx-2'>
+   <div className="forecast-legend">
+        <div className="forecast-legend-item">
+          <div className="solid-line"></div>
+          <span>Historical & Current Data</span>
+        </div>
+        <div className="forecast-legend-item">
+          <div className="dotted-line"></div>
+          <span>Forecast Data</span>
+        </div>
+      </div>
+       <div className="checkbox-group">
         {[
           { name: "SALES", label: "Sales", colorClass: "sales" },
           // { name: "COGS", label: "COGS", colorClass: "cogs" },
@@ -412,25 +414,16 @@ const PnlForecastChart: React.FC<PnlForecastChartProps> = ({
           </label>
         ))}
       </div>
+</div>
+     
 
       <div style={{
-        height: '40vw',
+        height: '37vw',
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
       }}>
         <Line data={data} options={options} plugins={[forecastBackgroundPlugin]} />
-      </div>
-
-      <div className="forecast-legend">
-        <div className="forecast-legend-item">
-          <div className="solid-line"></div>
-          <span>Historical & Current Data</span>
-        </div>
-        <div className="forecast-legend-item">
-          <div className="dotted-line"></div>
-          <span>Forecast Data</span>
-        </div>
       </div>
 
     </div>

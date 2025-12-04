@@ -763,12 +763,12 @@ span.flatpickr-weekday,
 
 
 
-select option {
+/* select option {
   background-color: white;
-  color: #333;
+  color: red !important;
 }
 
 select option:hover {
-  background-color: red !important; /* light green */
-  color: #0f5132 !important; /* dark green */
-}
+  background: #5EA68E !important;
+  color: #F8EDCE  !important; 
+} */
