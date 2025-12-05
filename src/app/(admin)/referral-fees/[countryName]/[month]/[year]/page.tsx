@@ -2898,37 +2898,37 @@ export default function ReferralFeesDashboard(): JSX.Element {
           {/* Summary tiles */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="rounded-xl border border-[#87AD12] bg-[#87AD1226] px-3 py-2 sm:px-4 sm:py-3">
-              <p className="text-xs sm:text-sm font-medium text-charcoal-500">
+              <p className="text-xs sm:text-sm font-bold text-charcoal-500">
                 Orders/Units
               </p>
               <p className="mt-1 text-xl sm:text-2xl font-bold text-charcoal-500">
                 {fmtInteger(cardSummary.ordersUnits)}
               </p>
-              <p className="mt-1 text-[10px] sm:text-xs text-charcoal-500">
+              <p className="mt-1 text-[10px] sm:text-xs font-medium text-charcoal-500">
                 Total Units Processed
               </p>
             </div>
 
             <div className="rounded-xl border border-[#F47A00] bg-[#F47A0026] px-3 py-2 sm:px-4 sm:py-3">
-              <p className="text-xs sm:text-sm font-medium text-charcoal-500">
+              <p className="text-xs sm:text-sm font-bold text-charcoal-500">
                 Total Sales
               </p>
               <p className="mt-1 text-xl sm:text-2xl font-bold text-charcoal-500">
                 {fmtCurrency(cardSummary.totalSales)}
               </p>
-              <p className="mt-1 text-[10px] sm:text-xs text-charcoal-500">
+              <p className="mt-1 text-[10px] sm:text-xs font-medium text-charcoal-500">
                 Revenue generated
               </p>
             </div>
 
             <div className="rounded-xl border border-[#FF5C5C] bg-[#FF5C5C26] px-3 py-2 sm:px-4 sm:py-3">
-              <p className="text-xs sm:text-sm font-medium text-charcoal-500">
+              <p className="text-xs sm:text-sm font-bold text-charcoal-500">
                 Fee Impact
               </p>
               <p className="mt-1 text-xl sm:text-2xl font-bold text-charcoal-500">
                 {fmtCurrency(cardSummary.feeImpact)}
               </p>
-              <p className="mt-1 text-[10px] sm:text-xs text-charcoal-500">
+              <p className="mt-1 text-[10px] sm:text-xs font-medium text-charcoal-500">
                 Overcharged amount
               </p>
             </div>
@@ -2948,7 +2948,7 @@ export default function ReferralFeesDashboard(): JSX.Element {
                   stickyHeader={false}
                   rowClassName={(row) =>
                     (row as any)._isTotal
-                      ? "font-black border-t-2 border-charcoal-500"
+                      ? "font-black"
                       : ""
                   }
                 />

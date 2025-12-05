@@ -1,4 +1,3 @@
-
 "use client";
 
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
@@ -2554,37 +2553,6 @@ useEffect(() => {
             </aside>
           </div>
 
-          {/* {amazonIntegrated && (
-          {amazonIntegrated && (
-            <>
-            <div className="mt-8 rounded-2xl border bg-[#D9D9D933] p-5 shadow-sm">
-              <div className="mb-3 flex items-center justify-between">
-                <div className="text-sm text-gray-500">
-                  <PageBreadcrumb pageTitle="Amazon" align="left" textSize="2xl" variant="page" />
-                  <p className="text-charcoal-500">Real-time data from Amazon Global </p>
-                </div>
-
-                               <SegmentedToggle<RegionKey>
-                  value={graphRegion}
-                  options={graphRegions.map((r) => ({ value: r }))}
-                  onChange={setGraphRegion}
-                />
-              </div>
-
-              <SimpleBarChart items={plItems} />
-              <DashboardBargraphCard
-                countryName={countryName}
-                formattedMonthYear={formattedMonthYear}
-                currencySymbol={currencySymbol}
-                labels={labels}
-                values={values}
-                colors={colors}
-                loading={loading}
-                allValuesZero={allValuesZero}
-                onDownload={handleDownload}
-              />
-            </div>
-          )} */}
           {amazonIntegrated && (
             <>
             <div className="mt-8 rounded-2xl border bg-[#D9D9D933] p-5 shadow-sm">

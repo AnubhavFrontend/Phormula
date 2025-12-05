@@ -1066,10 +1066,10 @@ const colorMapping: Record<string, string> = {
   "Amazon Fees": "#ff5c5c",
   "Advertising Cost": "#F47A00",
   "Other Charges": "#00627D",
-  "Tax and Credit": "#154B9B",
+  "Tax and Credit": "#FFBE26",
   "CM1 Profit": "#5EA49B",
-  "Net Reimbursement": "#87AD12",
-  "Cash Generated": "#5EA49B",
+  "Net Reimbursement": "#AB63B5",
+  "Cash Generated": "#87AD12",
 };
 
 const monthsList = [
@@ -1477,41 +1477,55 @@ const CashFlowPage: React.FC = () => {
     },
   } as const;
 
-  const lineChartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false, position: "top" as const },
-      tooltip: {
-        callbacks: {
-          label: (tooltipItem: any) =>
-            `${tooltipItem.dataset.label}: ${currencySymbol}${Number(
-              tooltipItem.raw
-            ).toLocaleString()}`,
+const lineChartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: { display: false, position: "top" as const },
+    tooltip: {
+      callbacks: {
+        label: (tooltipItem: any) =>
+          `${tooltipItem.dataset.label}: ${currencySymbol}${Number(
+            tooltipItem.raw
+          ).toLocaleString()}`,
+
+        // 🟢 color square in tooltip = line color
+        labelColor: (context: any) => {
+          const color = context.dataset.borderColor;
+          return {
+            borderColor: color,
+            backgroundColor: color,
+          };
+        },
+
+        // 🟢 text = line color
+        labelTextColor: (context: any) => {
+          return context.dataset.borderColor;
         },
       },
     },
-    scales: {
-      x: {
-        title: {
-          display: true,
-          text:
-            periodType === "quarterly"
-              ? `${selectedQuarter} ${year}`
-              : "Months",
-        },
-      },
-      y: {
-        beginAtZero: true,
-        title: { display: true, text: `Amount (${currencySymbol})` },
-        ticks: {
-          callback: (value: any) =>
-            `${currencySymbol}${Number(value).toLocaleString()}`,
-        },
+  },
+  scales: {
+    x: {
+      title: {
+        display: true,
+        text:
+          periodType === "quarterly"
+            ? `${selectedQuarter} ${year}`
+            : "Months",
       },
     },
-    interaction: { mode: "index" as const, intersect: false },
-  } as const;
+    y: {
+      beginAtZero: true,
+      title: { display: true, text: `Amount (${currencySymbol})` },
+      ticks: {
+        callback: (value: any) =>
+          `${currencySymbol}${Number(value).toLocaleString()}`,
+      },
+    },
+  },
+  interaction: { mode: "index" as const, intersect: false },
+} as const;
 
   // exports
   const exportChartToExcel = (chartType: "line" | "bar" = "line") => {
