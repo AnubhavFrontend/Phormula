@@ -15,6 +15,7 @@ import { Modal } from "@/components/ui/modal";
 import FileUploadForm from "@/app/(admin)/(ui-elements)/modals/FileUploadForm";
 import PeriodFiltersTable from "../filters/PeriodFiltersTable";
 import { FaBoxArchive, FaMoneyBillTrendUp } from "react-icons/fa6";
+import { IoMdLock } from "react-icons/io";
 import { MdEditDocument } from "react-icons/md";
 import { TbMoneybag } from "react-icons/tb";
 import { FcSalesPerformance } from "react-icons/fc";
@@ -628,62 +629,43 @@ const Dropdowns: React.FC<DropdownsProps> = ({
         </>
       )}
 
-      {showNoDataOverlay && (
-        <div
-          className="
-      fixed inset-y-0
-      z-[99999]
-      flex items-center justify-center
-      pointer-events-none
-    "
-          style={{
-            left: overlayBounds.left,
-            width: overlayBounds.width || "100%",
-          }}
-        >
-          <div
-            className="
-        bg-white
-        rounded-xl
-        shadow-xl
-        p-6
-        max-w-lg
-        w-[90%]
-        text-center
-        pointer-events-auto
-      "
-          >
-            <div className="mb-3">
-              <img
-                src="/lock.png"
-                alt="No Data Icon"
-                className="h-8 w-8 mx-auto opacity-70"
-              />
-            </div>
-
-            <h3 className="text-gray-800 font-semibold text-lg mb-2">
-              No Data Available
-            </h3>
-
-            <p className="text-gray-600 text-sm mb-3 leading-relaxed">
-              To see performance metrics, you need to upload more files for{" "}
-              <strong>{getTitle()}</strong>
-            </p>
-
-            {countryName !== "global" && (
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={() => setShowUploadModal(true)}
-                className="ml-4 "
-                startIcon={<AiOutlinePlus className="text-yellow-200" />}
-              >
-                Upload MTD(s)
-              </Button>
-            )}
+      {showNoDataOverlay && (<div className=" fixed inset-y-0 z-[99999] flex items-center justify-center pointer-events-none " style={{ left: overlayBounds.left, width: overlayBounds.width || "100%", }} > <div className=" bg-white border border-[#D9D9D9] rounded-xl shadow-xl p-6 max-w-lg w-[90%] text-center pointer-events-auto " >
+        {/* Lock icon */}
+        <div className="mb-4 flex items-center justify-center">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#D9D9D9]">
+           <IoMdLock className="text-green-500 text-2xl"/>
           </div>
         </div>
+
+        {/* Title */}
+        {/* <h3 className="text-slate-800 font-semibold text-lg mb-1">
+          No Data Available
+        </h3> */}
+        <PageBreadcrumb pageTitle="No Data Available" variant="table" align="center" textSize="2xl" />
+
+        {/* Subtitle */}
+        <p className="text-charcoal-500 text-xs sm:text-sm leading-relaxed my-4">
+          To see performance metrics, you need to upload more files for
+          <span className="block  mt-0.5">
+            {getTitle()}
+          </span>
+        </p>
+
+        {/* CTA */}
+        {countryName !== "global" && (
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => setShowUploadModal(true)}
+            className="mt-1 inline-flex items-center justify-center text-sm font-medium"
+          >
+            Upload MTD(s)
+          </Button>
+        )}
+      </div>
+      </div>
       )}
+
 
       <Modal
         isOpen={showUploadModal}
