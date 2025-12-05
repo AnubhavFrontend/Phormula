@@ -1323,8 +1323,11 @@ const displayedAllSkuRows = showAllSkus ? allSkuRows : allSkuRows.slice(0, 5);
 
 const rowsToRender =
   activeTab === "all_skus"
-    ? (showAllSkus ? allSkuRows : allSkuRows.slice(0, 5))
+    ? allSkuRows.slice(0, 5) // always top 5 in table first
     : currentTabData;
+
+const restAllSkuRows =
+  activeTab === "all_skus" ? allSkuRows.slice(5) : [];
 
 const hasAnySkus =
   categorizedGrowth.top_80_skus.length > 0 ||
@@ -1929,125 +1932,242 @@ console.log(segmentTotalsMap)
                 </tr>
               </thead>
 
-              <tbody>
-                {rowsToRender.map((item, idx) => (
-                  <tr key={idx} className="">
-                    <td className="border border-[#414042] px-2 py-2.5 text-center">
-                      {idx + 1}
-                    </td>
-                    <td className="border border-[#414042] px-2 py-2.5 text-left">
-                      {item.product_name || item.sku || 'N/A'}
-                    </td>
-                    <td className="border border-[#414042] px-2 py-2.5 text-center">
-                      {item['Sales Mix (Month2)'] != null
-                        ? `${Number(
-                            item['Sales Mix (Month2)']
-                          ).toFixed(2)}%`
-                        : 'N/A'}
-                    </td>
+<tbody>
+  {/* Top 5 */}
+  {rowsToRender.map((item, idx) => (
+    <tr key={`top-${idx}`} className="">
+      <td className="border border-[#414042] px-2 py-2.5 text-center">
+        {idx + 1}
+      </td>
+      <td className="border border-[#414042] px-2 py-2.5 text-left">
+        {item.product_name || item.sku || 'N/A'}
+      </td>
 
-                    {[
-                      { field: 'Unit Growth', raw: 'quantity' },
-                      { field: 'ASP Growth', raw: 'asp' },
-                      { field: 'Sales Growth', raw: 'net_sales' },
-                      ...(activeTab !== 'new_or_reviving_skus'
-                        ? [{ field: 'Sales Mix Change', raw: 'sales_mix' }]
-                        : []),
-                      { field: 'Profit Per Unit', raw: 'unit_wise_profitability' },
-                      { field: 'CM1 Profit Impact', raw: 'profit' },
-                    ].map(({ field, raw }) => {
-                      const growth = item[field];
+      {/* Sales Mix */}
+      <td className="border border-[#414042] px-2 py-2.5 text-center">
+        {item['Sales Mix (Month2)'] != null
+          ? `${Number(item['Sales Mix (Month2)']).toFixed(2)}%`
+          : 'N/A'}
+      </td>
 
-                      if (activeTab === 'new_or_reviving_skus') {
-                        const v = item[raw];
-                        return (
-                          <td
-                            key={field}
-                            className="border border-[#414042] px-2 py-2.5 text-center"
-                          >
-                            {v != null ? Number(v).toFixed(2) : 'N/A'}
-                          </td>
-                        );
-                      }
+      {/* Metrics (same as your existing map) */}
+      {[
+        { field: 'Unit Growth', raw: 'quantity' },
+        { field: 'ASP Growth', raw: 'asp' },
+        { field: 'Sales Growth', raw: 'net_sales' },
+        ...(activeTab !== 'new_or_reviving_skus'
+          ? [{ field: 'Sales Mix Change', raw: 'sales_mix' }]
+          : []),
+        { field: 'Profit Per Unit', raw: 'unit_wise_profitability' },
+        { field: 'CM1 Profit Impact', raw: 'profit' },
+      ].map(({ field, raw }) => {
+        const growth = item[field];
 
-                      if (
-                        !growth ||
-                        (growth as GrowthCategory).value == null
-                      ) {
-                        return (
-                          <td
-                            key={field}
-                            className="border border-[#414042] px-2 py-2.5 text-center"
-                          >
-                            N/A
-                          </td>
-                        );
-                      }
+        // keep your existing New/Reviving logic + normal logic exactly same:
+        // (paste the same block you already have here)
+        if (activeTab === 'new_or_reviving_skus') {
+          const vCurrent =
+            (item as any)[`${raw}_month2`] ??
+            (item as any)[`${raw}_curr`] ??
+            (item as any)[raw];
 
-                      let color = '#414042';
-                      if ((growth as GrowthCategory).category === 'High Growth')
-                        color = '#5EA68E';
-                      else if (
-                        (growth as GrowthCategory).category === 'Negative Growth'
-                      )
-                        color = '#FF5C5C';
-                      const sign =
-                        (growth as GrowthCategory).value >= 0 ? '+' : '';
-                      return (
-                        <td
-                          key={field}
-                          className="border border-[#414042] px-2 py-2.5 text-center"
-                          style={{ color, fontWeight: 600 }}
-                        >
-                          {(growth as GrowthCategory).category} (
-                          {sign}
-                          {Number(
-                            (growth as GrowthCategory).value
-                          ).toFixed(2)}
-                          %)
-                        </td>
-                      );
-                    })}
+          if (
+            growth &&
+            (growth as GrowthCategory).category &&
+            (growth as GrowthCategory).value != null
+          ) {
+            let color = '#414042';
+            if ((growth as GrowthCategory).category === 'High Growth') color = '#5EA68E';
+            else if ((growth as GrowthCategory).category === 'Negative Growth') color = '#FF5C5C';
 
-                    {Object.keys(skuInsights).length > 0 && (
-                      <td className="border border-[#414042] px-2 text-nowrap py-2.5 text-center">
-                        {(() => {
-                          const entry = getInsightForItem(item);
-                          if (entry) {
-                            return (
-                              <button
-                                className="font-semibold underline"
-                                style={{ margin: 0 }}
-                                onClick={() => {
-                                  setSelectedSku(entry[0]);
-                                  setModalOpen(true);
-                                  setFbType(null);
-                                  setFbText('');
-                                  setFbSuccess(false);
-                                }}
-                              >
-                                View Insights
-                              </button>
-                            );
-                          }
-                          return (
-                            <em style={{ color: '#888' }}>
-                              Not analyzed
-                              <br />
-                              <small style={{ fontSize: 10 }}>
-                                ({isGlobalData()
-                                  ? 'Global/Product Name'
-                                  : 'SKU'}
-                                : {item.product_name || item.sku || 'N/A'})
-                              </small>
-                            </em>
-                          );
-                        })()}
-                      </td>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
+            if ((growth as GrowthCategory).category !== 'No Data') {
+              const sign = (growth as GrowthCategory).value >= 0 ? '+' : '';
+              return (
+                <td
+                  key={field}
+                  className="border border-[#414042] px-2 py-2.5 text-center"
+                  style={{ color, fontWeight: 600 }}
+                >
+                  {(growth as GrowthCategory).category} ({sign}
+                  {Number((growth as GrowthCategory).value).toFixed(2)}%)
+                </td>
+              );
+            }
+          }
+
+          return (
+            <td key={field} className="border border-[#414042] px-2 py-2.5 text-center">
+              {vCurrent != null ? Number(vCurrent).toFixed(2) : 'N/A'}
+            </td>
+          );
+        }
+
+        if (!growth || (growth as GrowthCategory).value == null) {
+          return (
+            <td key={field} className="border border-[#414042] px-2 py-2.5 text-center">
+              N/A
+            </td>
+          );
+        }
+
+        let color = '#414042';
+        if ((growth as GrowthCategory).category === 'High Growth') color = '#5EA68E';
+        else if ((growth as GrowthCategory).category === 'Negative Growth') color = '#FF5C5C';
+
+        const sign = (growth as GrowthCategory).value >= 0 ? '+' : '';
+        return (
+          <td
+            key={field}
+            className="border border-[#414042] px-2 py-2.5 text-center"
+            style={{ color, fontWeight: 600 }}
+          >
+            {(growth as GrowthCategory).category} ({sign}
+            {Number((growth as GrowthCategory).value).toFixed(2)}%)
+          </td>
+        );
+      })}
+
+      {Object.keys(skuInsights).length > 0 && (
+        <td className="border border-[#414042] px-2 text-nowrap py-2.5 text-center">
+          {(() => {
+            const entry = getInsightForItem(item);
+            if (entry) {
+              return (
+                <button
+                  className="font-semibold underline"
+                  style={{ margin: 0 }}
+                  onClick={() => {
+                    setSelectedSku(entry[0]);
+                    setModalOpen(true);
+                    setFbType(null);
+                    setFbText('');
+                    setFbSuccess(false);
+                  }}
+                >
+                  View Insights
+                </button>
+              );
+            }
+            return (
+              <em style={{ color: '#888' }}>
+                Not analyzed
+                <br />
+                <small style={{ fontSize: 10 }}>
+                  ({isGlobalData() ? 'Global/Product Name' : 'SKU'}: {item.product_name || item.sku || 'N/A'})
+                </small>
+              </em>
+            );
+          })()}
+        </td>
+      )}
+    </tr>
+  ))}
+
+  {/* Others row only in ALL SKUS */}
+  {activeTab === 'all_skus' && restAllSkuRows.length > 0 && (
+    <tr
+      className="cursor-pointer hover:bg-gray-50"
+      onClick={() => setShowAllSkus((s) => !s)}
+    >
+      <td
+        className="border border-[#414042] px-2 py-2.5 text-left font-bold"
+        colSpan={Object.keys(skuInsights).length > 0 ? 9 : 9}
+      >
+        <div className="flex items-center gap-3">
+          <span>Others ({restAllSkuRows.length})</span>
+          <span className="select-none">{showAllSkus ? '▴' : '▾'}</span>
+        </div>
+      </td>
+    </tr>
+  )}
+
+  {/* Expanded rest */}
+  {activeTab === 'all_skus' &&
+    showAllSkus &&
+    restAllSkuRows.map((item, i) => (
+      <tr key={`rest-${i}`} className="">
+        {/* NOTE: serial continues from 6 */}
+        <td className="border border-[#414042] px-2 py-2.5 text-center">
+          {i + 6}
+        </td>
+
+        {/* reuse same cells quickly by copying same block as above:
+            product name + sales mix + metrics + AI column */}
+        <td className="border border-[#414042] px-2 py-2.5 text-left">
+          {item.product_name || item.sku || 'N/A'}
+        </td>
+        <td className="border border-[#414042] px-2 py-2.5 text-center">
+          {item['Sales Mix (Month2)'] != null
+            ? `${Number(item['Sales Mix (Month2)']).toFixed(2)}%`
+            : 'N/A'}
+        </td>
+
+        {[
+          { field: 'Unit Growth', raw: 'quantity' },
+          { field: 'ASP Growth', raw: 'asp' },
+          { field: 'Sales Growth', raw: 'net_sales' },
+          ...(activeTab !== 'new_or_reviving_skus'
+            ? [{ field: 'Sales Mix Change', raw: 'sales_mix' }]
+            : []),
+          { field: 'Profit Per Unit', raw: 'unit_wise_profitability' },
+          { field: 'CM1 Profit Impact', raw: 'profit' },
+        ].map(({ field, raw }) => {
+          const growth = item[field];
+
+          // same exact logic as top rows (you can keep it identical)
+          if (!growth || (growth as GrowthCategory).value == null) {
+            return (
+              <td key={field} className="border border-[#414042] px-2 py-2.5 text-center">
+                N/A
+              </td>
+            );
+          }
+
+          let color = '#414042';
+          if ((growth as GrowthCategory).category === 'High Growth') color = '#5EA68E';
+          else if ((growth as GrowthCategory).category === 'Negative Growth') color = '#FF5C5C';
+          const sign = (growth as GrowthCategory).value >= 0 ? '+' : '';
+          return (
+            <td
+              key={field}
+              className="border border-[#414042] px-2 py-2.5 text-center"
+              style={{ color, fontWeight: 600 }}
+            >
+              {(growth as GrowthCategory).category} ({sign}
+              {Number((growth as GrowthCategory).value).toFixed(2)}%)
+            </td>
+          );
+        })}
+
+        {Object.keys(skuInsights).length > 0 && (
+          <td className="border border-[#414042] px-2 text-nowrap py-2.5 text-center">
+            {(() => {
+              const entry = getInsightForItem(item);
+              if (entry) {
+                return (
+                  <button
+                    className="font-semibold underline"
+                    style={{ margin: 0 }}
+                    onClick={() => {
+                      setSelectedSku(entry[0]);
+                      setModalOpen(true);
+                      setFbType(null);
+                      setFbText('');
+                      setFbSuccess(false);
+                    }}
+                  >
+                    View Insights
+                  </button>
+                );
+              }
+              return <em style={{ color: '#888' }}>Not analyzed</em>;
+            })()}
+          </td>
+        )}
+      </tr>
+    ))}
+</tbody>
+
 
            <tfoot>
   <tr className="bg-[#D9D9D9E5] ">
@@ -2150,17 +2270,7 @@ if (activeTab === 'all_skus' && key) {
     </div>
   )}
 </div>
-{activeTab === "all_skus" && allSkuRows.length > 5 && (
-  <div className="mt-3 flex justify-center">
-    <button
-      type="button"
-      className="styled-button"
-      onClick={() => setShowAllSkus((s) => !s)}
-    >
-      {showAllSkus ? "Show Less" : `Others (${allSkuRows.length - 5})`}
-    </button>
-  </div>
-)}
+
 
           </div>
          

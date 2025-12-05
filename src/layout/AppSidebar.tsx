@@ -805,7 +805,7 @@ const defaultYear = String(today.getFullYear());
           path: `/inputCost/${currentParams.countryName}/${currentParams.month}/${currentParams.year}`,
         },
         {
-          name: "Current Inventory",
+          name: "Month-Wise Inventory",
           path: `/currentInventory/${currentParams.countryName}/${currentParams.month}/${currentParams.year}`,
            // ✅ yeh add karo
         },
