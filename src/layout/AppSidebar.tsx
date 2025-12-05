@@ -716,6 +716,7 @@ const defaultYear = String(today.getFullYear());
         {
           name: "Real-Time Dashboard",
           path: `/`,
+          onClick: handleFetchCurrentInventory,
         },
         {
           name: "Live AI Insights",
@@ -806,7 +807,7 @@ const defaultYear = String(today.getFullYear());
         {
           name: "Current Inventory",
           path: `/currentInventory/${currentParams.countryName}/${currentParams.month}/${currentParams.year}`,
-          onClick: handleFetchCurrentInventory,   // ✅ yeh add karo
+           // ✅ yeh add karo
         },
         {
           name: "Dispatches",
