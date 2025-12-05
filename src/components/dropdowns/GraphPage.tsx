@@ -1183,12 +1183,12 @@ const GraphPage: React.FC<GraphPageProps> = ({
       const colorMap: Record<string, string> = {
         sales: "#2CA9E0",
         AmazonExpense: "#ff5c5c",
-        taxncredit: "#154B9B",
+        taxncredit: "#FFBE26",
         total_cous: "#AB64B5",
-        profit: "#87AD12",
+        profit: "#5EA49B",
         advertisingCosts: "#F47A00",
         Other: "#00627D",
-        profit2: "#5EA49B",
+        profit2: "#87AD12",
       };
 
       const datasets = Object.entries(selectedGraphs)
@@ -1424,15 +1424,15 @@ const GraphPage: React.FC<GraphPageProps> = ({
               { name: "sales", label: "Sales", color: "#2CA9E0" },
               { name: "total_cous", label: "COGS", color: "#AB64B5" },
               { name: "AmazonExpense", label: "Amazon Fees", color: "#FF5C5C" },
-              { name: "taxncredit", label: "Taxes & Credits", color: "#154B9B" },
-              { name: "profit2", label: "CM1 Profit", color: "#5EA49B" },
+              { name: "taxncredit", label: "Taxes & Credits", color: "#FFBE26" },
+              { name: "profit2", label: "CM1 Profit", color: "#87AD12" },
               {
                 name: "advertisingCosts",
                 label: "Advertising Costs",
                 color: "#F47A00",
               },
               { name: "Other", label: "Other", color: "#00627D" },
-              { name: "profit", label: "CM2 Profit", color: "#87AD12" },
+              { name: "profit", label: "CM2 Profit", color: "#5EA49B" },
             ].map(({ name, label, color }) => {
               const isChecked = !!selectedGraphs[name];
 
