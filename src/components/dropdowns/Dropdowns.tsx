@@ -365,7 +365,7 @@ const Dropdowns: React.FC<DropdownsProps> = ({
     return `${capitalizeFirstLetter(range)} Tracking Profitability - ${selectedYear}`;
   };
 
-  
+
   return (
     <div ref={layoutRef} className="space-y-4 relative">
       {/* Back / Title */}
@@ -675,7 +675,7 @@ const Dropdowns: React.FC<DropdownsProps> = ({
                 variant="primary"
                 size="sm"
                 onClick={() => setShowUploadModal(true)}
-                className="ml-4"
+                className="ml-4 "
                 startIcon={<AiOutlinePlus className="text-yellow-200" />}
               >
                 Upload MTD(s)

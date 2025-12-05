@@ -2769,6 +2769,36 @@ function getPrevMonthShortLabel() {
   return `${shortMon}'${String(year).slice(-2)}`; // e.g., Oct'25
 }
 
+function getThisMonthShortLabel() {
+  const now = new Date();
+
+  // Convert to IST explicitly
+  const istString = now.toLocaleString("en-US", {
+    timeZone: "Asia/Kolkata",
+  });
+  const istDate = new Date(istString);
+
+  // Extract month & year
+  const monthName = istDate.toLocaleString("en-US", {
+    month: "long",
+    timeZone: "Asia/Kolkata",
+  });
+
+  const year = istDate.getFullYear();
+
+  // Convert to short month (Jan, Feb, ...)
+  const shortMon = new Date(`${monthName} 1, ${year}`).toLocaleString(
+    "en-US",
+    {
+      month: "short",
+      timeZone: "Asia/Kolkata",
+    }
+  );
+
+  return `${shortMon}'${String(year).slice(-2)}`;  
+}
+
+
 function getISTDayInfo() {
   const tz = "Asia/Kolkata";
   const now = new Date();
@@ -2947,6 +2977,7 @@ type AmazonStatCardProps = {
   className?: string;  // color styles per card
 };
 
+
 function SalesTargetCard({
   regions,
   defaultRegion = "Global",
@@ -2992,6 +3023,7 @@ function SalesTargetCard({
   const todayApprox = todayDay > 0 ? mtdUSD / todayDay : 0;
 
   const prevLabel = getPrevMonthShortLabel();
+  const thisMonthLabel = getThisMonthShortLabel(); // e.g. "Feb"
 
   const size = 280;
   const strokeMain = 10;
@@ -3091,7 +3123,7 @@ function SalesTargetCard({
             className="block h-3 w-3 rounded-sm shrink-0"
             style={{ backgroundColor: "#9ca3af" }}
           />
-          <span className="text-gray-600">This Month Target</span>
+          <span className="text-gray-600">{thisMonthLabel} Target</span>
         </div>
 
         <div className="flex flex-1 items-center justify-center gap-2">
@@ -4276,9 +4308,9 @@ export default function DashboardPage() {
     ];
   }, [graphRegion, combinedUSD, uk]);
 
-  
 
-    // ---------- Props & Excel export for Amazon bar graph ----------
+
+  // ---------- Props & Excel export for Amazon bar graph ----------
 
   // 1) Country used in the graph header
   const countryNameForGraph =
@@ -4318,82 +4350,82 @@ export default function DashboardPage() {
   // 6) True if all chart data is zero
   const allValuesZero = values.every((v) => !v || v === 0);
 
-// --- Helper: capture chart as PNG data URL (canvas or svg) ---
-const captureChartPng = React.useCallback(async (): Promise<string | null> => {
-  const container = chartRef.current;
-  if (!container) return null;
+  // --- Helper: capture chart as PNG data URL (canvas or svg) ---
+  const captureChartPng = React.useCallback(async (): Promise<string | null> => {
+    const container = chartRef.current;
+    if (!container) return null;
 
-  // 1) If DashboardBargraphCard uses <canvas> (e.g. Chart.js), use it directly
-  const canvas = container.querySelector("canvas") as HTMLCanvasElement | null;
-  if (canvas) {
-    try {
-      // make sure background is white (optional – depends on your chart lib)
-      const tmpCanvas = document.createElement("canvas");
-      tmpCanvas.width = canvas.width;
-      tmpCanvas.height = canvas.height;
-      const ctx = tmpCanvas.getContext("2d");
-      if (!ctx) return null;
+    // 1) If DashboardBargraphCard uses <canvas> (e.g. Chart.js), use it directly
+    const canvas = container.querySelector("canvas") as HTMLCanvasElement | null;
+    if (canvas) {
+      try {
+        // make sure background is white (optional – depends on your chart lib)
+        const tmpCanvas = document.createElement("canvas");
+        tmpCanvas.width = canvas.width;
+        tmpCanvas.height = canvas.height;
+        const ctx = tmpCanvas.getContext("2d");
+        if (!ctx) return null;
 
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, 0, tmpCanvas.width, tmpCanvas.height);
-      ctx.drawImage(canvas, 0, 0);
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, tmpCanvas.width, tmpCanvas.height);
+        ctx.drawImage(canvas, 0, 0);
 
-      return tmpCanvas.toDataURL("image/png");
-    } catch (e) {
-      console.error("Failed to capture canvas chart", e);
-      return null;
+        return tmpCanvas.toDataURL("image/png");
+      } catch (e) {
+        console.error("Failed to capture canvas chart", e);
+        return null;
+      }
     }
-  }
 
-  // 2) Fallback: if it's an <svg> chart, convert svg → png (your previous logic)
-  const svg = container.querySelector("svg");
-  if (!svg) return null;
+    // 2) Fallback: if it's an <svg> chart, convert svg → png (your previous logic)
+    const svg = container.querySelector("svg");
+    if (!svg) return null;
 
-  const serializer = new XMLSerializer();
-  let svgString = serializer.serializeToString(svg);
+    const serializer = new XMLSerializer();
+    let svgString = serializer.serializeToString(svg);
 
-  if (!svgString.includes('xmlns="http://www.w3.org/2000/svg"')) {
-    svgString = svgString.replace(
-      "<svg",
-      '<svg xmlns="http://www.w3.org/2000/svg"'
-    );
-  }
+    if (!svgString.includes('xmlns="http://www.w3.org/2000/svg"')) {
+      svgString = svgString.replace(
+        "<svg",
+        '<svg xmlns="http://www.w3.org/2000/svg"'
+      );
+    }
 
-  const svgBlob = new Blob([svgString], {
-    type: "image/svg+xml;charset=utf-8",
-  });
-  const url = URL.createObjectURL(svgBlob);
+    const svgBlob = new Blob([svgString], {
+      type: "image/svg+xml;charset=utf-8",
+    });
+    const url = URL.createObjectURL(svgBlob);
 
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.onload = () => {
-      const rect = svg.getBoundingClientRect();
-      const canvasEl = document.createElement("canvas");
-      canvasEl.width = rect.width || 1000;
-      canvasEl.height = rect.height || 500;
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const rect = svg.getBoundingClientRect();
+        const canvasEl = document.createElement("canvas");
+        canvasEl.width = rect.width || 1000;
+        canvasEl.height = rect.height || 500;
 
-      const ctx = canvasEl.getContext("2d");
-      if (!ctx) {
+        const ctx = canvasEl.getContext("2d");
+        if (!ctx) {
+          URL.revokeObjectURL(url);
+          resolve(null);
+          return;
+        }
+
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, canvasEl.width, canvasEl.height);
+        ctx.drawImage(img, 0, 0, canvasEl.width, canvasEl.height);
+
+        const pngDataUrl = canvasEl.toDataURL("image/png");
+        URL.revokeObjectURL(url);
+        resolve(pngDataUrl);
+      };
+      img.onerror = () => {
         URL.revokeObjectURL(url);
         resolve(null);
-        return;
-      }
-
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, 0, canvasEl.width, canvasEl.height);
-      ctx.drawImage(img, 0, 0, canvasEl.width, canvasEl.height);
-
-      const pngDataUrl = canvasEl.toDataURL("image/png");
-      URL.revokeObjectURL(url);
-      resolve(pngDataUrl);
-    };
-    img.onerror = () => {
-      URL.revokeObjectURL(url);
-      resolve(null);
-    };
-    img.src = url;
-  });
-}, []);
+      };
+      img.src = url;
+    });
+  }, []);
 
   // --- Download: Excel + chart image ---
   const handleDownload = React.useCallback(async () => {
