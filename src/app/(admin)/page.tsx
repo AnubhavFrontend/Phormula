@@ -2878,6 +2878,7 @@ import {
 } from "@/lib/dashboard/format";
 
 import type { RegionKey, RegionMetrics } from "@/lib/dashboard/types";
+import AgeingInventorySection from "@/components/dashboard/AgeingInventorySection";
 
 /* ===================== ENV & ENDPOINTS ===================== */
 const baseURL =
@@ -3400,8 +3401,8 @@ export default function DashboardPage() {
     const prevAspGBP = prevTotals
       ? toNumberSafe(prevTotals.asp)
       : prevUnitsGBP > 0
-      ? prevNetSalesGBP / prevUnitsGBP
-      : 0;
+        ? prevNetSalesGBP / prevUnitsGBP
+        : 0;
 
     const prevProfitGBP = prevTotals
       ? toNumberSafe(prevTotals.profit)
@@ -3427,32 +3428,32 @@ export default function DashboardPage() {
 
     const pctSalesVsCurrent = prevMonthCompare
       ? parsePercentToNumber(
-          prevMonthCompare.percentage_sales
-        )
+        prevMonthCompare.percentage_sales
+      )
       : null;
 
     const pctUnitsVsCurrent = prevMonthCompare
       ? parsePercentToNumber(
-          prevMonthCompare.percentage_quantity
-        )
+        prevMonthCompare.percentage_quantity
+      )
       : null;
 
     const pctAspVsCurrent = prevMonthCompare
       ? parsePercentToNumber(
-          prevMonthCompare.percentage_asp
-        )
+        prevMonthCompare.percentage_asp
+      )
       : null;
 
     const pctProfitVsCurrent = prevMonthCompare
       ? parsePercentToNumber(
-          prevMonthCompare.percentage_profit
-        )
+        prevMonthCompare.percentage_profit
+      )
       : null;
 
     const pctProfitPctVsCurrent = prevProfitCompare
       ? parsePercentToNumber(
-          prevProfitCompare.percentage_profit_percentage
-        )
+        prevProfitCompare.percentage_profit_percentage
+      )
       : null;
 
     return {
@@ -4061,11 +4062,10 @@ export default function DashboardPage() {
             <button
               onClick={refreshAll}
               disabled={anyLoading}
-              className={`w-full rounded-md border px-3 py-1.5 text-sm shadow-sm active:scale-[.99] sm:w-auto ${
-                anyLoading
+              className={`w-full rounded-md border px-3 py-1.5 text-sm shadow-sm active:scale-[.99] sm:w-auto ${anyLoading
                   ? "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400"
                   : "border-gray-300 bg-white hover:bg-gray-50"
-              }`}
+                }`}
             >
               {anyLoading ? (
                 <span className="inline-flex items-center gap-2">
@@ -4088,9 +4088,8 @@ export default function DashboardPage() {
           </div>
 
           <div
-            className={`grid grid-cols-12 gap-6 ${
-              !noIntegrations ? "items-stretch" : ""
-            }`}
+            className={`grid grid-cols-12 gap-6 ${!noIntegrations ? "items-stretch" : ""
+              }`}
           >
             {/* LEFT COLUMN: Global + Amazon + Shopify */}
             <div className="col-span-12 space-y-6 lg:col-span-8 order-2 lg:order-1">
@@ -4533,6 +4532,8 @@ export default function DashboardPage() {
 
 
               <CurrentInventorySection inventoryCountry={inventoryCountry} />
+
+              <AgeingInventorySection />
             </>
           )}
         </div>
