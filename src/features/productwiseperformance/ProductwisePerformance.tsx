@@ -569,6 +569,17 @@ const ProductwisePerformance: React.FC<ProductwisePerformanceProps> = ({
     return selectedMonth ? `${cap(selectedMonth)}'${yearShort}` : `Year'${yearShort}`;
   };
 
+  const getHeadingPeriod = () => {
+    // For the heading: Yearly -> YTD'25, others as-is
+    if (range === "yearly") return `YTD'${yearShort}`;
+    if (range === "quarterly") return `Q${selectedQuarter}'${yearShort}`;
+    if (range === "monthly" && selectedMonth) {
+      return `${cap(selectedMonth)}'${yearShort}`;
+    }
+    return "";
+  };
+
+
   // -------------------------
   // Cards (GLOBAL uses same conversion + fallback as chart)
   // -------------------------
@@ -850,50 +861,52 @@ const ProductwisePerformance: React.FC<ProductwisePerformanceProps> = ({
 
   return (
     <div className="w-full">
-      {/* <div className="mb-4 flex flex-wrap items-start justify-between gap-4">
+
+      {/* Header */}
+      {/* <div className="mb-4">
         <PageBreadcrumb
           pageTitle="Performance Analysis"
           variant="page"
           align="left"
           textSize="2xl"
         />
-
-        <ProductSearchDropdown
-          authToken={authToken}
-          onProductSelect={handleProductSelect}
-        />
-      </div>
-
-      <div className="mb-5">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-[0.5vw]">
-          <PeriodFiltersTable
-            range={range}
-            selectedMonth={selectedMonth}
-            selectedQuarter={`Q${selectedQuarter}`}
-            selectedYear={selectedYear}
-            yearOptions={years}
-            onRangeChange={(v: Range) => setRange(v)}
-            onMonthChange={(val) => setSelectedMonth(val)}
-            onQuarterChange={(val) => {
-              const num = val.replace("Q", "");
-              setSelectedQuarter(num || "1");
-            }}
-            onYearChange={(val) => setSelectedYear(Number(val) || initialYear)}
-            allowedRanges={["quarterly", "yearly"]}
-          />
-        </div>
       </div> */}
-
 
       {/* Header */}
       <div className="mb-4">
-        <PageBreadcrumb
+        <h2
+          className="
+        flex flex-wrap items-baseline gap-x-1 gap-y-1
+        text-[15px] sm:text-lg md:text-xl lg:text-2xl
+        font-semibold text-[#414042]
+      "
+        >
+         <PageBreadcrumb
           pageTitle="Performance Analysis"
           variant="page"
           align="left"
           textSize="2xl"
         />
+
+          {canShowResults && (
+            <>
+              <span className="text-gray-400">-</span>
+              <span
+                className="
+              text-lg sm:text-2xl md:text-2xl
+              font-bold text-green-500
+            "
+              >
+                {/* UK: Classic (YTD'25) */}
+                {countryName && formatCountryLabel(countryName)}
+                {productname && `: ${productname}`}{" "}
+                {`(${getHeadingPeriod()})`}
+              </span>
+            </>
+          )}
+        </h2>
       </div>
+
 
       {/* Search + Filters in SAME ROW */}
       <div className="mb-5 flex flex-col md:flex-row items-center justify-between gap-4">
@@ -981,57 +994,57 @@ const ProductwisePerformance: React.FC<ProductwisePerformanceProps> = ({
                 </p>
 
                 <div className="my-4 flex flex-wrap items-center gap-3">
-              {["global", ...nonEmptyCountriesFromApi].map((country) => {
-  const color = getCountryColor(country);
-  const isChecked = selectedCountries[country] ?? true;
-  const label = formatCountryLabel(country);
+                  {["global", ...nonEmptyCountriesFromApi].map((country) => {
+                    const color = getCountryColor(country);
+                    const isChecked = selectedCountries[country] ?? true;
+                    const label = formatCountryLabel(country);
 
-  return (
-    <label
-      key={country}
-      className={[
-        "shrink-0",
-        "flex items-center gap-1 sm:gap-1.5",
-        "font-semibold select-none whitespace-nowrap",
-        "text-[9px] sm:text-[10px] md:text-[11px] lg:text-xs xl:text-sm",
-        "text-charcoal-500",
-        isChecked ? "opacity-100" : "opacity-40",
-        "cursor-pointer",
-      ].join(" ")}
-      onClick={() => handleCountryChange(country as CountryKey)}
-    >
-      <span
-        className="
+                    return (
+                      <label
+                        key={country}
+                        className={[
+                          "shrink-0",
+                          "flex items-center gap-1 sm:gap-1.5",
+                          "font-semibold select-none whitespace-nowrap",
+                          "text-[9px] sm:text-[10px] md:text-[11px] lg:text-xs xl:text-sm",
+                          "text-charcoal-500",
+                          isChecked ? "opacity-100" : "opacity-40",
+                          "cursor-pointer",
+                        ].join(" ")}
+                        onClick={() => handleCountryChange(country as CountryKey)}
+                      >
+                        <span
+                          className="
           flex items-center justify-center
           h-3 w-3 sm:h-3.5 sm:w-3.5
           rounded-sm border transition
         "
-        style={{
-          borderColor: color,
-          backgroundColor: isChecked ? color : "white",
-        }}
-      >
-        {isChecked && (
-          <svg
-            viewBox="0 0 24 24"
-            width="14"
-            height="14"
-            className="text-white"
-          >
-            <path
-              fill="currentColor"
-              d="M20.285 6.709a1 1 0 0 0-1.414-1.414L9 15.168l-3.879-3.88a1 1 0 0 0-1.414 1.415l4.586 4.586a1 1 0 0 0 1.414 0l10-10Z"
-            />
-          </svg>
-        )}
-      </span>
+                          style={{
+                            borderColor: color,
+                            backgroundColor: isChecked ? color : "white",
+                          }}
+                        >
+                          {isChecked && (
+                            <svg
+                              viewBox="0 0 24 24"
+                              width="14"
+                              height="14"
+                              className="text-white"
+                            >
+                              <path
+                                fill="currentColor"
+                                d="M20.285 6.709a1 1 0 0 0-1.414-1.414L9 15.168l-3.879-3.88a1 1 0 0 0-1.414 1.415l4.586 4.586a1 1 0 0 0 1.414 0l10-10Z"
+                              />
+                            </svg>
+                          )}
+                        </span>
 
-      <span className="text-charcoal-500">
-        {label}
-      </span>
-    </label>
-  );
-})}
+                        <span className="text-charcoal-500">
+                          {label}
+                        </span>
+                      </label>
+                    );
+                  })}
 
                 </div>
               </div>
