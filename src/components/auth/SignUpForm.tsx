@@ -1133,7 +1133,7 @@ export default function SignUpForm() {
               <p className="text-sm font-normal text-center text-blue-700 sm:text-start">
                 Already a user ?{" "}
                 <Link href="/signin" className="text-blue-700 ">
-                  Sign In
+                  Login here
                 </Link>
               </p>
             </div>

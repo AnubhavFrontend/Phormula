@@ -399,7 +399,7 @@ const handleStatusPollWinAndRoute = async () => {
             <select
               value={region}
               onChange={(e) => setRegion(e.target.value)}
-              className="mb-4 w-full rounded-md border border-gray-300 bg-white px-3 py-2 pr-10 text-sm md:text-base text-gray-800 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
+              className="mb-4 w-full rounded-md border border-gray-300 bg-white px-3 py-2 pr-10 text-sm md:text-base text-gray-800 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-500"
             >
               <option value="eu-west-1">{REGION_LABELS["eu-west-1"]}</option>
               <option value="us-east-1">{REGION_LABELS["us-east-1"]}</option>

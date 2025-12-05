@@ -297,7 +297,7 @@ const chooseIntegration = (key: Provider, origin: Origin = "page") => {
           className="m-4 max-w-xl"
           showCloseButton
         >
-          <div className="relative w-full rounded-3xl bg-white p-4 no-scrollbar dark:bg-gray-900 lg:p-11">
+          <div className="relative w-full rounded-3xl shadow-[6px_6px_7px_0px_#00000026] border border-[#D9D9D9] p-4 no-scrollbar dark:bg-gray-900 lg:p-11">
             <SkuMultiCountryUpload
               onClose={() => setActivePopup(null)}
               onComplete={async () => {

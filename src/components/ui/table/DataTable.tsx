@@ -503,11 +503,25 @@ export default function DataTable<T extends Row>({
 
     return words
       .map((w, idx) => {
-        if (w.toLowerCase() === "sku") return "SKU";       // Always SKU
-        return w.charAt(0).toUpperCase() + w.slice(1);     // Capitalize others
+        const lower = w.toLowerCase();
+
+        if (lower === "sku") return "SKU";
+
+        // If word comes after "SKU" and is a country => uppercase it
+        if (
+          idx > 0 &&
+          words[idx - 1].toLowerCase() === "sku" &&
+          ["uk", "us", "canada"].includes(lower)
+        ) {
+          return w.toUpperCase(); // UK / US / CANADA
+        }
+
+        // normal capitalization for other words
+        return w.charAt(0).toUpperCase() + w.slice(1);
       })
       .join(" ");
   };
+
 
 
   return (
@@ -544,18 +558,17 @@ export default function DataTable<T extends Row>({
                 <th
                   key={String(col.key) + i}
                   className={clsx(
-                    "border border-[#e1e5ea] px-3 py-2.5 text-left align-middle whitespace-nowrap",
+                    "border border-[#e1e5ea] px-3 py-2.5 text-center align-middle whitespace-nowrap", // 👈 text-center
                     col.headerClassName
                   )}
-
                   style={col.width ? { width: col.width } : undefined}
                 >
-                  {formatHeader(col.header)}
-
+                  {formatHeader(col.header)} 
                 </th>
               ))}
             </tr>
           </thead>
+
 
           <tbody>
             {!hasData && (

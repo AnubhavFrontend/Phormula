@@ -545,7 +545,7 @@ const ProductwisePerformance: React.FC<ProductwisePerformanceProps> = ({
     scales: {
       x: { title: { display: true, text: "Month" } },
       y: {
-        title: { display: true, text: "Amount (USD)" },
+        title: { display: true, text: "Amount ($)" },
         min: 0,
         ticks: {
           padding: 0,

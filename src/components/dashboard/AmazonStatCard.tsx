@@ -67,7 +67,7 @@ export default function AmazonStatCard({
         </ValueOrSkeleton>
       </div>
 
-      <div className="mt-3 flex items-center justify-between text-xs text-charcoal-500">
+      <div className="mt-3 flex items-end justify-between text-xs text-charcoal-500">
         <div className="flex flex-col">
           <span>{bottomLabel}:</span>
           <span className="font-medium">
@@ -76,7 +76,7 @@ export default function AmazonStatCard({
         </div>
 
         <div
-          className={`inline-flex items-center text-[11px] font-semibold ${deltaColor}`}
+          className={`inline-flex items-center font-semibold ${deltaColor}`}
         >
           {deltaContent}
         </div>

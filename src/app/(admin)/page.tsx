@@ -4041,7 +4041,7 @@ export default function DashboardPage() {
                   className="text-2xl font-semibold"
                 />
 
-                <span className="text-[#5EA68E] text-xl font-semibold">
+                <span className="text-lg sm:text-2xl md:text-2xl font-semibold text-[#5EA68E]">
                   {(() => {
                     const { monthName, year } =
                       getISTYearMonth();
@@ -4098,11 +4098,11 @@ export default function DashboardPage() {
                 <div className="mb-4">
                   <div className="flex items-baseline gap-2">
                     <PageBreadcrumb
-                      pageTitle="Global -"
+                      pageTitle="Global"
                       variant="page"
                       align="left"
                     />
-                    <span className="text-[#5EA68E] text-lg font-semibold sm:text-2xl md:text-2xl">
+                    {/* <span className="text-[#5EA68E] text-lg font-semibold sm:text-2xl md:text-2xl">
                       {(() => {
                         const { monthName, year } =
                           getISTYearMonth();
@@ -4116,7 +4116,7 @@ export default function DashboardPage() {
                           year
                         ).slice(2)}`;
                       })()}
-                    </span>
+                    </span> */}
                   </div>
                   <p className="mt-1 text-sm text-charcoal-500">
                     Real-time data from Amazon &amp; Shopify
@@ -4225,11 +4225,11 @@ export default function DashboardPage() {
                   <div className="flex flex-col flex-1 min-w-0">
                     <div className="flex flex-wrap items-baseline gap-2">
                       <PageBreadcrumb
-                        pageTitle="Amazon -"
+                        pageTitle="Amazon"
                         variant="page"
                         align="left"
                       />
-                      <span className="text-[#5EA68E] text-lg font-semibold sm:text-2xl md:text-2xl">
+                      {/* <span className="text-[#5EA68E] text-lg font-semibold sm:text-2xl md:text-2xl">
                         {(() => {
                           const { monthName, year } =
                             getISTYearMonth();
@@ -4243,7 +4243,7 @@ export default function DashboardPage() {
                             year
                           ).slice(2)}`;
                         })()}
-                      </span>
+                      </span> */}
                     </div>
 
                     <p className="mt-1 text-sm text-charcoal-500">
@@ -4339,12 +4339,12 @@ export default function DashboardPage() {
                   <div className="flex flex-col">
                     <div className="flex items-baseline gap-2">
                       <PageBreadcrumb
-                        pageTitle="Shopify -"
+                        pageTitle="Shopify"
                         variant="page"
                         align="left"
                         textSize="2xl"
                       />
-                      <span className="text-2xl font-semibold text-[#5EA68E]">
+                      {/* <span className="text-2xl font-semibold text-[#5EA68E]">
                         {(() => {
                           const { monthName, year } =
                             getISTYearMonth();
@@ -4358,7 +4358,7 @@ export default function DashboardPage() {
                             year
                           ).slice(2)}`;
                         })()}
-                      </span>
+                      </span> */}
                     </div>
 
                     <p className="mt-1 text-sm text-charcoal-500">
@@ -4533,7 +4533,7 @@ export default function DashboardPage() {
 
               <CurrentInventorySection inventoryCountry={inventoryCountry} />
 
-              <AgeingInventorySection />
+              {/* <AgeingInventorySection /> */}
             </>
           )}
         </div>

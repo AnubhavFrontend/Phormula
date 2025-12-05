@@ -15,11 +15,26 @@ export function StepBadge({
           ? "bg-[#5EA68E] border-[#5EA68E] text-white shadow-md"
           : "bg-white text-[#414042] border-[#D9D9D9]"}`}
     >
-      {completed ? (
-        <img src="/Tick_small.png" alt="Done" className="h-3 w-3" />
-      ) : (
-        label
-      )}
+    {completed ? (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    className="h-8 w-8"
+  >
+    <circle cx="12" cy="12" r="12" fill="#5EA68E" />
+    <path
+      d="M16 9l-5.5 5.5L8 12"
+      stroke="white"
+      strokeWidth="2"
+      fill="none"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+) : (
+  label
+)}
+
     </div>
   );
 }

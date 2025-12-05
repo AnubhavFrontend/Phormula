@@ -762,7 +762,7 @@ const SKUtable: React.FC<SKUtableProps> = ({
 
                     {/* Main table */}
 
-                    <div className="w-full overflow-x-auto">
+                    <div className="w-full overflow-x-auto rounded-xl border border-gray-300">
                         <div className="min-w-full">
                             <table className="min-w-[800px] w-full table-auto border-collapse text-[#414042]">
                                 <thead className="sticky top-0 z-10 font-bold text-[#f8edcf]">
@@ -1120,7 +1120,7 @@ const SKUtable: React.FC<SKUtableProps> = ({
                             <span className="text-green-500 ">&nbsp;({currencySymbol})</span>
                         </div>
 
-                        <div className="overflow-x-auto">
+                       <div className="overflow-x-auto rounded-xl border border-gray-300">
                             <table className="w-full table-auto border-collapse">
                                 <thead>
                                     <tr className="bg-green-500 font-bold text-[#f8edcf]">
@@ -1219,7 +1219,7 @@ const SKUtable: React.FC<SKUtableProps> = ({
                             <PageBreadcrumb pageTitle="Least 5 Profitable Products" variant="page" align="left" textSize="2xl" />
                             <span className="text-[#5EA68E]">&nbsp;({currencySymbol})</span>
                         </div>
-                        <div className="overflow-x-auto">
+                     <div className="overflow-x-auto rounded-xl border border-gray-300">
                             <table className="w-full table-auto border-collapse">
                                 <thead>
                                     <tr className="bg-[#ff5c5c] font-bold text-white">

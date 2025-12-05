@@ -670,7 +670,7 @@ const Dropdowns: React.FC<DropdownsProps> = ({
       <Modal
         isOpen={showUploadModal}
         onClose={() => setShowUploadModal(false)}
-        className="max-w-3xl w-[90vw] mx-auto p-0"
+        className="max-w-3xl w-[90vw] mx-auto p-0 shadow-[6px_6px_7px_0px_#00000026] border border-[#D9D9D9]"
         showCloseButton
       >
         <div className="max-h-[85vh] overflow-y-auto">

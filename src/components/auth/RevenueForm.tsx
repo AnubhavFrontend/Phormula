@@ -229,7 +229,7 @@ const onSubmit = (e: React.FormEvent) => {
       <div className="flex flex-col justify-center flex-1 w-full max-w-lg mx-auto">
         <div className="flex flex-col gap-14">
           <div className="">
-            <h1 className="mb-2 font-semibold text-gray-800 text-title-sm dark:text-white/90 sm:text-title-md">
+            <h1 className="mb-2 font-semibold text-charcoal-500 text-title-sm dark:text-white/90 sm:text-title-md">
             Select  <span className="text-[#5EA68E]">Estimated Revenue</span> achieved in the past 12 Months
             </h1>
           </div>
