@@ -3562,6 +3562,10 @@ export default function DashboardPage() {
 
   const hasAnyGraphData = amazonIntegrated || shopifyIntegrated;
 
+  const onlyAmazon = amazonIntegrated && !shopifyIntegrated;
+const onlyShopify = shopifyIntegrated && !amazonIntegrated;
+
+
 
   const shopifyDeriv = useMemo(() => {
     if (!shopify) return null;
@@ -3821,9 +3825,103 @@ export default function DashboardPage() {
 
   /* ---------- P&L items for graph based on graphRegion ---------- */
 
-  const plItems = useMemo(() => {
-    if (graphRegion === "Global") {
-      // combinedUSD is in USD
+  // const plItems = useMemo(() => {
+  //   if (graphRegion === "Global") {
+  //     // combinedUSD is in USD
+  //     const salesHome = convertToHomeCurrency(combinedUSD, "USD");
+
+  //     return [
+  //       {
+  //         label: "Sales",
+  //         raw: salesHome,
+  //         display: formatHomeAmount(salesHome),
+  //       },
+  //       {
+  //         label: "Amazon Fees",
+  //         raw: 0,
+  //         display: formatHomeAmount(0),
+  //       },
+  //       {
+  //         label: "COGS",
+  //         raw: 0,
+  //         display: formatHomeAmount(0),
+  //       },
+  //       {
+  //         label: "Advertisements",
+  //         raw: 0,
+  //         display: formatHomeAmount(0),
+  //       },
+  //       {
+  //         label: "Other Charges",
+  //         raw: 0,
+  //         display: formatHomeAmount(0),
+  //       },
+  //       {
+  //         label: "Profit",
+  //         raw: 0,
+  //         display: formatHomeAmount(0),
+  //       },
+  //     ];
+  //   }
+
+  //   // Region-level; currently only UK has actual cost data
+  //   const salesHome = convertToHomeCurrency(uk.netSalesGBP ?? 0, "GBP");
+  //   const amazonFeesHome = convertToHomeCurrency(uk.amazonFeesGBP ?? 0, "GBP");
+  //   const cogsHome = convertToHomeCurrency(uk.cogsGBP ?? 0, "GBP");
+  //   const advHome = convertToHomeCurrency(uk.advertisingGBP ?? 0, "GBP");
+  //   const platformHome = convertToHomeCurrency(uk.platformFeeGBP ?? 0, "GBP");
+  //   const profitHome = convertToHomeCurrency(uk.profitGBP ?? 0, "GBP");
+
+  //   return [
+  //     {
+  //       label: "Sales",
+  //       raw: salesHome,
+  //       display: formatHomeAmount(salesHome),
+  //     },
+  //     {
+  //       label: "Amazon Fees",
+  //       raw: amazonFeesHome,
+  //       display: formatHomeAmount(amazonFeesHome),
+  //     },
+  //     {
+  //       label: "COGS",
+  //       raw: cogsHome,
+  //       display: formatHomeAmount(cogsHome),
+  //     },
+  //     {
+  //       label: "Advertisements",
+  //       raw: advHome,
+  //       display: formatHomeAmount(advHome),
+  //     },
+  //     {
+  //       label: "Platform Fees",
+  //       raw: platformHome,
+  //       display: formatHomeAmount(platformHome),
+  //     },
+  //     {
+  //       label: "Profit",
+  //       raw: profitHome,
+  //       display: formatHomeAmount(profitHome),
+  //     },
+  //   ];
+  // }, [
+  //   graphRegion,
+  //   combinedUSD,
+  //   uk.netSalesGBP,
+  //   uk.amazonFeesGBP,
+  //   uk.cogsGBP,
+  //   uk.advertisingGBP,
+  //   uk.platformFeeGBP,
+  //   uk.profitGBP,
+  //   convertToHomeCurrency,
+  //   formatHomeAmount,
+  // ]);
+
+const plItems = useMemo(() => {
+  // ---------- GLOBAL VIEW ----------
+  if (graphRegion === "Global") {
+    // Case 1: BOTH Amazon + Shopify connected → show aggregate
+    if (amazonIntegrated && shopifyIntegrated) {
       const salesHome = convertToHomeCurrency(combinedUSD, "USD");
 
       return [
@@ -3860,58 +3958,172 @@ export default function DashboardPage() {
       ];
     }
 
-    // Region-level; currently only UK has actual cost data
-    const salesHome = convertToHomeCurrency(uk.netSalesGBP ?? 0, "GBP");
-    const amazonFeesHome = convertToHomeCurrency(uk.amazonFeesGBP ?? 0, "GBP");
-    const cogsHome = convertToHomeCurrency(uk.cogsGBP ?? 0, "GBP");
-    const advHome = convertToHomeCurrency(uk.advertisingGBP ?? 0, "GBP");
-    const platformHome = convertToHomeCurrency(uk.platformFeeGBP ?? 0, "GBP");
-    const profitHome = convertToHomeCurrency(uk.profitGBP ?? 0, "GBP");
+    // Case 2: ONLY Amazon connected → Global should look exactly like UK
+    if (onlyAmazon) {
+      const salesHome = convertToHomeCurrency(uk.netSalesGBP ?? 0, "GBP");
+      const amazonFeesHome = convertToHomeCurrency(
+        uk.amazonFeesGBP ?? 0,
+        "GBP"
+      );
+      const cogsHome = convertToHomeCurrency(uk.cogsGBP ?? 0, "GBP");
+      const advHome = convertToHomeCurrency(uk.advertisingGBP ?? 0, "GBP");
+      const platformHome = convertToHomeCurrency(
+        uk.platformFeeGBP ?? 0,
+        "GBP"
+      );
+      const profitHome = convertToHomeCurrency(uk.profitGBP ?? 0, "GBP");
 
+      return [
+        {
+          label: "Sales",
+          raw: salesHome,
+          display: formatHomeAmount(salesHome),
+        },
+        {
+          label: "Amazon Fees",
+          raw: amazonFeesHome,
+          display: formatHomeAmount(amazonFeesHome),
+        },
+        {
+          label: "COGS",
+          raw: cogsHome,
+          display: formatHomeAmount(cogsHome),
+        },
+        {
+          label: "Advertisements",
+          raw: advHome,
+          display: formatHomeAmount(advHome),
+        },
+        {
+          label: "Platform Fees",
+          raw: platformHome,
+          display: formatHomeAmount(platformHome),
+        },
+        {
+          label: "Profit",
+          raw: profitHome,
+          display: formatHomeAmount(profitHome),
+        },
+      ];
+    }
+
+    // Case 3: ONLY Shopify connected → Global = Shopify-only aggregate
+    if (onlyShopify) {
+      const salesHome = convertToHomeCurrency(
+        shopifyDeriv?.netSales ?? 0,
+        "INR"
+      );
+
+      return [
+        {
+          label: "Sales",
+          raw: salesHome,
+          display: formatHomeAmount(salesHome),
+        },
+        {
+          label: "Amazon Fees",
+          raw: 0,
+          display: formatHomeAmount(0),
+        },
+        {
+          label: "COGS",
+          raw: 0,
+          display: formatHomeAmount(0),
+        },
+        {
+          label: "Advertisements",
+          raw: 0,
+          display: formatHomeAmount(0),
+        },
+        {
+          label: "Other Charges",
+          raw: 0,
+          display: formatHomeAmount(0),
+        },
+        {
+          label: "Profit",
+          raw: 0,
+          display: formatHomeAmount(0),
+        },
+      ];
+    }
+
+    // Fallback if somehow no integrations → all zeros
+    const zeroDisplay = formatHomeAmount(0);
     return [
-      {
-        label: "Sales",
-        raw: salesHome,
-        display: formatHomeAmount(salesHome),
-      },
-      {
-        label: "Amazon Fees",
-        raw: amazonFeesHome,
-        display: formatHomeAmount(amazonFeesHome),
-      },
-      {
-        label: "COGS",
-        raw: cogsHome,
-        display: formatHomeAmount(cogsHome),
-      },
-      {
-        label: "Advertisements",
-        raw: advHome,
-        display: formatHomeAmount(advHome),
-      },
-      {
-        label: "Platform Fees",
-        raw: platformHome,
-        display: formatHomeAmount(platformHome),
-      },
-      {
-        label: "Profit",
-        raw: profitHome,
-        display: formatHomeAmount(profitHome),
-      },
+      { label: "Sales", raw: 0, display: zeroDisplay },
+      { label: "Amazon Fees", raw: 0, display: zeroDisplay },
+      { label: "COGS", raw: 0, display: zeroDisplay },
+      { label: "Advertisements", raw: 0, display: zeroDisplay },
+      { label: "Other Charges", raw: 0, display: zeroDisplay },
+      { label: "Profit", raw: 0, display: zeroDisplay },
     ];
-  }, [
-    graphRegion,
-    combinedUSD,
-    uk.netSalesGBP,
-    uk.amazonFeesGBP,
-    uk.cogsGBP,
-    uk.advertisingGBP,
-    uk.platformFeeGBP,
-    uk.profitGBP,
-    convertToHomeCurrency,
-    formatHomeAmount,
-  ]);
+  }
+
+  // ---------- REGION-LEVEL (currently UK only has data) ----------
+  const salesHome = convertToHomeCurrency(uk.netSalesGBP ?? 0, "GBP");
+  const amazonFeesHome = convertToHomeCurrency(
+    uk.amazonFeesGBP ?? 0,
+    "GBP"
+  );
+  const cogsHome = convertToHomeCurrency(uk.cogsGBP ?? 0, "GBP");
+  const advHome = convertToHomeCurrency(uk.advertisingGBP ?? 0, "GBP");
+  const platformHome = convertToHomeCurrency(
+    uk.platformFeeGBP ?? 0,
+    "GBP"
+  );
+  const profitHome = convertToHomeCurrency(uk.profitGBP ?? 0, "GBP");
+
+  return [
+    {
+      label: "Sales",
+      raw: salesHome,
+      display: formatHomeAmount(salesHome),
+    },
+    {
+      label: "Amazon Fees",
+      raw: amazonFeesHome,
+      display: formatHomeAmount(amazonFeesHome),
+    },
+    {
+      label: "COGS",
+      raw: cogsHome,
+      display: formatHomeAmount(cogsHome),
+    },
+    {
+      label: "Advertisements",
+      raw: advHome,
+      display: formatHomeAmount(advHome),
+    },
+    {
+      label: "Platform Fees",
+      raw: platformHome,
+      display: formatHomeAmount(platformHome),
+    },
+    {
+      label: "Profit",
+      raw: profitHome,
+      display: formatHomeAmount(profitHome),
+    },
+  ];
+}, [
+  graphRegion,
+  amazonIntegrated,
+  shopifyIntegrated,
+  onlyAmazon,
+  onlyShopify,
+  combinedUSD,
+  uk.netSalesGBP,
+  uk.amazonFeesGBP,
+  uk.cogsGBP,
+  uk.advertisingGBP,
+  uk.platformFeeGBP,
+  uk.profitGBP,
+  shopifyDeriv?.netSales,
+  convertToHomeCurrency,
+  formatHomeAmount,
+]);
+
 
   const hasGlobalCard = !noIntegrations;
   const hasAmazonCard = amazonIntegrated;
