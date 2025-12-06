@@ -368,7 +368,7 @@ const Dropdowns: React.FC<DropdownsProps> = ({
 
 
   return (
-    <div ref={layoutRef} className="space-y-4 relative">
+    <div ref={layoutRef} className="space-y-5 relative">
       {/* Back / Title */}
       <div className="flex flex-col leading-tight">
 
@@ -396,8 +396,7 @@ const Dropdowns: React.FC<DropdownsProps> = ({
 
 
       {/* WRAPPER: stacked layout */}
-      <div className="flex flex-col gap-3 w-full">
-        {/* Period / Range / Year – centered */}
+      <div className="flex flex-col gap-5 w-full">
         {/* Top Row: Period Filter + Upload MTD Button */}
         <div className="w-full flex flex-col md:flex-row gap-3 items-center justify-between">
           <PeriodFiltersTable
@@ -464,7 +463,7 @@ const Dropdowns: React.FC<DropdownsProps> = ({
             return (
               <div
                 className={[
-                  "w-full flex flex-wrap gap-7 mt-3",
+                  "w-full flex flex-wrap gap-7",
                   isSummaryZero ? "opacity-30" : "opacity-100",
                 ].join(" ")}
               >

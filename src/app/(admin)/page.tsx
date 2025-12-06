@@ -2855,7 +2855,9 @@ import DashboardBargraphCard from "@/components/dashboard/DashboardBargraphCard"
 import ValueOrSkeleton from "@/components/common/ValueOrSkeleton";
 import SalesTargetCard from "@/components/dashboard/SalesTargetCard";
 import AmazonStatCard from "@/components/dashboard/AmazonStatCard";
+// import CurrentInventorySection from "@/components/dashboard/CurrentInventorySection";
 import CurrentInventorySection from "@/components/dashboard/CurrentInventorySection";
+
 
 import { RootState } from "@/lib/store";
 import { useAmazonConnections } from "@/lib/utils/useAmazonConnections";
@@ -2879,6 +2881,9 @@ import {
 
 import type { RegionKey, RegionMetrics } from "@/lib/dashboard/types";
 import AgeingInventorySection from "@/components/dashboard/AgeingInventorySection";
+
+
+type HomeCurrency = "USD" | "GBP";
 
 /* ===================== ENV & ENDPOINTS ===================== */
 const baseURL =
@@ -2960,6 +2965,9 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<any>(null);
 
+  const [homeCurrency, setHomeCurrency] =
+    useState<HomeCurrency>("USD");
+
   // Amazon connections (real integration status)
   const { connections: amazonConnections } = useAmazonConnections();
 
@@ -2989,6 +2997,68 @@ export default function DashboardPage() {
   const [gbpToUsd, setGbpToUsd] = useState(GBP_TO_USD_ENV);
   const [inrToUsd, setInrToUsd] = useState(INR_TO_USD_ENV);
   const [fxLoading, setFxLoading] = useState(false);
+
+  // 👇 add these helpers here
+
+  const convertToHomeCurrency = useCallback(
+    (value: number | null | undefined, from: "USD" | "GBP" | "INR") => {
+      const n = toNumberSafe(value ?? 0);
+
+      if (!n) return 0;
+
+      // Home currency = USD
+      if (homeCurrency === "USD") {
+        switch (from) {
+          case "USD":
+            return n;
+          case "GBP":
+            // GBP → USD
+            return n * gbpToUsd;
+          case "INR":
+            // INR → USD
+            return n * inrToUsd;
+          default:
+            return n;
+        }
+      }
+
+      // Home currency = GBP
+      if (homeCurrency === "GBP") {
+        switch (from) {
+          case "GBP":
+            return n;
+          case "USD":
+            // USD → GBP (inverse of GBP→USD)
+            return gbpToUsd ? n / gbpToUsd : n;
+          case "INR": {
+            // INR → USD → GBP
+            const usd = n * inrToUsd;
+            return gbpToUsd ? usd / gbpToUsd : usd;
+          }
+          default:
+            return n;
+        }
+      }
+
+      return n;
+    },
+    [homeCurrency, gbpToUsd, inrToUsd]
+  );
+
+  const formatHomeAmount = useCallback(
+    (value: number | null | undefined) => {
+      const n = toNumberSafe(value ?? 0);
+      switch (homeCurrency) {
+        case "USD":
+          return fmtUSD(n);
+        case "GBP":
+          return fmtGBP(n);
+        default:
+          return fmtNum(n);
+      }
+    },
+    [homeCurrency]
+  );
 
   const inventoryCountry = useMemo(() => {
     const v = (graphRegion || "").toString().trim().toLowerCase();
@@ -3707,78 +3777,185 @@ export default function DashboardPage() {
   }, [cms, shopifyDeriv, combinedUSD, uk.profitGBP, gbpToUsd]);
 
   /* ---------- P&L items for graph based on graphRegion ---------- */
+  // const plItems = useMemo(() => {
+  //   if (graphRegion === "Global") {
+  //     const sales = combinedUSD;
+  //     return [
+  //       { label: "Sales", raw: sales, display: fmtUSD(sales) },
+  //       {
+  //         label: "Amazon Fees",
+  //         raw: 0,
+  //         display: fmtUSD(0),
+  //       },
+  //       { label: "COGS", raw: 0, display: fmtUSD(0) },
+  //       {
+  //         label: "Advertisements",
+  //         raw: 0,
+  //         display: fmtUSD(0),
+  //       },
+  //       {
+  //         label: "Other Charges",
+  //         raw: 0,
+  //         display: fmtUSD(0),
+  //       },
+  //       {
+  //         label: "Profit",
+  //         raw: 0,
+  //         display: fmtUSD(0),
+  //       },
+  //     ];
+  //   }
+
+  //   // For region-level (currently only UK is populated)
+  //   return [
+  //     {
+  //       label: "Sales",
+  //       raw: Number(uk.netSalesGBP ?? 0),
+  //       display: fmtGBP(uk.netSalesGBP ?? 0),
+  //     },
+  //     {
+  //       label: "Amazon Fees",
+  //       raw: Number(uk.amazonFeesGBP ?? 0),
+  //       display: fmtGBP(uk.amazonFeesGBP ?? 0),
+  //     },
+  //     {
+  //       label: "COGS",
+  //       raw: Number(uk.cogsGBP ?? 0),
+  //       display: fmtGBP(uk.cogsGBP ?? 0),
+  //     },
+  //     {
+  //       label: "Advertisements",
+  //       raw: Number(uk.advertisingGBP ?? 0),
+  //       display: fmtGBP(uk.advertisingGBP ?? 0),
+  //     },
+  //     {
+  //       label: "Platform Fees",
+  //       raw: Number(uk.platformFeeGBP ?? 0),
+  //       display: fmtGBP(uk.platformFeeGBP ?? 0),
+  //     },
+  //     {
+  //       label: "Profit",
+  //       raw: Number(uk.profitGBP ?? 0),
+  //       display: fmtGBP(uk.profitGBP ?? 0),
+  //     },
+  //   ];
+  // }, [graphRegion, combinedUSD, uk]);
+
   const plItems = useMemo(() => {
     if (graphRegion === "Global") {
-      const sales = combinedUSD;
+      // combinedUSD is in USD
+      const salesHome = convertToHomeCurrency(combinedUSD, "USD");
+
       return [
-        { label: "Sales", raw: sales, display: fmtUSD(sales) },
+        {
+          label: "Sales",
+          raw: salesHome,
+          display: formatHomeAmount(salesHome),
+        },
         {
           label: "Amazon Fees",
           raw: 0,
-          display: fmtUSD(0),
+          display: formatHomeAmount(0),
         },
-        { label: "COGS", raw: 0, display: fmtUSD(0) },
+        {
+          label: "COGS",
+          raw: 0,
+          display: formatHomeAmount(0),
+        },
         {
           label: "Advertisements",
           raw: 0,
-          display: fmtUSD(0),
+          display: formatHomeAmount(0),
         },
         {
           label: "Other Charges",
           raw: 0,
-          display: fmtUSD(0),
+          display: formatHomeAmount(0),
         },
         {
           label: "Profit",
           raw: 0,
-          display: fmtUSD(0),
+          display: formatHomeAmount(0),
         },
       ];
     }
 
-    // For region-level (currently only UK is populated)
+    // Region-level; currently only UK has actual cost data
+    const salesHome = convertToHomeCurrency(uk.netSalesGBP ?? 0, "GBP");
+    const amazonFeesHome = convertToHomeCurrency(uk.amazonFeesGBP ?? 0, "GBP");
+    const cogsHome = convertToHomeCurrency(uk.cogsGBP ?? 0, "GBP");
+    const advHome = convertToHomeCurrency(uk.advertisingGBP ?? 0, "GBP");
+    const platformHome = convertToHomeCurrency(uk.platformFeeGBP ?? 0, "GBP");
+    const profitHome = convertToHomeCurrency(uk.profitGBP ?? 0, "GBP");
+
     return [
       {
         label: "Sales",
-        raw: Number(uk.netSalesGBP ?? 0),
-        display: fmtGBP(uk.netSalesGBP ?? 0),
+        raw: salesHome,
+        display: formatHomeAmount(salesHome),
       },
       {
         label: "Amazon Fees",
-        raw: Number(uk.amazonFeesGBP ?? 0),
-        display: fmtGBP(uk.amazonFeesGBP ?? 0),
+        raw: amazonFeesHome,
+        display: formatHomeAmount(amazonFeesHome),
       },
       {
         label: "COGS",
-        raw: Number(uk.cogsGBP ?? 0),
-        display: fmtGBP(uk.cogsGBP ?? 0),
+        raw: cogsHome,
+        display: formatHomeAmount(cogsHome),
       },
       {
         label: "Advertisements",
-        raw: Number(uk.advertisingGBP ?? 0),
-        display: fmtGBP(uk.advertisingGBP ?? 0),
+        raw: advHome,
+        display: formatHomeAmount(advHome),
       },
       {
         label: "Platform Fees",
-        raw: Number(uk.platformFeeGBP ?? 0),
-        display: fmtGBP(uk.platformFeeGBP ?? 0),
+        raw: platformHome,
+        display: formatHomeAmount(platformHome),
       },
       {
         label: "Profit",
-        raw: Number(uk.profitGBP ?? 0),
-        display: fmtGBP(uk.profitGBP ?? 0),
+        raw: profitHome,
+        display: formatHomeAmount(profitHome),
       },
     ];
-  }, [graphRegion, combinedUSD, uk]);
+  }, [
+    graphRegion,
+    combinedUSD,
+    uk.netSalesGBP,
+    uk.amazonFeesGBP,
+    uk.cogsGBP,
+    uk.advertisingGBP,
+    uk.platformFeeGBP,
+    uk.profitGBP,
+    convertToHomeCurrency,
+    formatHomeAmount,
+  ]);
+
 
   /* ---------- Chart & Excel export wiring ---------- */
+
+  // const countryNameForGraph =
+  //   graphRegion === "Global"
+  //     ? "global"
+  //     : graphRegion.toLowerCase();
+
+  // const currencySymbol = getCurrencySymbol(countryNameForGraph);
 
   const countryNameForGraph =
     graphRegion === "Global"
       ? "global"
       : graphRegion.toLowerCase();
 
-  const currencySymbol = getCurrencySymbol(countryNameForGraph);
+  // Symbol should reflect home currency, not region
+  const currencySymbol =
+    homeCurrency === "USD"
+      ? "$"
+      : homeCurrency === "GBP"
+        ? "£"
+        : getCurrencySymbol(countryNameForGraph);
+
 
   const { monthName: currMonthName, year: currYear } =
     getISTYearMonth();
@@ -4063,8 +4240,8 @@ export default function DashboardPage() {
               onClick={refreshAll}
               disabled={anyLoading}
               className={`w-full rounded-md border px-3 py-1.5 text-sm shadow-sm active:scale-[.99] sm:w-auto ${anyLoading
-                  ? "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400"
-                  : "border-gray-300 bg-white hover:bg-gray-50"
+                ? "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400"
+                : "border-gray-300 bg-white hover:bg-gray-50"
                 }`}
             >
               {anyLoading ? (
@@ -4137,12 +4314,12 @@ export default function DashboardPage() {
                         Sales
                       </div>
                       <div className="mt-2 text-lg font-semibold">
-                        <ValueOrSkeleton
-                          loading={anyLoading}
-                          mode="inline"
-                        >
-                          {fmtUSD(
-                            globalCardMetrics.totalSalesUSD
+                        <ValueOrSkeleton loading={anyLoading} mode="inline">
+                          {formatHomeAmount(
+                            convertToHomeCurrency(
+                              globalCardMetrics.totalSalesUSD,
+                              "USD"
+                            )
                           )}
                         </ValueOrSkeleton>
                       </div>
@@ -4170,13 +4347,12 @@ export default function DashboardPage() {
                         ASP
                       </div>
                       <div className="mt-2 text-lg font-semibold">
-                        <ValueOrSkeleton
-                          loading={anyLoading}
-                          mode="inline"
-                          compact
-                        >
-                          {fmtUSD(
-                            globalCardMetrics.aspUSD
+                        <ValueOrSkeleton loading={anyLoading} mode="inline" compact>
+                          {formatHomeAmount(
+                            convertToHomeCurrency(
+                              globalCardMetrics.aspUSD,
+                              "USD"
+                            )
                           )}
                         </ValueOrSkeleton>
                       </div>
@@ -4187,13 +4363,12 @@ export default function DashboardPage() {
                         Profit
                       </div>
                       <div className="mt-2 text-lg font-semibold">
-                        <ValueOrSkeleton
-                          loading={anyLoading}
-                          mode="inline"
-                          compact
-                        >
-                          {fmtUSD(
-                            globalCardMetrics.profitUSD
+                        <ValueOrSkeleton loading={anyLoading} mode="inline" compact>
+                          {formatHomeAmount(
+                            convertToHomeCurrency(
+                              globalCardMetrics.profitUSD,
+                              "USD"
+                            )
                           )}
                         </ValueOrSkeleton>
                       </div>
@@ -4282,13 +4457,14 @@ export default function DashboardPage() {
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-5">
                     <AmazonStatCard
                       label="Sales"
-                      current={uk.netSalesGBP}
-                      previous={ukPrev.netSalesGBP}
+                      current={convertToHomeCurrency(uk.netSalesGBP, "GBP")}
+                      previous={convertToHomeCurrency(ukPrev.netSalesGBP, "GBP")}
                       loading={loading}
-                      formatter={fmtGBP}
+                      formatter={formatHomeAmount}
                       bottomLabel={prevLabel}
                       className="border-[#87AD12] bg-[#87AD1226]"
                     />
+
 
                     <AmazonStatCard
                       label="Units"
@@ -4302,23 +4478,25 @@ export default function DashboardPage() {
 
                     <AmazonStatCard
                       label="ASP"
-                      current={uk.aspGBP}
-                      previous={ukPrev.aspGBP}
+                      current={convertToHomeCurrency(uk.aspGBP, "GBP")}
+                      previous={convertToHomeCurrency(ukPrev.aspGBP, "GBP")}
                       loading={loading}
-                      formatter={fmtGBP}
+                      formatter={formatHomeAmount}
                       bottomLabel={prevLabel}
                       className="border-[#2CA9E0] bg-[#2CA9E026]"
                     />
 
+
                     <AmazonStatCard
                       label="Profit"
-                      current={uk.profitGBP}
-                      previous={ukPrev.profitGBP}
+                      current={convertToHomeCurrency(uk.profitGBP, "GBP")}
+                      previous={convertToHomeCurrency(ukPrev.profitGBP, "GBP")}
                       loading={loading}
-                      formatter={fmtGBP}
+                      formatter={formatHomeAmount}
                       bottomLabel={prevLabel}
                       className="border-[#AB64B5] bg-[#AB64B526]"
                     />
+
 
                     <AmazonStatCard
                       label="Profit %"
@@ -4397,11 +4575,13 @@ export default function DashboardPage() {
                           loading={shopifyLoading}
                           mode="inline"
                         >
-                          {fmtShopify(
-                            toNumberSafe(
-                              shopify?.net_sales ?? 0
+                          {formatHomeAmount(
+                            convertToHomeCurrency(
+                              shopify?.net_sales ?? 0,
+                              "INR"
                             )
                           )}
+
                         </ValueOrSkeleton>
                       </div>
                     </div>
@@ -4431,7 +4611,7 @@ export default function DashboardPage() {
                           mode="inline"
                           compact
                         >
-                          {(() => {
+                          {/* {(() => {
                             const units = toNumberSafe(
                               shopify?.total_orders ?? 0
                             );
@@ -4440,7 +4620,22 @@ export default function DashboardPage() {
                             );
                             if (units <= 0) return "—";
                             return fmtShopify(net / units);
+                          })()} */}
+                          {(() => {
+                            const units = toNumberSafe(
+                              shopify?.total_orders ?? 0
+                            );
+                            const netINR = toNumberSafe(
+                              shopify?.net_sales ?? 0
+                            );
+                            if (units <= 0) return "—";
+
+                            const netHome = convertToHomeCurrency(netINR, "INR");
+                            const aspHome = netHome / units;
+
+                            return formatHomeAmount(aspHome);
                           })()}
+
                         </ValueOrSkeleton>
                       </div>
                     </div>
@@ -4531,7 +4726,11 @@ export default function DashboardPage() {
               </div>
 
 
-              <CurrentInventorySection inventoryCountry={inventoryCountry} />
+              {/* <CurrentInventorySection inventoryCountry={inventoryCountry} /> */}
+
+
+              <CurrentInventorySection region={graphRegion as RegionKey} />
+
 
               {/* <AgeingInventorySection /> */}
             </>

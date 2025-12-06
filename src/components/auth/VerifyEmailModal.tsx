@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useResendVerificationMutation } from "@/lib/api/userApi";
 import { FaCircleCheck } from "react-icons/fa6";
+import Button from "../ui/button/Button";
 
 type VerifyEmailModalProps = {
   status: string; // "success" | "failed" | ...
@@ -97,13 +98,14 @@ useEffect(() => {
             </p>
 
             {/* Primary CTA */}
-            <button
+            <Button
               type="button"
+              variant="primary"
               onClick={onClose}
-              className="mt-2 inline-flex items-center justify-center rounded-md bg-green-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 transition-colors"
+              size='sm'
             >
               Explore the Tool
-            </button>
+            </Button>
           </div>
         )}
 
