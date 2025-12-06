@@ -1477,55 +1477,53 @@ const CashFlowPage: React.FC = () => {
     },
   } as const;
 
-const lineChartOptions = {
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: {
-    legend: { display: false, position: "top" as const },
-    tooltip: {
-      callbacks: {
-        label: (tooltipItem: any) =>
-          `${tooltipItem.dataset.label}: ${currencySymbol}${Number(
-            tooltipItem.raw
-          ).toLocaleString()}`,
+  const lineChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false, position: "top" as const },
+      tooltip: {
+        callbacks: {
+          label: (tooltipItem: any) =>
+            `${tooltipItem.dataset.label}: ${currencySymbol}${Number(
+              tooltipItem.raw
+            ).toLocaleString()}`,
 
-        // 🟢 color square in tooltip = line color
-        labelColor: (context: any) => {
-          const color = context.dataset.borderColor;
-          return {
-            borderColor: color,
-            backgroundColor: color,
-          };
-        },
+          // 🟢 color square in tooltip = line color
+          labelColor: (context: any) => {
+            const color = context.dataset.borderColor;
+            return {
+              borderColor: color,
+              backgroundColor: color,
+            };
+          },
 
-        // 🟢 text = line color
-        labelTextColor: (context: any) => {
-          return context.dataset.borderColor;
+          labelTextColor: () => "#414042",  
+
         },
       },
     },
-  },
-  scales: {
-    x: {
-      title: {
-        display: true,
-        text:
-          periodType === "quarterly"
-            ? `${selectedQuarter} ${year}`
-            : "Months",
+    scales: {
+      x: {
+        title: {
+          display: true,
+          text:
+            periodType === "quarterly"
+              ? `${selectedQuarter} ${year}`
+              : "Months",
+        },
+      },
+      y: {
+        beginAtZero: true,
+        title: { display: true, text: `Amount (${currencySymbol})` },
+        ticks: {
+          callback: (value: any) =>
+            `${currencySymbol}${Number(value).toLocaleString()}`,
+        },
       },
     },
-    y: {
-      beginAtZero: true,
-      title: { display: true, text: `Amount (${currencySymbol})` },
-      ticks: {
-        callback: (value: any) =>
-          `${currencySymbol}${Number(value).toLocaleString()}`,
-      },
-    },
-  },
-  interaction: { mode: "index" as const, intersect: false },
-} as const;
+    interaction: { mode: "index" as const, intersect: false },
+  } as const;
 
   // exports
   const exportChartToExcel = (chartType: "line" | "bar" = "line") => {
@@ -1795,12 +1793,12 @@ const lineChartOptions = {
   }, [data?.summary, currencySymbol]);
 
   const toggleMetric = (name: string) => {
-  if (allValuesZero) return;
-  setSelectedGraphs((prev) => ({
-    ...prev,
-    [name]: !prev[name],
-  }));
-};
+    if (allValuesZero) return;
+    setSelectedGraphs((prev) => ({
+      ...prev,
+      [name]: !prev[name],
+    }));
+  };
 
 
   return (
@@ -1897,16 +1895,17 @@ const lineChartOptions = {
 
           {/* Chart Section */}
           <div className="mt-6 rounded-xl bg-white p-4 shadow border">
-            {/* <div
-              className="flex flex-wrap items-center gap-2 md:gap-3 mb-4"
-              style={{
-                opacity: allValuesZero ? 0.3 : 1,
-                transition: "opacity 0.3s ease",
-              }}
+            <div
+              className={[
+                "my-3 sm:my-4",
+                "flex flex-wrap items-center justify-center",
+                "gap-3 sm:gap-4 md:gap-5",
+                "w-full mx-auto",
+                allValuesZero ? "opacity-30" : "opacity-100",
+                "transition-opacity duration-300",
+              ].join(" ")}
             >
-              {columnsToDisplay2.map((name) => {
-                const label = labelMap[name];
-                const color = colorMapping[label];
+              {metrics.map(({ name, label, color }) => {
                 const isChecked = !!selectedGraphs[name];
 
                 return (
@@ -1915,39 +1914,32 @@ const lineChartOptions = {
                     className={[
                       "shrink-0",
                       "flex items-center gap-1 sm:gap-1.5",
-                      "font-semibold cursor-pointer select-none whitespace-nowrap",
+                      "font-semibold select-none whitespace-nowrap",
                       "text-[9px] sm:text-[10px] md:text-[11px] lg:text-xs xl:text-sm",
-                      "underline decoration-2 underline-offset-[2px]",
+                      "text-charcoal-500",
                       isChecked ? "opacity-100" : "opacity-40",
+                      allValuesZero ? "cursor-not-allowed" : "cursor-pointer",
                     ].join(" ")}
-                    style={{ color }}
                   >
                     <span
-                      className={`
-      flex items-center justify-center 
-      h-3 w-3 sm:h-3.5 sm:w-3.5 
-      rounded-sm border 
-      cursor-pointer
-      transition 
-      ${isChecked ? "" : "bg-white"} 
-    `}
+                      className="
+            flex items-center justify-center
+            h-3 w-3 sm:h-3.5 sm:w-3.5
+            rounded-sm border transition
+          "
                       style={{
                         borderColor: color,
                         backgroundColor: isChecked ? color : "white",
+                        opacity: allValuesZero ? 0.6 : 1,
                       }}
-                      onClick={() =>
-                        setSelectedGraphs((prev) => ({
-                          ...prev,
-                          [name]: !isChecked,
-                        }))
-                      }
+                      onClick={() => !allValuesZero && toggleMetric(name)}
                     >
                       {isChecked && (
                         <svg
                           viewBox="0 0 24 24"
-                          className="text-white"
                           width="14"
                           height="14"
+                          className="text-white"
                         >
                           <path
                             fill="currentColor"
@@ -1957,73 +1949,12 @@ const lineChartOptions = {
                       )}
                     </span>
 
-                    <span>{label.toUpperCase()}</span>
+                    {/* same as GraphPage: capitalized label, not all-caps */}
+                    <span className="capitalize">{label}</span>
                   </label>
-
                 );
               })}
-            </div> */}
-
-            <div
-  className={[
-    "my-3 sm:my-4",
-    "flex flex-wrap items-center justify-center",
-    "gap-3 sm:gap-4 md:gap-5",
-    "w-full mx-auto",
-    allValuesZero ? "opacity-30" : "opacity-100",
-    "transition-opacity duration-300",
-  ].join(" ")}
->
-  {metrics.map(({ name, label, color }) => {
-    const isChecked = !!selectedGraphs[name];
-
-    return (
-      <label
-        key={name}
-        className={[
-          "shrink-0",
-          "flex items-center gap-1 sm:gap-1.5",
-          "font-semibold select-none whitespace-nowrap",
-          "text-[9px] sm:text-[10px] md:text-[11px] lg:text-xs xl:text-sm",
-          "text-charcoal-500",
-          isChecked ? "opacity-100" : "opacity-40",
-          allValuesZero ? "cursor-not-allowed" : "cursor-pointer",
-        ].join(" ")}
-      >
-        <span
-          className="
-            flex items-center justify-center
-            h-3 w-3 sm:h-3.5 sm:w-3.5
-            rounded-sm border transition
-          "
-          style={{
-            borderColor: color,
-            backgroundColor: isChecked ? color : "white",
-            opacity: allValuesZero ? 0.6 : 1,
-          }}
-          onClick={() => !allValuesZero && toggleMetric(name)}
-        >
-          {isChecked && (
-            <svg
-              viewBox="0 0 24 24"
-              width="14"
-              height="14"
-              className="text-white"
-            >
-              <path
-                fill="currentColor"
-                d="M20.285 6.709a1 1 0 0 0-1.414-1.414L9 15.168l-3.879-3.88a1 1 0 0 0-1.414 1.415l4.586 4.586a1 1 0 0 0 1.414 0l10-10Z"
-              />
-            </svg>
-          )}
-        </span>
-
-        {/* same as GraphPage: capitalized label, not all-caps */}
-        <span className="capitalize">{label}</span>
-      </label>
-    );
-  })}
-</div>
+            </div>
 
 
             <div className="h-[50vh] sm:h-[40vw] max-h-[560px]">
