@@ -1842,7 +1842,7 @@ return (
       <div className="mb-3">
         <div className="flex items-baseline gap-2">
           <PageBreadcrumb
-            pageTitle="Current Inventory -"
+            pageTitle="Current Inventory"
             variant="page"
             align="left"
           />

@@ -3560,6 +3560,13 @@ export default function DashboardPage() {
 
   const noIntegrations = !amazonIntegrated && !shopifyIntegrated;
 
+  const hasAnyGraphData = amazonIntegrated || shopifyIntegrated;
+
+  const onlyAmazon = amazonIntegrated && !shopifyIntegrated;
+const onlyShopify = shopifyIntegrated && !amazonIntegrated;
+
+
+
   const shopifyDeriv = useMemo(() => {
     if (!shopify) return null;
     const totalOrders = toNumberSafe(shopify.total_orders);
@@ -3779,48 +3786,142 @@ export default function DashboardPage() {
     };
   }, [cms, shopifyDeriv, combinedUSD, uk.profitGBP, gbpToUsd]);
 
-const globalPrevMetrics = useMemo(() => {
-  // Amazon UK previous month → USD
-  const amazonPrevSalesGBP = toNumberSafe(ukPrev.netSalesGBP ?? 0);
-  const amazonPrevSalesUSD = amazonPrevSalesGBP * gbpToUsd;
-  const amazonPrevUnits = toNumberSafe(ukPrev.unitsGBP ?? 0);
-  const amazonPrevProfitGBP = toNumberSafe(ukPrev.profitGBP ?? 0);
-  const amazonPrevProfitUSD = amazonPrevProfitGBP * gbpToUsd;
+  const globalPrevMetrics = useMemo(() => {
+    // Amazon UK previous month → USD
+    const amazonPrevSalesGBP = toNumberSafe(ukPrev.netSalesGBP ?? 0);
+    const amazonPrevSalesUSD = amazonPrevSalesGBP * gbpToUsd;
+    const amazonPrevUnits = toNumberSafe(ukPrev.unitsGBP ?? 0);
+    const amazonPrevProfitGBP = toNumberSafe(ukPrev.profitGBP ?? 0);
+    const amazonPrevProfitUSD = amazonPrevProfitGBP * gbpToUsd;
 
-  // Shopify previous month → USD
-  const shopifyPrevSalesINR = toNumberSafe(
-    shopifyPrevDeriv?.netSales ?? 0
-  );
-  const shopifyPrevSalesUSD = shopifyPrevSalesINR * inrToUsd;
-  const shopifyPrevUnits = toNumberSafe(
-    shopifyPrevDeriv?.totalOrders ?? 0
-  );
+    // Shopify previous month → USD
+    const shopifyPrevSalesINR = toNumberSafe(
+      shopifyPrevDeriv?.netSales ?? 0
+    );
+    const shopifyPrevSalesUSD = shopifyPrevSalesINR * inrToUsd;
+    const shopifyPrevUnits = toNumberSafe(
+      shopifyPrevDeriv?.totalOrders ?? 0
+    );
 
-  const totalSalesUSD = amazonPrevSalesUSD + shopifyPrevSalesUSD;
-  const totalUnits = amazonPrevUnits + shopifyPrevUnits;
+    const totalSalesUSD = amazonPrevSalesUSD + shopifyPrevSalesUSD;
+    const totalUnits = amazonPrevUnits + shopifyPrevUnits;
 
-  const aspUSD =
-    totalUnits > 0 ? totalSalesUSD / totalUnits : 0;
+    const aspUSD =
+      totalUnits > 0 ? totalSalesUSD / totalUnits : 0;
 
-  // For now we only have Amazon profit – Shopify profit unknown.
-  const profitUSD = amazonPrevProfitUSD;
-  const profitPct =
-    totalSalesUSD > 0 ? (profitUSD / totalSalesUSD) * 100 : 0;
+    // For now we only have Amazon profit – Shopify profit unknown.
+    const profitUSD = amazonPrevProfitUSD;
+    const profitPct =
+      totalSalesUSD > 0 ? (profitUSD / totalSalesUSD) * 100 : 0;
 
-  return {
-    totalSalesUSD,
-    totalUnits,
-    aspUSD,
-    profitUSD,
-    profitPct,
-  };
-}, [ukPrev, shopifyPrevDeriv, gbpToUsd, inrToUsd]);
+    return {
+      totalSalesUSD,
+      totalUnits,
+      aspUSD,
+      profitUSD,
+      profitPct,
+    };
+  }, [ukPrev, shopifyPrevDeriv, gbpToUsd, inrToUsd]);
 
   /* ---------- P&L items for graph based on graphRegion ---------- */
 
-  const plItems = useMemo(() => {
-    if (graphRegion === "Global") {
-      // combinedUSD is in USD
+  // const plItems = useMemo(() => {
+  //   if (graphRegion === "Global") {
+  //     // combinedUSD is in USD
+  //     const salesHome = convertToHomeCurrency(combinedUSD, "USD");
+
+  //     return [
+  //       {
+  //         label: "Sales",
+  //         raw: salesHome,
+  //         display: formatHomeAmount(salesHome),
+  //       },
+  //       {
+  //         label: "Amazon Fees",
+  //         raw: 0,
+  //         display: formatHomeAmount(0),
+  //       },
+  //       {
+  //         label: "COGS",
+  //         raw: 0,
+  //         display: formatHomeAmount(0),
+  //       },
+  //       {
+  //         label: "Advertisements",
+  //         raw: 0,
+  //         display: formatHomeAmount(0),
+  //       },
+  //       {
+  //         label: "Other Charges",
+  //         raw: 0,
+  //         display: formatHomeAmount(0),
+  //       },
+  //       {
+  //         label: "Profit",
+  //         raw: 0,
+  //         display: formatHomeAmount(0),
+  //       },
+  //     ];
+  //   }
+
+  //   // Region-level; currently only UK has actual cost data
+  //   const salesHome = convertToHomeCurrency(uk.netSalesGBP ?? 0, "GBP");
+  //   const amazonFeesHome = convertToHomeCurrency(uk.amazonFeesGBP ?? 0, "GBP");
+  //   const cogsHome = convertToHomeCurrency(uk.cogsGBP ?? 0, "GBP");
+  //   const advHome = convertToHomeCurrency(uk.advertisingGBP ?? 0, "GBP");
+  //   const platformHome = convertToHomeCurrency(uk.platformFeeGBP ?? 0, "GBP");
+  //   const profitHome = convertToHomeCurrency(uk.profitGBP ?? 0, "GBP");
+
+  //   return [
+  //     {
+  //       label: "Sales",
+  //       raw: salesHome,
+  //       display: formatHomeAmount(salesHome),
+  //     },
+  //     {
+  //       label: "Amazon Fees",
+  //       raw: amazonFeesHome,
+  //       display: formatHomeAmount(amazonFeesHome),
+  //     },
+  //     {
+  //       label: "COGS",
+  //       raw: cogsHome,
+  //       display: formatHomeAmount(cogsHome),
+  //     },
+  //     {
+  //       label: "Advertisements",
+  //       raw: advHome,
+  //       display: formatHomeAmount(advHome),
+  //     },
+  //     {
+  //       label: "Platform Fees",
+  //       raw: platformHome,
+  //       display: formatHomeAmount(platformHome),
+  //     },
+  //     {
+  //       label: "Profit",
+  //       raw: profitHome,
+  //       display: formatHomeAmount(profitHome),
+  //     },
+  //   ];
+  // }, [
+  //   graphRegion,
+  //   combinedUSD,
+  //   uk.netSalesGBP,
+  //   uk.amazonFeesGBP,
+  //   uk.cogsGBP,
+  //   uk.advertisingGBP,
+  //   uk.platformFeeGBP,
+  //   uk.profitGBP,
+  //   convertToHomeCurrency,
+  //   formatHomeAmount,
+  // ]);
+
+const plItems = useMemo(() => {
+  // ---------- GLOBAL VIEW ----------
+  if (graphRegion === "Global") {
+    // Case 1: BOTH Amazon + Shopify connected → show aggregate
+    if (amazonIntegrated && shopifyIntegrated) {
       const salesHome = convertToHomeCurrency(combinedUSD, "USD");
 
       return [
@@ -3857,58 +3958,179 @@ const globalPrevMetrics = useMemo(() => {
       ];
     }
 
-    // Region-level; currently only UK has actual cost data
-    const salesHome = convertToHomeCurrency(uk.netSalesGBP ?? 0, "GBP");
-    const amazonFeesHome = convertToHomeCurrency(uk.amazonFeesGBP ?? 0, "GBP");
-    const cogsHome = convertToHomeCurrency(uk.cogsGBP ?? 0, "GBP");
-    const advHome = convertToHomeCurrency(uk.advertisingGBP ?? 0, "GBP");
-    const platformHome = convertToHomeCurrency(uk.platformFeeGBP ?? 0, "GBP");
-    const profitHome = convertToHomeCurrency(uk.profitGBP ?? 0, "GBP");
+    // Case 2: ONLY Amazon connected → Global should look exactly like UK
+    if (onlyAmazon) {
+      const salesHome = convertToHomeCurrency(uk.netSalesGBP ?? 0, "GBP");
+      const amazonFeesHome = convertToHomeCurrency(
+        uk.amazonFeesGBP ?? 0,
+        "GBP"
+      );
+      const cogsHome = convertToHomeCurrency(uk.cogsGBP ?? 0, "GBP");
+      const advHome = convertToHomeCurrency(uk.advertisingGBP ?? 0, "GBP");
+      const platformHome = convertToHomeCurrency(
+        uk.platformFeeGBP ?? 0,
+        "GBP"
+      );
+      const profitHome = convertToHomeCurrency(uk.profitGBP ?? 0, "GBP");
 
+      return [
+        {
+          label: "Sales",
+          raw: salesHome,
+          display: formatHomeAmount(salesHome),
+        },
+        {
+          label: "Amazon Fees",
+          raw: amazonFeesHome,
+          display: formatHomeAmount(amazonFeesHome),
+        },
+        {
+          label: "COGS",
+          raw: cogsHome,
+          display: formatHomeAmount(cogsHome),
+        },
+        {
+          label: "Advertisements",
+          raw: advHome,
+          display: formatHomeAmount(advHome),
+        },
+        {
+          label: "Platform Fees",
+          raw: platformHome,
+          display: formatHomeAmount(platformHome),
+        },
+        {
+          label: "Profit",
+          raw: profitHome,
+          display: formatHomeAmount(profitHome),
+        },
+      ];
+    }
+
+    // Case 3: ONLY Shopify connected → Global = Shopify-only aggregate
+    if (onlyShopify) {
+      const salesHome = convertToHomeCurrency(
+        shopifyDeriv?.netSales ?? 0,
+        "INR"
+      );
+
+      return [
+        {
+          label: "Sales",
+          raw: salesHome,
+          display: formatHomeAmount(salesHome),
+        },
+        {
+          label: "Amazon Fees",
+          raw: 0,
+          display: formatHomeAmount(0),
+        },
+        {
+          label: "COGS",
+          raw: 0,
+          display: formatHomeAmount(0),
+        },
+        {
+          label: "Advertisements",
+          raw: 0,
+          display: formatHomeAmount(0),
+        },
+        {
+          label: "Other Charges",
+          raw: 0,
+          display: formatHomeAmount(0),
+        },
+        {
+          label: "Profit",
+          raw: 0,
+          display: formatHomeAmount(0),
+        },
+      ];
+    }
+
+    // Fallback if somehow no integrations → all zeros
+    const zeroDisplay = formatHomeAmount(0);
     return [
-      {
-        label: "Sales",
-        raw: salesHome,
-        display: formatHomeAmount(salesHome),
-      },
-      {
-        label: "Amazon Fees",
-        raw: amazonFeesHome,
-        display: formatHomeAmount(amazonFeesHome),
-      },
-      {
-        label: "COGS",
-        raw: cogsHome,
-        display: formatHomeAmount(cogsHome),
-      },
-      {
-        label: "Advertisements",
-        raw: advHome,
-        display: formatHomeAmount(advHome),
-      },
-      {
-        label: "Platform Fees",
-        raw: platformHome,
-        display: formatHomeAmount(platformHome),
-      },
-      {
-        label: "Profit",
-        raw: profitHome,
-        display: formatHomeAmount(profitHome),
-      },
+      { label: "Sales", raw: 0, display: zeroDisplay },
+      { label: "Amazon Fees", raw: 0, display: zeroDisplay },
+      { label: "COGS", raw: 0, display: zeroDisplay },
+      { label: "Advertisements", raw: 0, display: zeroDisplay },
+      { label: "Other Charges", raw: 0, display: zeroDisplay },
+      { label: "Profit", raw: 0, display: zeroDisplay },
     ];
-  }, [
-    graphRegion,
-    combinedUSD,
-    uk.netSalesGBP,
-    uk.amazonFeesGBP,
-    uk.cogsGBP,
-    uk.advertisingGBP,
-    uk.platformFeeGBP,
-    uk.profitGBP,
-    convertToHomeCurrency,
-    formatHomeAmount,
-  ]);
+  }
+
+  // ---------- REGION-LEVEL (currently UK only has data) ----------
+  const salesHome = convertToHomeCurrency(uk.netSalesGBP ?? 0, "GBP");
+  const amazonFeesHome = convertToHomeCurrency(
+    uk.amazonFeesGBP ?? 0,
+    "GBP"
+  );
+  const cogsHome = convertToHomeCurrency(uk.cogsGBP ?? 0, "GBP");
+  const advHome = convertToHomeCurrency(uk.advertisingGBP ?? 0, "GBP");
+  const platformHome = convertToHomeCurrency(
+    uk.platformFeeGBP ?? 0,
+    "GBP"
+  );
+  const profitHome = convertToHomeCurrency(uk.profitGBP ?? 0, "GBP");
+
+  return [
+    {
+      label: "Sales",
+      raw: salesHome,
+      display: formatHomeAmount(salesHome),
+    },
+    {
+      label: "Amazon Fees",
+      raw: amazonFeesHome,
+      display: formatHomeAmount(amazonFeesHome),
+    },
+    {
+      label: "COGS",
+      raw: cogsHome,
+      display: formatHomeAmount(cogsHome),
+    },
+    {
+      label: "Advertisements",
+      raw: advHome,
+      display: formatHomeAmount(advHome),
+    },
+    {
+      label: "Platform Fees",
+      raw: platformHome,
+      display: formatHomeAmount(platformHome),
+    },
+    {
+      label: "Profit",
+      raw: profitHome,
+      display: formatHomeAmount(profitHome),
+    },
+  ];
+}, [
+  graphRegion,
+  amazonIntegrated,
+  shopifyIntegrated,
+  onlyAmazon,
+  onlyShopify,
+  combinedUSD,
+  uk.netSalesGBP,
+  uk.amazonFeesGBP,
+  uk.cogsGBP,
+  uk.advertisingGBP,
+  uk.platformFeeGBP,
+  uk.profitGBP,
+  shopifyDeriv?.netSales,
+  convertToHomeCurrency,
+  formatHomeAmount,
+]);
+
+
+  const hasGlobalCard = !noIntegrations;
+  const hasAmazonCard = amazonIntegrated;
+  const hasShopifyCard = !shopifyNotConnected;
+
+  // When Shopify card is missing, make the left column taller
+  const leftColumnHeightClass = !hasShopifyCard ? "lg:min-h-[520px]" : "";
 
 
   /* ---------- Chart & Excel export wiring ---------- */
@@ -4241,327 +4463,318 @@ const globalPrevMetrics = useMemo(() => {
             </button>
           </div>
 
-<div
-  className={`grid grid-cols-12 gap-6 ${
-    !noIntegrations ? "items-stretch" : ""
-  }`}
->
-  {/* LEFT COLUMN: Global + Amazon + Shopify */}
-  <div className="col-span-12 lg:col-span-8 order-2 lg:order-1 flex flex-col gap-6 lg:h-full">
-    {/* GLOBAL CARD (now AmazonStatCard-style) */}
-    {!noIntegrations && (
-      <div className="flex lg:flex-1">
-        <div className="w-full rounded-2xl border bg-white p-5 shadow-sm">
-          <div className="mb-4">
-            <div className="flex items-baseline gap-2">
-              <PageBreadcrumb
-                pageTitle="Global"
-                variant="page"
-                align="left"
-              />
-            </div>
-            <p className="mt-1 text-sm text-charcoal-500">
-              Real-time data from Amazon &amp; Shopify
-            </p>
-          </div>
+          <div
+            className={`grid grid-cols-12 gap-6 ${!noIntegrations ? "items-stretch" : ""
+              }`}
+          >
+            {/* LEFT COLUMN: Global + Amazon + Shopify */}
+            <div
+              className={`col-span-12 lg:col-span-8 order-2 lg:order-1 flex flex-col gap-6 ${leftColumnHeightClass}`}
+            >
+              {/* GLOBAL CARD */}
+              {hasGlobalCard && (
+                <div className="flex lg:flex-1">
+                  <div className="w-full rounded-2xl border bg-white p-5 shadow-sm">
+                    <div className="mb-4">
+                      <div className="flex items-baseline gap-2">
+                        <PageBreadcrumb
+                          pageTitle="Global"
+                          variant="page"
+                          align="left"
+                        />
+                      </div>
+                      <p className="mt-1 text-sm text-charcoal-500">
+                        Real-time data from Amazon &amp; Shopify
+                      </p>
+                    </div>
 
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-5">
-            {/* Sales */}
-            <AmazonStatCard
-              label="Sales"
-              current={convertToHomeCurrency(
-                globalCardMetrics.totalSalesUSD,
-                "USD"
-              )}
-              previous={convertToHomeCurrency(
-                globalPrevMetrics.totalSalesUSD,
-                "USD"
-              )}
-              loading={anyLoading}
-              formatter={formatHomeAmount}
-              bottomLabel={prevLabel}
-              className="border-[#87AD12] bg-[#87AD1226]"
-            />
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                      <AmazonStatCard
+                        label="Sales"
+                        current={convertToHomeCurrency(
+                          globalCardMetrics.totalSalesUSD,
+                          "USD"
+                        )}
+                        previous={convertToHomeCurrency(
+                          globalPrevMetrics.totalSalesUSD,
+                          "USD"
+                        )}
+                        loading={anyLoading}
+                        formatter={formatHomeAmount}
+                        bottomLabel={prevLabel}
+                        className="border-[#87AD12] bg-[#87AD1226]"
+                      />
 
-            {/* Units */}
-            <AmazonStatCard
-              label="Units"
-              current={globalCardMetrics.totalUnits}
-              previous={globalPrevMetrics.totalUnits}
-              loading={anyLoading}
-              formatter={fmtInt}
-              bottomLabel={prevLabel}
-              className="border-[#F47A00] bg-[#F47A0026]"
-            />
+                      <AmazonStatCard
+                        label="Units"
+                        current={globalCardMetrics.totalUnits}
+                        previous={globalPrevMetrics.totalUnits}
+                        loading={anyLoading}
+                        formatter={fmtInt}
+                        bottomLabel={prevLabel}
+                        className="border-[#F47A00] bg-[#F47A0026]"
+                      />
 
-            {/* ASP */}
-            <AmazonStatCard
-              label="ASP"
-              current={convertToHomeCurrency(
-                globalCardMetrics.aspUSD,
-                "USD"
-              )}
-              previous={convertToHomeCurrency(
-                globalPrevMetrics.aspUSD,
-                "USD"
-              )}
-              loading={anyLoading}
-              formatter={formatHomeAmount}
-              bottomLabel={prevLabel}
-              className="border-[#2CA9E0] bg-[#2CA9E026]"
-            />
+                      <AmazonStatCard
+                        label="ASP"
+                        current={convertToHomeCurrency(
+                          globalCardMetrics.aspUSD,
+                          "USD"
+                        )}
+                        previous={convertToHomeCurrency(
+                          globalPrevMetrics.aspUSD,
+                          "USD"
+                        )}
+                        loading={anyLoading}
+                        formatter={formatHomeAmount}
+                        bottomLabel={prevLabel}
+                        className="border-[#2CA9E0] bg-[#2CA9E026]"
+                      />
 
-            {/* Profit */}
-            <AmazonStatCard
-              label="Profit"
-              current={convertToHomeCurrency(
-                globalCardMetrics.profitUSD,
-                "USD"
-              )}
-              previous={convertToHomeCurrency(
-                globalPrevMetrics.profitUSD,
-                "USD"
-              )}
-              loading={anyLoading}
-              formatter={formatHomeAmount}
-              bottomLabel={prevLabel}
-              className="border-[#AB64B5] bg-[#AB64B526]"
-            />
+                      <AmazonStatCard
+                        label="Profit"
+                        current={convertToHomeCurrency(
+                          globalCardMetrics.profitUSD,
+                          "USD"
+                        )}
+                        previous={convertToHomeCurrency(
+                          globalPrevMetrics.profitUSD,
+                          "USD"
+                        )}
+                        loading={anyLoading}
+                        formatter={formatHomeAmount}
+                        bottomLabel={prevLabel}
+                        className="border-[#AB64B5] bg-[#AB64B526]"
+                      />
 
-            {/* Profit % */}
-            <AmazonStatCard
-              label="Profit %"
-              current={globalCardMetrics.profitPct}
-              previous={globalPrevMetrics.profitPct}
-              loading={anyLoading}
-              formatter={fmtPct}
-              bottomLabel={prevLabel}
-              className="border-[#00627B] bg-[#00627B26]"
-            />
-          </div>
-        </div>
-      </div>
-    )}
-
-    {/* AMAZON CARD (unchanged logic, just wrapped in flex-1) */}
-    {amazonIntegrated && (
-      <div className="flex lg:flex-1">
-        <div className="w-full rounded-2xl border bg-white p-5 shadow-sm">
-          <div className="mb-4 flex flex-row gap-4 items-start md:items-start md:justify-between">
-            <div className="flex flex-col flex-1 min-w-0">
-              <div className="flex flex-wrap items-baseline gap-2">
-                <PageBreadcrumb
-                  pageTitle="Amazon"
-                  variant="page"
-                  align="left"
-                />
-              </div>
-
-              <p className="mt-1 text-sm text-charcoal-500">
-                Real-time data from Amazon
-              </p>
-            </div>
-
-            {amazonTabs.length > 0 && (
-              <div className="mt-1 md:mt-0 self-start md:self-center">
-                <SegmentedToggle<RegionKey>
-                  value={amazonRegion}
-                  options={amazonTabs.map((r) => ({
-                    value: r,
-                  }))}
-                  onChange={setAmazonRegion}
-                />
-              </div>
-            )}
-          </div>
-
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-5">
-            <AmazonStatCard
-              label="Sales"
-              current={convertToHomeCurrency(
-                uk.netSalesGBP,
-                "GBP"
-              )}
-              previous={convertToHomeCurrency(
-                ukPrev.netSalesGBP,
-                "GBP"
-              )}
-              loading={loading}
-              formatter={formatHomeAmount}
-              bottomLabel={prevLabel}
-              className="border-[#87AD12] bg-[#87AD1226]"
-            />
-
-            <AmazonStatCard
-              label="Units"
-              current={cms?.total_quantity ?? 0}
-              previous={ukPrev.unitsGBP}
-              loading={loading}
-              formatter={fmtInt}
-              bottomLabel={prevLabel}
-              className="border-[#F47A00] bg-[#F47A0026]"
-            />
-
-            <AmazonStatCard
-              label="ASP"
-              current={convertToHomeCurrency(
-                uk.aspGBP,
-                "GBP"
-              )}
-              previous={convertToHomeCurrency(
-                ukPrev.aspGBP,
-                "GBP"
-              )}
-              loading={loading}
-              formatter={formatHomeAmount}
-              bottomLabel={prevLabel}
-              className="border-[#2CA9E0] bg-[#2CA9E026]"
-            />
-
-            <AmazonStatCard
-              label="Profit"
-              current={convertToHomeCurrency(
-                uk.profitGBP,
-                "GBP"
-              )}
-              previous={convertToHomeCurrency(
-                ukPrev.profitGBP,
-                "GBP"
-              )}
-              loading={loading}
-              formatter={formatHomeAmount}
-              bottomLabel={prevLabel}
-              className="border-[#AB64B5] bg-[#AB64B526]"
-            />
-
-            <AmazonStatCard
-              label="Profit %"
-              current={uk.profitPctGBP}
-              previous={ukPrev.profitPctGBP}
-              loading={loading}
-              formatter={fmtPct}
-              bottomLabel={prevLabel}
-              className="border-[#00627B] bg-[#00627B26]"
-            />
-          </div>
-        </div>
-      </div>
-    )}
-
-    {/* SHOPIFY CARD (now AmazonStatCard-style) */}
-    {!shopifyNotConnected && (
-      <div className="flex lg:flex-1">
-        <div className="w-full rounded-2xl border bg-white p-5 shadow-sm">
-          <div className="mb-4 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-            <div className="flex flex-col">
-              <div className="flex items-baseline gap-2">
-                <PageBreadcrumb
-                  pageTitle="Shopify"
-                  variant="page"
-                  align="left"
-                  textSize="2xl"
-                />
-              </div>
-
-              <p className="mt-1 text-sm text-charcoal-500">
-                Real-time data from Shopify
-              </p>
-            </div>
-          </div>
-
-          {shopifyLoading ? (
-            <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {[...Array(3)].map((_, i) => (
-                <div
-                  key={i}
-                  className="rounded-2xl border bg-white p-5 shadow-sm"
-                >
-                  <div className="h-3 w-24 animate-pulse rounded bg-gray-200" />
-                  <div className="mt-2 h-7 w-28 animate-pulse rounded bg-gray-200" />
+                      <AmazonStatCard
+                        label="Profit %"
+                        current={globalCardMetrics.profitPct}
+                        previous={globalPrevMetrics.profitPct}
+                        loading={anyLoading}
+                        formatter={fmtPct}
+                        bottomLabel={prevLabel}
+                        className="border-[#00627B] bg-[#00627B26]"
+                      />
+                    </div>
+                  </div>
                 </div>
-              ))}
-            </div>
-          ) : shopify ? (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {/* Shopify Sales */}
-              <AmazonStatCard
-                label="Sales"
-                current={convertToHomeCurrency(
-                  shopifyDeriv?.netSales ?? 0,
-                  "INR"
-                )}
-                previous={convertToHomeCurrency(
-                  shopifyPrevDeriv?.netSales ?? 0,
-                  "INR"
-                )}
-                loading={shopifyLoading}
-                formatter={formatHomeAmount}
-                bottomLabel={prevLabel}
-                className="border-[#87AD12] bg-[#87AD1226]"
-              />
+              )}
 
-              {/* Shopify Units */}
-              <AmazonStatCard
-                label="Units"
-                current={shopifyDeriv?.totalOrders ?? 0}
-                previous={shopifyPrevDeriv?.totalOrders ?? 0}
-                loading={shopifyLoading}
-                formatter={fmtInt}
-                bottomLabel={prevLabel}
-                className="border-[#F47A00] bg-[#F47A0026]"
-              />
+              {/* AMAZON CARD */}
+              {hasAmazonCard && (
+                <div className="flex lg:flex-1">
+                  <div className="w-full rounded-2xl border bg-white p-5 shadow-sm">
+                    <div className="mb-4 flex flex-row gap-4 items-start md:items-start md:justify-between">
+                      <div className="flex flex-col flex-1 min-w-0">
+                        <div className="flex flex-wrap items-baseline gap-2">
+                          <PageBreadcrumb
+                            pageTitle="Amazon"
+                            variant="page"
+                            align="left"
+                          />
+                        </div>
 
-              {/* Shopify ASP */}
-              <AmazonStatCard
-                label="ASP"
-                current={(() => {
-                  const units = shopifyDeriv?.totalOrders ?? 0;
-                  if (!units) return 0;
-                  const netHome = convertToHomeCurrency(
-                    shopifyDeriv?.netSales ?? 0,
-                    "INR"
-                  );
-                  return netHome / units;
-                })()}
-                previous={(() => {
-                  const unitsPrev =
-                    shopifyPrevDeriv?.totalOrders ?? 0;
-                  if (!unitsPrev) return 0;
-                  const netPrevHome = convertToHomeCurrency(
-                    shopifyPrevDeriv?.netSales ?? 0,
-                    "INR"
-                  );
-                  return netPrevHome / unitsPrev;
-                })()}
-                loading={shopifyLoading}
-                formatter={formatHomeAmount}
-                bottomLabel={prevLabel}
-                className="border-[#2CA9E0] bg-[#2CA9E026]"
-              />
-            </div>
-          ) : (
-            <div className="mt-2 text-sm text-gray-500">
-              No Shopify data for the current month.
-            </div>
-          )}
-        </div>
-      </div>
-    )}
-  </div>
+                        <p className="mt-1 text-sm text-charcoal-500">
+                          Real-time data from Amazon
+                        </p>
+                      </div>
 
-  {/* RIGHT COLUMN: Sales Target card */}
-  <aside className="col-span-12 lg:col-span-4 order-1 lg:order-2">
-    <div className="lg:sticky lg:top-6 w-full lg:h-full">
-      <SalesTargetCard
-        regions={regions}
-        defaultRegion="Global"
-      />
-    </div>
-  </aside>
-</div>
+                      {amazonTabs.length > 0 && (
+                        <div className="mt-1 md:mt-0 self-start md:self-center">
+                          <SegmentedToggle<RegionKey>
+                            value={amazonRegion}
+                            options={amazonTabs.map((r) => ({
+                              value: r,
+                            }))}
+                            onChange={setAmazonRegion}
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                      <AmazonStatCard
+                        label="Sales"
+                        current={convertToHomeCurrency(
+                          uk.netSalesGBP,
+                          "GBP"
+                        )}
+                        previous={convertToHomeCurrency(
+                          ukPrev.netSalesGBP,
+                          "GBP"
+                        )}
+                        loading={loading}
+                        formatter={formatHomeAmount}
+                        bottomLabel={prevLabel}
+                        className="border-[#87AD12] bg-[#87AD1226]"
+                      />
+
+                      <AmazonStatCard
+                        label="Units"
+                        current={cms?.total_quantity ?? 0}
+                        previous={ukPrev.unitsGBP}
+                        loading={loading}
+                        formatter={fmtInt}
+                        bottomLabel={prevLabel}
+                        className="border-[#F47A00] bg-[#F47A0026]"
+                      />
+
+                      <AmazonStatCard
+                        label="ASP"
+                        current={convertToHomeCurrency(
+                          uk.aspGBP,
+                          "GBP"
+                        )}
+                        previous={convertToHomeCurrency(
+                          ukPrev.aspGBP,
+                          "GBP"
+                        )}
+                        loading={loading}
+                        formatter={formatHomeAmount}
+                        bottomLabel={prevLabel}
+                        className="border-[#2CA9E0] bg-[#2CA9E026]"
+                      />
+
+                      <AmazonStatCard
+                        label="Profit"
+                        current={convertToHomeCurrency(
+                          uk.profitGBP,
+                          "GBP"
+                        )}
+                        previous={convertToHomeCurrency(
+                          ukPrev.profitGBP,
+                          "GBP"
+                        )}
+                        loading={loading}
+                        formatter={formatHomeAmount}
+                        bottomLabel={prevLabel}
+                        className="border-[#AB64B5] bg-[#AB64B526]"
+                      />
+
+                      <AmazonStatCard
+                        label="Profit %"
+                        current={uk.profitPctGBP}
+                        previous={ukPrev.profitPctGBP}
+                        loading={loading}
+                        formatter={fmtPct}
+                        bottomLabel={prevLabel}
+                        className="border-[#00627B] bg-[#00627B26]"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* SHOPIFY CARD */}
+              {hasShopifyCard && (
+                <div className="flex lg:flex-1">
+                  <div className="w-full rounded-2xl border bg-white p-5 shadow-sm">
+                    <div className="mb-4 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                      <div className="flex flex-col">
+                        <div className="flex items-baseline gap-2">
+                          <PageBreadcrumb
+                            pageTitle="Shopify"
+                            variant="page"
+                            align="left"
+                            textSize="2xl"
+                          />
+                        </div>
+
+                        <p className="mt-1 text-sm text-charcoal-500">
+                          Real-time data from Shopify
+                        </p>
+                      </div>
+                    </div>
+
+                    {shopifyLoading ? (
+                      <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                        {[...Array(3)].map((_, i) => (
+                          <div
+                            key={i}
+                            className="rounded-2xl border bg-white p-5 shadow-sm"
+                          >
+                            <div className="h-3 w-24 animate-pulse rounded bg-gray-200" />
+                            <div className="mt-2 h-7 w-28 animate-pulse rounded bg-gray-200" />
+                          </div>
+                        ))}
+                      </div>
+                    ) : shopify ? (
+                      <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                        <AmazonStatCard
+                          label="Sales"
+                          current={convertToHomeCurrency(
+                            shopifyDeriv?.netSales ?? 0,
+                            "INR"
+                          )}
+                          previous={convertToHomeCurrency(
+                            shopifyPrevDeriv?.netSales ?? 0,
+                            "INR"
+                          )}
+                          loading={shopifyLoading}
+                          formatter={formatHomeAmount}
+                          bottomLabel={prevLabel}
+                          className="border-[#87AD12] bg-[#87AD1226]"
+                        />
+
+                        <AmazonStatCard
+                          label="Units"
+                          current={shopifyDeriv?.totalOrders ?? 0}
+                          previous={shopifyPrevDeriv?.totalOrders ?? 0}
+                          loading={shopifyLoading}
+                          formatter={fmtInt}
+                          bottomLabel={prevLabel}
+                          className="border-[#F47A00] bg-[#F47A0026]"
+                        />
+
+                        <AmazonStatCard
+                          label="ASP"
+                          current={(() => {
+                            const units = shopifyDeriv?.totalOrders ?? 0;
+                            if (!units) return 0;
+                            const netHome = convertToHomeCurrency(
+                              shopifyDeriv?.netSales ?? 0,
+                              "INR"
+                            );
+                            return netHome / units;
+                          })()}
+                          previous={(() => {
+                            const unitsPrev =
+                              shopifyPrevDeriv?.totalOrders ?? 0;
+                            if (!unitsPrev) return 0;
+                            const netPrevHome = convertToHomeCurrency(
+                              shopifyPrevDeriv?.netSales ?? 0,
+                              "INR"
+                            );
+                            return netPrevHome / unitsPrev;
+                          })()}
+                          loading={shopifyLoading}
+                          formatter={formatHomeAmount}
+                          bottomLabel={prevLabel}
+                          className="border-[#2CA9E0] bg-[#2CA9E026]"
+                        />
+                      </div>
+                    ) : (
+                      <div className="mt-2 text-sm text-gray-500">
+                        No Shopify data for the current month.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* RIGHT COLUMN: Sales Target card */}
+            <aside className="col-span-12 lg:col-span-4 order-1 lg:order-2">
+              <div className="lg:sticky lg:top-6 w-full">
+                <SalesTargetCard regions={regions} defaultRegion="Global" />
+              </div>
+            </aside>
+
+          </div>
 
           {/* AMAZON P&L GRAPH */}
-          {amazonIntegrated && (
+          {/* {amazonIntegrated && (
             <>
               <div className="mt-8 rounded-2xl border bg-[#D9D9D933] p-5 shadow-sm">
                 <div className="mb-3 flex items-center justify-between">
@@ -4611,9 +4824,69 @@ const globalPrevMetrics = useMemo(() => {
 
               <CurrentInventorySection region={graphRegion as RegionKey} />
 
+            
+            </>
+          )} */}
+
+
+          {/* P&L GRAPH (Global + Amazon/Shopify) */}
+          {hasAnyGraphData && (
+            <>
+              <div className="mt-8 rounded-2xl border bg-[#D9D9D933] p-5 shadow-sm">
+                <div className="mb-3 flex items-center justify-between">
+                  <div className="text-sm text-gray-500">
+                    <PageBreadcrumb
+                      pageTitle="Amazon"
+                      align="left"
+                      textSize="2xl"
+                      variant="page"
+                    />
+                    <p className="text-charcoal-500">
+                      Real-time data from{" "}
+                      {amazonIntegrated && shopifyIntegrated
+                        ? "Amazon & Shopify"
+                        : amazonIntegrated
+                          ? "Amazon"
+                          : "Shopify"}{" "}
+                      {graphRegion === "Global" ? "Global" : graphRegion}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <SegmentedToggle<RegionKey>
+                      value={graphRegion}
+                      options={graphRegions.map((r) => ({
+                        value: r,
+                      }))}
+                      onChange={setGraphRegion}
+                    />
+                    <DownloadIconButton onClick={handleDownload} />
+                  </div>
+                </div>
+
+                <div ref={chartRef}>
+                  <DashboardBargraphCard
+                    countryName={countryNameForGraph}
+                    formattedMonthYear={formattedMonthYear}
+                    currencySymbol={currencySymbol}
+                    labels={labels}
+                    values={values}
+                    colors={colors}
+                    loading={loading}
+                    allValuesZero={allValuesZero}
+                  />
+                </div>
+              </div>
+
+              {/* Inventory section only makes sense for Amazon, so keep this guard */}
+              {amazonIntegrated && (
+                <CurrentInventorySection region={graphRegion as RegionKey} />
+              )}
+
               {/* <AgeingInventorySection /> */}
             </>
           )}
+
         </div>
       </div>
     </div>
