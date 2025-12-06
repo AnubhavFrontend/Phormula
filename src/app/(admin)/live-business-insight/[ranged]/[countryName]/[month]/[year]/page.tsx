@@ -2045,41 +2045,52 @@ console.log(segmentTotalsMap)
                       const growth = item[field];
 
 if (activeTab === 'new_or_reviving_skus') {
-  // current absolute (fallback)
-  const vCurrent =
-    (item as any)[`${raw}_month2`] ??
-    (item as any)[`${raw}_curr`] ??
-    (item as any)[raw];
+  const g = growth as GrowthCategory | undefined;
 
-  // growth object exists? (backend already sends this when prev>0)
-  if (growth && (growth as GrowthCategory).category && (growth as GrowthCategory).value != null) {
-    let color = '#414042';
-    if ((growth as GrowthCategory).category === 'High Growth') color = '#5EA68E';
-    else if ((growth as GrowthCategory).category === 'Negative Growth') color = '#FF5C5C';
+  // ✅ show growth only if backend has a real baseline (not "No Data")
+  if (g && g.value != null && g.category && g.category !== 'No Data') {
+    const val = Number(g.value);
+    const sign = val >= 0 ? '+' : '';
+    const text = `${sign}${val.toFixed(2)}%`;
 
-    // Backend sets "No Data" when baseline missing (prev=0). In that case show current instead.
-    if ((growth as GrowthCategory).category !== 'No Data') {
-      const sign = (growth as GrowthCategory).value >= 0 ? '+' : '';
+    if (g.category === 'High Growth') {
       return (
-        <td
-          key={field}
-          className="border border-[#414042] px-2 py-2.5 text-center"
-          style={{ color, fontWeight: 600 }}
-        >
-          {(growth as GrowthCategory).category} ({sign}
-          {Number((growth as GrowthCategory).value).toFixed(2)}%)
+        <td key={field} className="border border-[#414042] px-2 py-2.5 text-center" style={{ fontWeight: 600 }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#5EA68E' }}>
+            <FaArrowUp size={12} />
+            {text}
+          </span>
         </td>
       );
     }
+
+    if (g.category === 'Negative Growth') {
+      return (
+        <td key={field} className="border border-[#414042] px-2 py-2.5 text-center" style={{ fontWeight: 600 }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#FF5C5C' }}>
+            <FaArrowDown size={12} />
+            {text}
+          </span>
+        </td>
+      );
+    }
+
+    // Low/No Growth
+    return (
+      <td key={field} className="border border-[#414042] px-2 py-2.5 text-center" style={{ fontWeight: 600, color: '#414042' }}>
+        {text}
+      </td>
+    );
   }
 
-  // baseline missing => show absolute current
+  // ❌ if no prev baseline => N/A (NOT current)
   return (
     <td key={field} className="border border-[#414042] px-2 py-2.5 text-center">
-      {vCurrent != null ? Number(vCurrent).toFixed(2) : 'N/A'}
+      N/A
     </td>
   );
 }
+
 
 
                       if (
