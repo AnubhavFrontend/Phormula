@@ -337,7 +337,6 @@
 
 
 
-
 "use client";
 
 import * as React from "react";
@@ -349,11 +348,12 @@ export type Row = Record<string, React.ReactNode>;
 
 export type ColumnDef<T extends Row> = {
   key: keyof T | string;
-  header: string;
+  header: React.ReactNode; // string OR JSX
   render?: (row: T, value: React.ReactNode, rowIndex: number) => React.ReactNode;
   width?: string;
   cellClassName?: string;
   headerClassName?: string;
+  onHeaderClick?: () => void; // header click handler
 };
 
 type DataTableProps<T extends Row> = {
@@ -498,7 +498,9 @@ export default function DataTable<T extends Row>({
 
   const pageItems = getPageItems(page, totalPages);
 
-  const formatHeader = (header: string) => {
+  const formatHeader = (header: React.ReactNode) => {
+    if (typeof header !== "string") return header; // JSX → return as-is
+
     const words = header.split(" ");
 
     return words
@@ -507,141 +509,114 @@ export default function DataTable<T extends Row>({
 
         if (lower === "sku") return "SKU";
 
-        // If word comes after "SKU" and is a country => uppercase it
         if (
           idx > 0 &&
           words[idx - 1].toLowerCase() === "sku" &&
           ["uk", "us", "canada"].includes(lower)
         ) {
-          return w.toUpperCase(); // UK / US / CANADA
+          return w.toUpperCase();
         }
 
-        // normal capitalization for other words
         return w.charAt(0).toUpperCase() + w.slice(1);
       })
       .join(" ");
   };
 
-
-
   return (
     <div
       className={clsx(
-        "overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm",
+        "relative w-full max-w-full border border-slate-200 bg-white shadow-sm",
+        "overflow-x-auto",                      // 👈 horizontal scroll ONLY inside this container
+        scrollY && "overflow-y-auto",          // 👈 vertical scroll inside container if enabled
         className
       )}
+      style={containerStyle}
     >
-      <div
+      <table
         className={clsx(
-          "w-full",
-          scrollY ? "overflow-y-auto" : "overflow-x-auto",
-          stickyHeader && "scroll-pt-12"
+          // 👇 table can be wider than container; container scrolls it
+          "min-w-max border-collapse text-xs sm:text-sm text-slate-700",
+          tableClassName
         )}
-        style={containerStyle}
       >
-        <table
+        {/* HEADER */}
+        <thead
           className={clsx(
-            "w-full border-collapse text-xs sm:text-sm text-slate-700",
-            tableClassName
+            "bg-[#5EA68E] text-yellow-200",
+            "text-xs sm:text-sm font-semibold",
+            stickyHeader && "sticky top-0 z-10"
           )}
         >
-          {/* HEADER like your green example */}
-          <thead
-            className={clsx(
-              "bg-[#5EA68E] text-yellow-200",
-              "text-xs sm:text-sm font-semibold",
-              stickyHeader && "sticky top-0 z-10"
-            )}
-          >
+          <tr>
+            {columns.map((col, i) => (
+              <th
+                key={String(col.key) + i}
+                onClick={col.onHeaderClick}
+                className={clsx(
+                  "border border-[#e1e5ea] px-3 py-2.5 text-center align-middle whitespace-nowrap",
+                  col.headerClassName,
+                  col.onHeaderClick && "cursor-pointer select-none"
+                )}
+                style={col.width ? { width: col.width } : undefined}
+              >
+                {formatHeader(col.header)}
+              </th>
+            ))}
+          </tr>
+        </thead>
+
+        {/* BODY */}
+        <tbody>
+          {!hasData && (
             <tr>
-              {columns.map((col, i) => (
-                <th
-                  key={String(col.key) + i}
-                  className={clsx(
-                    "border border-[#e1e5ea] px-3 py-2.5 text-center align-middle whitespace-nowrap", // 👈 text-center
-                    col.headerClassName
-                  )}
-                  style={col.width ? { width: col.width } : undefined}
-                >
-                  {formatHeader(col.header)} 
-                </th>
-              ))}
+              <td
+                className="px-3 py-8 text-center text-xs sm:text-sm text-slate-400"
+                colSpan={columns.length}
+              >
+                {emptyMessage}
+              </td>
             </tr>
-          </thead>
+          )}
 
-
-          <tbody>
-            {!hasData && (
-              <tr>
-                <td
-                  className="px-3 py-8 text-center text-xs sm:text-sm text-slate-400"
-                  colSpan={columns.length}
-                >
-                  {emptyMessage}
-                </td>
+          {hasData &&
+            pageRows.map((row, ri) => (
+              <tr
+                key={ri}
+                className={clsx(
+                  zebra && ri % 2 === 1 ? "bg-slate-50" : "bg-white",
+                  "transition-colors hover:bg-emerald-50/80",
+                  rowClassName?.(row, (page - 1) * pageSize + ri)
+                )}
+              >
+                {columns.map((col, ci) => {
+                  const value = (row as Record<string, React.ReactNode>)[
+                    String(col.key)
+                  ];
+                  return (
+                    <td
+                      key={String(col.key) + ci}
+                      className={clsx(
+                        "max-w-[260px] truncate border border-[#e1e5ea] px-3 py-2.5 align-middle text-center text-xs sm:text-sm",
+                        col.cellClassName
+                      )}
+                      title={
+                        showCellTitle ? String(value ?? "\u00A0") : undefined
+                      }
+                    >
+                      {col.render
+                        ? col.render(row, value, (page - 1) * pageSize + ri)
+                        : value ?? "\u00A0"}
+                    </td>
+                  );
+                })}
               </tr>
-            )}
+            ))}
+        </tbody>
+      </table>
 
-            {hasData &&
-              pageRows.map((row, ri) => (
-                <tr
-                  key={ri}
-                  className={clsx(
-                    zebra && ri % 2 === 1 ? "bg-slate-50" : "bg-white",
-                    "transition-colors hover:bg-emerald-50/80",
-                    rowClassName?.(row, (page - 1) * pageSize + ri)
-                  )}
-                >
-                  {columns.map((col, ci) => {
-                    const value = (row as Record<string, React.ReactNode>)[
-                      String(col.key)
-                    ];
-                    return (
-                      <td
-                        key={String(col.key) + ci}
-                        className={clsx(
-                          "max-w-[260px] truncate border border-[#e1e5ea] px-3 py-2.5 align-middle text-center text-xs sm:text-sm",
-                          col.cellClassName
-                        )}
-                        title={
-                          showCellTitle ? String(value ?? "\u00A0") : undefined
-                        }
-                      >
-                        {col.render
-                          ? col.render(
-                            row,
-                            value,
-                            (page - 1) * pageSize + ri
-                          )
-                          : value ?? "\u00A0"}
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* PAGINATION – like your screenshot */}
+      {/* PAGINATION */}
       {paginate && totalPages > 1 && (
         <div className="border-t border-slate-200 bg-slate-50 px-4 py-3">
-          {/* summary row (optional, centered) */}
-          {/* <div className="mb-2 text-center text-[11px] sm:text-xs text-slate-600">
-            {total > 0 ? (
-              <>
-                Showing{" "}
-                <span className="font-semibold text-slate-800">{startIdx}</span>
-                –
-                <span className="font-semibold text-slate-800">{endIdx}</span>{" "}
-                of{" "}
-                <span className="font-semibold text-slate-800">{total}</span>
-              </>
-            ) : (
-              <>No records</>
-            )}
-          </div> */}
-
           <div className="flex items-center justify-between gap-4 text-xs sm:text-sm">
             {/* Previous */}
             <button
@@ -655,7 +630,7 @@ export default function DataTable<T extends Row>({
               <FaChevronLeft />
             </button>
 
-            {/* Center page numbers */}
+            {/* Page numbers */}
             <div className="flex items-center justify-center gap-1 sm:gap-1.5">
               {pageItems.map((item, idx) =>
                 item === "dots" ? (

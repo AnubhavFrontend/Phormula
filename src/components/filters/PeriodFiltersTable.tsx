@@ -320,7 +320,7 @@ import { FaAngleDown } from "react-icons/fa";
 export type Range = "monthly" | "quarterly" | "yearly";
 
 interface Props {
-  range: Range | "";
+  range: "monthly" | "quarterly" | "yearly";
   selectedMonth: string;
   selectedQuarter: string;
   selectedYear: string | number;

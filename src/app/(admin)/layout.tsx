@@ -48,7 +48,7 @@ export default function AdminLayout({
           {/* Header */}
           <AppHeader />
           {/* Page Content */}
-          <div className="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6 border-l border-t border-gray-200 ">{children}</div>
+          <div className="p-4 md:p-6 border-l border-t border-gray-200 ">{children}</div>
         </div>
 
         {/* Floating Chatbot Button */}

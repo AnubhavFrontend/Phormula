@@ -207,7 +207,7 @@ export default function SalesTargetCard({
       </div>
 
       {/* Bottom cards */}
-      <div className="mt-3 md:mt-12 mb-3 grid grid-cols-2 gap-4 text-sm">
+      <div className="mt-3 md:mt-12 mb-3 grid grid-cols-2 gap-4 text-base">
         <div className="flex flex-col text-center items-center justify-between rounded-xl bg-gray-50 p-3">
           <div className="text-charcoal-500">Today's Sale</div>
           <div className="mt-0.5 font-semibold">{fmtUSDk(todayApprox)}</div>
