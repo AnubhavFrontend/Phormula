@@ -13,6 +13,7 @@ import {
   Legend,
   Filler,
 } from "chart.js";
+import Loader from '@/components/loader/Loader';
 
 ChartJS.register(
   CategoryScale,
@@ -67,9 +68,10 @@ const Productinfoinpopup: React.FC<ProductinfoinpopupProps> = ({ productname = "
   const [selectedQuarter, setSelectedQuarter] = useState<string>('1');
   const [selectedCountries, setSelectedCountries] = useState<Record<string, boolean>>({
     uk: true,
-    us: true,
     global: true
   });
+
+  const GBP_TO_USD_RATE = 1.27;
 
   // Generate years (e.g., last 5 years)
   const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i);
@@ -218,29 +220,53 @@ const Productinfoinpopup: React.FC<ProductinfoinpopupProps> = ({ productname = "
     fetchProductData();
   }, [productname, year]);
 
-  const prepareChartData = () => {
-    if (!data || !data.data) return [];
+ const prepareChartData = () => {
+  if (!data || !data.data) return [];
 
-    const allMonths = new Set<string>();
-    Object.values(data.data as unknown as CountryData).forEach(countryData => {
-      countryData.forEach(monthData => allMonths.add(monthData.month));
-    });
+  const monthOrder = [
+    'January','February','March','April','May','June',
+    'July','August','September','October','November','December'
+  ];
 
-    const sortedMonths = Array.from(allMonths).sort((a: string, b: string) => {
-      const monthOrder = ['January', 'February', 'March', 'April', 'May', 'June',
-        'July', 'August', 'September', 'October', 'November', 'December'];
-      return monthOrder.indexOf(a) - monthOrder.indexOf(b);
-    });
+  const allMonths = new Set<string>();
 
-    return sortedMonths.map(month => {
-      const dataPoint: Record<string, any> = { month };
-      Object.entries(data.data as unknown as CountryData).forEach(([country, countryData]) => {
-        const monthData = countryData.find(d => d.month === month);
-        dataPoint[country] = monthData ? monthData.net_sales : 0;
-      });
-      return dataPoint;
-    });
+  // data.data is Record<country, MonthDatum[]>, but your typing is messy in this file
+  Object.values(data.data as any).forEach((rows: any[]) => {
+    rows?.forEach((m: any) => allMonths.add(m.month));
+  });
+
+  const labels = Array.from(allMonths).sort(
+    (a, b) => monthOrder.indexOf(a) - monthOrder.indexOf(b)
+  );
+
+  const getMetric = (country: string, month: string) => {
+    const arr = (data.data as any)?.[country];
+    if (!arr) return 0;
+    const found = arr.find((m: any) => m.month === month);
+    return found ? Number(found.net_sales || 0) : 0;
   };
+
+  return labels.map((month) => {
+    const ukRaw = getMetric("uk", month);
+    const usRaw = getMetric("us", month);
+    const globalRaw = getMetric("global", month);
+
+    // Match ProductwisePerformance:
+    // UK shown in USD, GLOBAL = (UK in USD) + US, fallback to backend global
+    const ukUSD = ukRaw * GBP_TO_USD_RATE;
+    const globalUSD = (ukUSD + usRaw) !== 0 ? (ukUSD + usRaw) : globalRaw;
+
+    const point: Record<string, any> = { month };
+
+    // only put values for selected countries
+    if (selectedCountries.uk) point.uk = ukUSD;
+    if (selectedCountries.us) point.us = usRaw;
+    if (selectedCountries.global) point.global = globalUSD;
+
+    return point;
+  });
+};
+
 
   const getCountryColor = (country: string) => {
     const colors: Record<string, string> = {
@@ -265,8 +291,9 @@ const Productinfoinpopup: React.FC<ProductinfoinpopupProps> = ({ productname = "
     if (!raw || raw.length === 0) return null;
 
     const labels = raw.map(item => item.month);
-    const datasets = Object.keys(selectedCountries)
-      .filter(country => selectedCountries[country])
+  const datasets = Object.keys(selectedCountries)
+  .filter(country => selectedCountries[country])
+  .filter(country => Array.isArray((data?.data as any)?.[country]) && ((data?.data as any)?.[country].length > 0))
       .map(country => ({
         label: country.toUpperCase(),
         data: raw.map(item => item[country] || 0),
@@ -276,6 +303,8 @@ const Productinfoinpopup: React.FC<ProductinfoinpopupProps> = ({ productname = "
         pointRadius: 3,
         // pointHoverRadius: 5,
         fill: false,
+         borderDash: country === "global" ? [6, 4] : undefined,
+  borderWidth: country === "global" ? 2.5 : 2,
       } as const));
 
     return { labels, datasets };
@@ -644,32 +673,16 @@ h2 {
 
           {/* Loading State */}
           {loading && (
-            <div style={{
-          padding: '48px',
-          textAlign: 'center'
-        }}>
-          <video
-            src="/infinity2.webm"
-            autoPlay
-            loop
-            muted
-            playsInline
-            style={{
-              width: 150,
-              height: 'auto',
-              backgroundColor: 'transparent',
-              pointerEvents: 'none'
-            }}
-          />
-          <style>
-            {`
-                @keyframes spin {
-                  0% { transform: rotate(0deg); }
-                  100% { transform: rotate(360deg); }
-                }
-              `}
-          </style>
-        </div>
+           <div className="flex flex-col items-center justify-center py-12 text-center">
+                        <Loader
+                          src="/infinity-unscreen.gif"
+                          size={150}
+                          transparent
+                          roundedClass="rounded-none"
+                          backgroundClass="bg-transparent"
+                          respectReducedMotion
+                        />
+                      </div>
           )}
 
           {/* Error State */}

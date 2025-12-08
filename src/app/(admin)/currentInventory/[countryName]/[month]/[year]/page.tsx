@@ -78,13 +78,13 @@ export default function CurrentInventoryPage({ params }: PageParams) {
   // V = unknown_events
   const toDisplayRow = (item: any, idx: number): Row => {
     const sku = String(item?.msku ?? item?.MSKU ?? item?.sku ?? item?.SKU ?? '').trim();
-    const productName = String(item?.title ?? item?.Title ?? item?.product_name ?? '').trim();
+    const productName = String(item?.product_name ?? item?.product_name ?? item?.product_name ?? '').trim();
 
     return {
       'Sno.': idx + 1,
       ...(countryName !== 'global' ? { SKU: sku } : {}),
       'Product Name': productName,
-      'Column A': Number(item?.starting_warehouse_balance ?? 0),
+      '': Number(item?.ending_warehouse_balance ?? 0),
     };
   };
 

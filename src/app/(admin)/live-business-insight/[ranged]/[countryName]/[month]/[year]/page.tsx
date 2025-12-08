@@ -2086,7 +2086,7 @@ if (activeTab === 'new_or_reviving_skus') {
   // ❌ if no prev baseline => N/A (NOT current)
   return (
     <td key={field} className="border border-[#414042] px-2 py-2.5 text-center">
-      N/A
+      -
     </td>
   );
 }

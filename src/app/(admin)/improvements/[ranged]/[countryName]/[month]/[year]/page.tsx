@@ -59,7 +59,17 @@ interface CategorizedGrowth {
   top_80_skus: SkuItem[];
   new_or_reviving_skus: SkuItem[];
   other_skus: SkuItem[];
+
+  // ✅ add
+  all_skus?: SkuItem[];
+
+  top_80_total?: SkuItem | null;
+  new_or_reviving_total?: SkuItem | null;
+  other_total?: SkuItem | null;
+  all_skus_total?: SkuItem | null;
 }
+
+
 
 interface SkuInsight {
   product_name: string;
@@ -79,6 +89,8 @@ interface ApiResponse {
 // Config
 // =========================
 const API_BASE = 'http://127.0.0.1:5000';
+
+type TabKey = 'top_80_skus' | 'new_or_reviving_skus' | 'other_skus' | 'all_skus';
 
 // Persist keys
 const STORAGE_KEY = 'bi_insight_data';        // compare inputs + results
@@ -103,12 +115,19 @@ const MonthsforBI: React.FC = () => {
   const [year2, setYear2] = useState<string>('');
 
   // Data + UI state
-  const [categorizedGrowth, setCategorizedGrowth] = useState<CategorizedGrowth>({
-    top_80_skus: [],
-    new_or_reviving_skus: [],
-    other_skus: [],
-  });
-  const [activeTab, setActiveTab] = useState<'top_80_skus' | 'new_or_reviving_skus' | 'other_skus'>('top_80_skus');
+ const [categorizedGrowth, setCategorizedGrowth] = useState<CategorizedGrowth>({
+  top_80_skus: [],
+  new_or_reviving_skus: [],
+  other_skus: [],
+  all_skus: [],              // ✅ add
+  top_80_total: null,
+  new_or_reviving_total: null,
+  other_total: null,
+  all_skus_total: null,
+});
+
+
+const [activeTab, setActiveTab] = useState<TabKey>('top_80_skus');
   const [month2Label, setMonth2Label] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
 
@@ -144,9 +163,12 @@ const MonthsforBI: React.FC = () => {
   const y2 = String(year2 || '');
 
   const isGlobalData = () => (countryName || '').toLowerCase() === 'global';
-  const getTabLabel = (key: keyof CategorizedGrowth): string =>
-    key === 'top_80_skus' ? 'Top 80% SKUs' :
-    key === 'new_or_reviving_skus' ? 'New/Reviving SKUs' : 'Other SKUs';
+  const getTabLabel = (key: TabKey): string =>
+  key === 'top_80_skus' ? 'Top 80% SKUs'
+  : key === 'new_or_reviving_skus' ? 'New/Reviving SKUs'
+  : key === 'other_skus' ? 'Other SKUs'
+  : 'All SKUs';
+
   const getTabNumberForFeedback = (key: keyof CategorizedGrowth): number =>
     key === 'top_80_skus' ? 1 : key === 'new_or_reviving_skus' ? 2 : 3;
 
@@ -200,6 +222,81 @@ const MonthsforBI: React.FC = () => {
       return {};
     }
   };
+
+  const normalizeCategorizedGrowth = (raw?: any): CategorizedGrowth => {
+  const mapRow = (row: any): SkuItem => {
+    const clone: any = { ...row };
+
+    // sales mix key mapping (if needed)
+    if (row['Sales Mix (Current)'] != null) clone['Sales Mix (Month2)'] = row['Sales Mix (Current)'];
+
+    // growth field mapping (if your backend uses (%) keys)
+    const fieldMap: Record<string, string> = {
+      'Unit Growth (%)': 'Unit Growth',
+      'ASP Growth (%)': 'ASP Growth',
+      'Sales Growth (%)': 'Sales Growth',
+      'Sales Mix Change (%)': 'Sales Mix Change',
+      'Profit Per Unit (%)': 'Profit Per Unit',
+      'CM1 Profit Impact (%)': 'CM1 Profit Impact',
+    };
+    Object.entries(fieldMap).forEach(([bk, fk]) => {
+      if (row[bk] != null) clone[fk] = row[bk];
+    });
+
+    // prev/curr → month1/month2 (aapke months compare page me bhi same keys use ho rahe)
+   clone.quantity_month1 = row.quantity_month1 ?? row.quantity_prev ?? null;
+clone.quantity_month2 = row.quantity_month2 ?? row.quantity_curr ?? null;
+
+clone.asp_month1 = row.asp_month1 ?? row.asp_prev ?? null;
+clone.asp_month2 = row.asp_month2 ?? row.asp_curr ?? null;
+
+clone.net_sales_month1 = row.net_sales_month1 ?? row.net_sales_prev ?? null;
+clone.net_sales_month2 = row.net_sales_month2 ?? row.net_sales_curr ?? null;
+
+clone.sales_mix_month1 = row.sales_mix_month1 ?? row.sales_mix_prev ?? null;
+clone.sales_mix_month2 = row.sales_mix_month2 ?? row.sales_mix_curr ?? row['Sales Mix (Current)'] ?? null;
+
+clone.unit_wise_profitability_month1 =
+  row.unit_wise_profitability_month1 ?? row.unit_wise_profitability_prev ?? null;
+clone.unit_wise_profitability_month2 =
+  row.unit_wise_profitability_month2 ?? row.unit_wise_profitability_curr ?? null;
+
+clone.profit_month1 = row.profit_month1 ?? row.profit_prev ?? null;
+clone.profit_month2 = row.profit_month2 ?? row.profit_curr ?? null;
+
+    return clone;
+  };
+
+  const empty: CategorizedGrowth = {
+    top_80_skus: [],
+    new_or_reviving_skus: [],
+    other_skus: [],
+    top_80_total: null,
+    new_or_reviving_total: null,
+    other_total: null,
+    all_skus_total: null,
+  };
+
+  if (!raw) return empty;
+
+  return {
+    top_80_skus: (raw.top_80_skus || []).map(mapRow),
+    new_or_reviving_skus: (raw.new_or_reviving_skus || []).map(mapRow),
+    other_skus: (raw.other_skus || []).map(mapRow),
+
+    all_skus: (raw.all_skus || [
+    ...(raw.top_80_skus || []),
+    ...(raw.new_or_reviving_skus || []),
+    ...(raw.other_skus || []),
+  ]).map(mapRow),
+
+  top_80_total: raw.top_80_total ? mapRow(raw.top_80_total) : null,
+  new_or_reviving_total: raw.new_or_reviving_total ? mapRow(raw.new_or_reviving_total) : null,
+  other_total: raw.other_total ? mapRow(raw.other_total) : null,
+  all_skus_total: raw.all_skus_total ? mapRow(raw.all_skus_total) : null,
+  };
+};
+
 
   // =========================
   // Load persisted state on mount
@@ -283,23 +380,28 @@ const MonthsforBI: React.FC = () => {
     }
 
     try {
-      const res = await api.get<ApiResponse>('/MonthsforBI', {
-        params: { month1, year1, month2, year2, countryName },
-      });
-      const newMonth2Label = res.data?.comparison_range?.month2_label || '';
-      const newCategorized: CategorizedGrowth = res.data?.categorized_growth || { top_80_skus: [], new_or_reviving_skus: [], other_skus: [] };
+     const res = await api.get<ApiResponse>('/MonthsforBI', {
+  params: { month1, year1, month2, year2, countryName },
+});
 
-      setMonth2Label(newMonth2Label);
-      setCategorizedGrowth(newCategorized);
+const newMonth2Label = res.data?.comparison_range?.month2_label || '';
 
-      // Save to localStorage (persist compare)
-      saveCompareToStorage({
-        month1, year1, month2, year2,
-        categorizedGrowth: newCategorized,
-        month2Label: newMonth2Label,
-        activeTab,
-        countryName
-      });
+// ✅ normalize here
+const raw = res.data?.categorized_growth;
+const newCategorized = normalizeCategorizedGrowth(raw);
+
+setMonth2Label(newMonth2Label);
+setCategorizedGrowth(newCategorized);
+
+// Save to localStorage (persist compare)
+saveCompareToStorage({
+  month1, year1, month2, year2,
+  categorizedGrowth: newCategorized,
+  month2Label: newMonth2Label,
+  activeTab,
+  countryName
+});
+
     } catch (err: any) {
       console.error('MonthsforBI error:', err?.response?.data || err.message);
       setError(err?.response?.data?.error || 'An error occurred');
@@ -365,11 +467,21 @@ const MonthsforBI: React.FC = () => {
   // Export to Excel
   // =====================
 const exportToExcel = (rows: SkuItem[], filename = 'export.xlsx') => {
-  // Month labels for header, like Sep / Oct
-  const m1Abbr = getAbbr(month1); // e.g. "Sep"
-  const m2Abbr = getAbbr(month2); // e.g. "Oct"
+  const m1Abbr = `${getAbbr(month1)}'${String(year1).slice(2)}`;
+const m2Abbr = `${getAbbr(month2)}'${String(year2).slice(2)}`;
+  // 1) remove any existing total rows coming from API/data
+  const cleanRows = (rows || []).filter((r) => {
+    const name = String(r?.product_name || '').toLowerCase().trim();
+    return name !== 'total' && !name.includes('total (top 80') && name !== 'total (top 80%)';
+  });
 
-  const formatted = rows.map((row) => {
+  const num = (v: any) => {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : 0;
+  };
+
+  // 2) build normal rows
+  const formatted = cleanRows.map((row) => {
     const unitGrowth = row['Unit Growth'] as GrowthCategory | undefined;
     const aspGrowth = row['ASP Growth'] as GrowthCategory | undefined;
     const salesGrowth = row['Sales Growth'] as GrowthCategory | undefined;
@@ -378,47 +490,130 @@ const exportToExcel = (rows: SkuItem[], filename = 'export.xlsx') => {
     const profitGrowth = row['CM1 Profit Impact'] as GrowthCategory | undefined;
 
     return {
-      // Basic identifiers
       SKU: row.sku || '',
       Product: row.product_name || '',
 
-      // Qty
       [`Qty ${m1Abbr}`]: row.quantity_month1 ?? null,
       [`Qty ${m2Abbr}`]: row.quantity_month2 ?? null,
       'Qty %': unitGrowth?.value ?? null,
 
-      // ASP
       [`ASP ${m1Abbr}`]: row.asp_month1 ?? null,
       [`ASP ${m2Abbr}`]: row.asp_month2 ?? null,
       'ASP %': aspGrowth?.value ?? null,
 
-      // Net Sales
       [`Net Sales ${m1Abbr}`]: row.net_sales_month1 ?? null,
       [`Net Sales ${m2Abbr}`]: row.net_sales_month2 ?? null,
       'Net Sales %': salesGrowth?.value ?? null,
 
-      // Sales Mix
       [`Sales Mix ${m1Abbr}`]: row.sales_mix_month1 ?? null,
       [`Sales Mix ${m2Abbr}`]: row.sales_mix_month2 ?? row['Sales Mix (Month2)'] ?? null,
       'Sales Mix %': mixGrowth?.value ?? null,
 
-      // Unit Profit (Unit-wise profitability)
       [`Unit Profit ${m1Abbr}`]: row.unit_wise_profitability_month1 ?? null,
       [`Unit Profit ${m2Abbr}`]: row.unit_wise_profitability_month2 ?? null,
       'Unit Profit %': unitProfitGrowth?.value ?? null,
 
-      // Profit
-      [`Profit ${m1Abbr}`]: row.profit_month1 ?? null,
-      [`Profit ${m2Abbr}`]: row.profit_month2 ?? null,
-      'Profit %': profitGrowth?.value ?? null,
+      [`CM1 Profit ${m1Abbr}`]: row.profit_month1 ?? null,
+      [`CM1 Profit ${m2Abbr}`]: row.profit_month2 ?? null,
+      'CM1 Profit %': profitGrowth?.value ?? null,
     };
   });
 
+  // 3) compute totals (sum)
+  const totals = cleanRows.reduce(
+    (acc, r) => {
+      acc.qty1 += num(r.quantity_month1);
+      acc.qty2 += num(r.quantity_month2);
+
+      acc.asp1 += num(r.asp_month1);
+      acc.asp2 += num(r.asp_month2);
+
+      acc.sales1 += num(r.net_sales_month1);
+      acc.sales2 += num(r.net_sales_month2);
+
+      acc.mix1 += num(r.sales_mix_month1);
+      acc.mix2 += num(r.sales_mix_month2 ?? r['Sales Mix (Month2)']);
+
+      acc.up1 += num(r.unit_wise_profitability_month1);
+      acc.up2 += num(r.unit_wise_profitability_month2);
+
+      acc.p1 += num(r.profit_month1);
+      acc.p2 += num(r.profit_month2);
+
+      return acc;
+    },
+    { qty1: 0, qty2: 0, asp1: 0, asp2: 0, sales1: 0, sales2: 0, mix1: 0, mix2: 0, up1: 0, up2: 0, p1: 0, p2: 0 }
+  );
+
+  // 4) append total row ALWAYS at the end (blank % columns to avoid confusion)
+  formatted.push({
+    SKU: '',
+    Product: 'Total',
+
+    [`Qty ${m1Abbr}`]: totals.qty1,
+    [`Qty ${m2Abbr}`]: totals.qty2,
+    'Qty %': null,
+
+    [`ASP ${m1Abbr}`]: totals.asp1,
+    [`ASP ${m2Abbr}`]: totals.asp2,
+    'ASP %': null,
+
+    [`Net Sales ${m1Abbr}`]: totals.sales1,
+    [`Net Sales ${m2Abbr}`]: totals.sales2,
+    'Net Sales %': null,
+
+    [`Sales Mix ${m1Abbr}`]: totals.mix1,
+    [`Sales Mix ${m2Abbr}`]: totals.mix2,
+    'Sales Mix %': null,
+
+    [`Unit Profit ${m1Abbr}`]: totals.up1,
+    [`Unit Profit ${m2Abbr}`]: totals.up2,
+    'Unit Profit %': null,
+
+    [`CM1 Profit ${m1Abbr}`]: totals.p1,
+    [`CM1 Profit ${m2Abbr}`]: totals.p2,
+    'CM1 Profit %': null,
+  });
+
+  const addPercentToPercentColumns = (ws: XLSX.WorkSheet) => {
+  const ref = ws['!ref'];
+  if (!ref) return;
+
+  const range = XLSX.utils.decode_range(ref);
+
+  // header row assumed at row 0
+  for (let C = range.s.c; C <= range.e.c; C++) {
+    const headerCell = ws[XLSX.utils.encode_cell({ r: 0, c: C })];
+    const header = String(headerCell?.v ?? '');
+    if (!header.includes('%')) continue;
+
+    // apply % display to rows (skip header)
+    for (let R = 1; R <= range.e.r; R++) {
+      const addr = XLSX.utils.encode_cell({ r: R, c: C });
+      const cell = ws[addr];
+      if (!cell || cell.v == null || cell.v === '') continue;
+
+      const n = Number(cell.v);
+      if (!Number.isFinite(n)) continue;
+
+      // keep as number but display with percent sign
+      ws[addr] = { ...cell, t: 'n', v: n, z: '0.00"%"' };
+    }
+  }
+};
+
+
   const ws = XLSX.utils.json_to_sheet(formatted);
+  addPercentToPercentColumns(ws);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Growth Comparison');
+
+  // Optional: freeze header row
+  ws['!freeze'] = { xSplit: 0, ySplit: 1 };
+
   XLSX.writeFile(wb, filename);
 };
+
 
   // =====================
   // Save feedback (Summary)
@@ -489,6 +684,12 @@ const exportToExcel = (rows: SkuItem[], filename = 'export.xlsx') => {
   // =====================
   // Insight renderer (headings + bullets)
   // =====================
+
+  
+
+
+
+
 const highlightInsightText = (text: string) => {
   const greenWords = [
     'profit',
@@ -807,7 +1008,128 @@ const highlightInsightText = (text: string) => {
   ];
 };
 
-  const currentTabData = categorizedGrowth[activeTab] || [];
+  const fullCurrent = categorizedGrowth[activeTab] || [];
+
+const currentTabData = React.useMemo(() => {
+  if (activeTab !== 'all_skus') return fullCurrent;
+
+  const sorted = [...fullCurrent].sort((a, b) => {
+    const am = Number(a['Sales Mix (Month2)'] ?? -Infinity);
+    const bm = Number(b['Sales Mix (Month2)'] ?? -Infinity);
+    return bm - am;
+  });
+
+  const top5 = sorted.slice(0, 5);
+  const rest = sorted.slice(5);
+  if (!rest.length) return top5;
+
+  const sum = (key: string) => rest.reduce((acc, r) => acc + Number(r?.[key] ?? 0), 0);
+
+  const pct = (m1: number, m2: number) => {
+    if (!Number.isFinite(m1) || !Number.isFinite(m2)) return null;
+    if (m1 === 0) return 0; // backend jaisa rule
+    return Number((((m2 - m1) / m1) * 100).toFixed(2));
+  };
+
+  // totals for Others (month1 + month2)
+  const qty1 = sum('quantity_month1');
+  const qty2 = sum('quantity_month2');
+
+  const asp1 = sum('asp_month1');
+  const asp2 = sum('asp_month2');
+
+  const sales1 = sum('net_sales_month1');
+  const sales2 = sum('net_sales_month2');
+
+  const mix1 = sum('sales_mix_month1');
+  const mix2 =
+    sum('sales_mix_month2') + rest.reduce((acc, r) => acc + Number(r?.['Sales Mix (Month2)'] ?? 0), 0) * 0; // keep safe
+  // NOTE: if your data doesn't have sales_mix_month2, you can still show Sales Mix via Sales Mix (Month2) only.
+  // We'll compute Sales Mix Change only if both exist.
+  const canMixChange = Number.isFinite(mix1) && Number.isFinite(mix2) && (mix1 !== 0 || mix2 !== 0);
+
+  const up1 = sum('unit_wise_profitability_month1');
+  const up2 = sum('unit_wise_profitability_month2');
+
+  const p1 = sum('profit_month1');
+  const p2 = sum('profit_month2');
+
+  const classify = (v: number | null) => {
+    if (v == null) return 'No Data';
+    if (v >= 5) return 'High Growth';
+    if (v > 0.5) return 'Low Growth';
+    if (v < -0.5) return 'Negative Growth';
+    return 'No Growth';
+  };
+
+  const makeGrowth = (v: number | null) =>
+    v == null ? null : { category: classify(v), value: v };
+
+  const others: any = {
+    product_name: 'Others',
+    sku: 'Others',
+
+    // Month2 display columns (not required but ok)
+    'Sales Mix (Month2)': sum('Sales Mix (Month2)'),
+
+    // raw month values so footer/exports remain consistent
+    quantity_month1: qty1,
+    quantity_month2: qty2,
+    asp_month1: asp1,
+    asp_month2: asp2,
+    net_sales_month1: sales1,
+    net_sales_month2: sales2,
+    sales_mix_month1: mix1,
+    sales_mix_month2: mix2,
+    unit_wise_profitability_month1: up1,
+    unit_wise_profitability_month2: up2,
+    profit_month1: p1,
+    profit_month2: p2,
+
+    // growth objects so table stops showing N/A
+    'Unit Growth': makeGrowth(pct(qty1, qty2)),
+    'ASP Growth': makeGrowth(pct(asp1, asp2)),
+    'Sales Growth': makeGrowth(pct(sales1, sales2)),
+    ...(activeTab !== 'new_or_reviving_skus'
+      ? { 'Sales Mix Change': makeGrowth(canMixChange ? pct(mix1, mix2) : null) }
+      : {}),
+    'Profit Per Unit': makeGrowth(pct(up1, up2)),
+    'CM1 Profit Impact': makeGrowth(pct(p1, p2)),
+  };
+
+  return [...top5, others];
+}, [activeTab, fullCurrent]);
+
+
+
+ const totalRow =
+  activeTab === "top_80_skus"
+    ? categorizedGrowth.top_80_total
+    : activeTab === "new_or_reviving_skus"
+    ? categorizedGrowth.new_or_reviving_total
+    : activeTab === "other_skus"
+    ? categorizedGrowth.other_total
+    : categorizedGrowth.all_skus_total; // ✅ all_skus
+
+
+    const formatCountryLabel = (country: string) => {
+  const lower = country.toLowerCase();
+  if (lower === "global") return "Global"; // special case
+  return country.toUpperCase(); // UK, US, etc.
+};
+
+const currentYearStr = String(new Date().getFullYear());
+const currentMonthStr = pad2(new Date().getMonth() + 1); // "01".."12"
+const currentPeriodKey = `${currentYearStr}-${currentMonthStr}`;
+
+const isCurrentPeriodAvailable = availablePeriods.includes(currentPeriodKey);
+
+const isLockedCurrent = (year: string, month: string) => {
+  if (!year || !month) return false;
+  // Lock ONLY if backend has current month AND the option is current month
+  return isCurrentPeriodAvailable && `${year}-${month}` === currentPeriodKey;
+};
+
 
   return (
     <>
@@ -917,18 +1239,98 @@ const highlightInsightText = (text: string) => {
   .insight-list{ margin: 6px 0 10px 20px; padding:0; }
   .insight-list-item{ line-height:1.6; }
   .insight-paragraphs p{ margin:4px 0; line-height:1.6; }
+
+  .sku-zero-wrap{
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.sku-zero{
+  color: #dc2626;
+  font-weight: 700;
+}
+.sku-zero-tooltip{
+  position: absolute;
+  left: 0;
+  top: 100%;
+  transform: translateY(6px);
+  background: #111827;
+  color: #fff;
+  padding: 6px 8px;
+  font-size: 12px;
+  border-radius: 6px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .15s ease;
+  z-index: 50;
+}
+.sku-zero-wrap:hover .sku-zero-tooltip{
+  opacity: 1;
+}
 `}</style>
 
       {/* Month selectors */}
       <h2 className="text-2xl font-bold text-[#414042] mb-2">
           Business Insights - AI Analyst&nbsp;
           <span className="text-[#5EA68E]">
-            {month1 && year1 && month2 && year2
-              ? `(${getAbbr(month1)}'${y1.slice(2)} vs ${getAbbr(month2)}'${y2.slice(2)})`
-              : ''}
+             {countryName && formatCountryLabel(countryName)}<span className="text-[#5EA68E] px-2">
+           {month1 && year1 && month2 && year2
+  ? (() => {
+      const monthToIndex = (m: string) => {
+        const s = String(m).trim().toLowerCase();
+
+        // numeric month: "1".."12" or 1..12
+        const n = Number(s);
+        if (!Number.isNaN(n) && n >= 1 && n <= 12) return n - 1;
+
+        // normalize to 3-letter
+        const abbr = s.slice(0, 3);
+
+        const map: Record<string, number> = {
+          jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5,
+          jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11,
+        };
+
+        return map[abbr] ?? -1; // -1 means unknown
+      };
+
+      const m1 = monthToIndex(month1);
+      const m2 = monthToIndex(month2);
+
+      const y1n = Number(year1);
+      const y2n = Number(year2);
+
+      // If month parsing failed, fallback to original order (safe)
+      if (m1 === -1 || m2 === -1 || Number.isNaN(y1n) || Number.isNaN(y2n)) {
+        const y1s = String(year1);
+        const y2s = String(year2);
+        return `(${getAbbr(month1)}'${y1s.slice(2)} vs ${getAbbr(month2)}'${y2s.slice(2)})`;
+      }
+
+      const d1 = new Date(y1n, m1, 1).getTime();
+      const d2 = new Date(y2n, m2, 1).getTime();
+
+      // NEW should come first
+      const monthNewerFirst = d2 >= d1;
+
+      const newMonth = monthNewerFirst ? month2 : month1;
+      const newYear = monthNewerFirst ? year2 : year1;
+      const oldMonth = monthNewerFirst ? month1 : month2;
+      const oldYear = monthNewerFirst ? year1 : year2;
+
+      const ny = String(newYear);
+      const oy = String(oldYear);
+
+      return `(${getAbbr(newMonth)}'${ny.slice(2)} vs ${getAbbr(oldMonth)}'${oy.slice(2)})`;
+    })()
+  : ''}
+
+</span>
           </span>
         </h2>
-        <p><i className="">Choose any two months to performance trends.</i></p>
+        <p><i className="">Select the year and month for both periods to compare growth metrics and totals.</i></p>
       <form onSubmit={handleSubmit} className="month-form ">
         {/* Row 1 */}
         <div className="month-row">
@@ -938,7 +1340,10 @@ const highlightInsightText = (text: string) => {
           </select>
           <div className="month-slider">
             {months.map(m => {
-             const disabled = !year1 || !isPeriodAvailable(year1, m.value);
+const disabled =
+  !year1 ||
+  !isPeriodAvailable(year1, m.value) ||
+  isLockedCurrent(year1, m.value);
               const selected = month1 === m.value;
               return (
                 <div
@@ -968,7 +1373,10 @@ const highlightInsightText = (text: string) => {
           </select>
           <div className="month-slider">
             {months.map(m => {
-             const disabled = !year2 || !isPeriodAvailable(year2, m.value);
+            const disabled =
+  !year2 ||
+  !isPeriodAvailable(year2, m.value) ||
+  isLockedCurrent(year2, m.value);
               const selected = month2 === m.value;
               return (
                 <div
@@ -1000,7 +1408,9 @@ const highlightInsightText = (text: string) => {
       {error && <p style={{ color: 'red' }}>{error}</p>}
 
       {/* Table + actions */}
-      {Object.values(categorizedGrowth).some(arr => arr.length > 0) && (
+{(['top_80_skus','new_or_reviving_skus','other_skus','all_skus'] as TabKey[]).some(
+  (k) => (categorizedGrowth[k] || []).length > 0
+) && (
         <div>
           <div className='flex md:flex-row flex-col justify-between items-center mt-10'>
             <div className='flex md:flex-row flex-col justify-between items-center w-full'>
@@ -1016,10 +1426,10 @@ const highlightInsightText = (text: string) => {
               }}
               className='p-1'
             >
-              {['top_80_skus','new_or_reviving_skus','other_skus'].map(key => (
+{(['top_80_skus','new_or_reviving_skus','other_skus','all_skus'] as TabKey[]).map(key => (
                 <button
                   key={key}
-                  onClick={() => setActiveTab(key as keyof CategorizedGrowth)}
+onClick={() => setActiveTab(key)}
                   className="text-sm font-normal"
                   style={{
                     padding: '3px 12px',
@@ -1038,7 +1448,9 @@ const highlightInsightText = (text: string) => {
             <div className='flex gap-3'>
  <button
               onClick={analyzeSkus}
-              disabled={!Object.values(categorizedGrowth).some(a => a.length > 0)}
+disabled={!['top_80_skus','new_or_reviving_skus','other_skus'].some(
+  (k) => (categorizedGrowth[k as keyof CategorizedGrowth] as SkuItem[])?.length > 0
+)}
               className="bg-custom-effect text-[#F8EDCE] rounded-sm px-4 flex items-center justify-end  disabled:opacity-50 disabled:cursor-not-allowed"
                style={{
                  boxShadow: "0px 4px 4px 0px #00000040",
@@ -1081,85 +1493,91 @@ exportToExcel(allRows, file);
                   <th>S.No.</th>
                   <th className="text-left">Product Name</th>
                   <th>Sales Mix ({month2Label || 'Month 2'})</th>
-                  <th>{activeTab==='new_or_reviving_skus' ? `Units (${month2Label})` : 'Unit Growth (%)'}</th>
-                  <th>{activeTab==='new_or_reviving_skus' ? `ASP (${month2Label})`   : 'ASP Growth (%)'}</th>
-                  <th>{activeTab==='new_or_reviving_skus' ? `Sales (${month2Label})` : 'Sales Growth (%)'}</th>
+                <th>Unit Growth (%)</th>
+<th>ASP Growth (%)</th>
+<th>Net Sales Growth (%)</th>
+
                   {activeTab!=='new_or_reviving_skus' && <th>Sales Mix Change (%)</th>}
-                  <th>{activeTab==='new_or_reviving_skus' ? `Unit Profit (${month2Label})` : 'Profit Per Unit (%)'}</th>
-                  <th>{activeTab==='new_or_reviving_skus' ? `Profit (${month2Label})`      : 'CM1 Profit Impact (%)'}</th>
+                  <th>CM1 Profit Impact (%)</th>
+                 <th>Profit Per Unit (%)</th>
+
                   {Object.keys(skuInsights).length > 0 && <th>AI Insight</th>}
                 </tr>
               </thead>
 
               <tbody>
-                {categorizedGrowth[activeTab]?.map((item, idx) => (
+{currentTabData?.map((item, idx) => (
                   <tr key={idx} className="">
                     <td className="border border-[#414042] px-2 py-2.5 text-center">{idx + 1}</td>
-                    <td className="border border-[#414042] px-2 py-2.5 text-left">{item.product_name}</td>
+                  <td className="border border-[#414042] px-2 py-2.5 text-left">
+  {String(item.product_name).trim() === '0' ? (
+    <span className="sku-zero-wrap">
+      <span className="sku-zero">{item.sku || 'N/A'}</span>
+      <span className="sku-zero-tooltip">Product name is 0; SKU is used.</span>
+    </span>
+  ) : (
+    item.product_name
+  )}
+</td>
                     <td className="border border-[#414042] px-2 py-2.5 text-center">
                       {item['Sales Mix (Month2)'] != null
                         ? `${Number(item['Sales Mix (Month2)']).toFixed(2)}%` : 'N/A'}
                     </td>
 
-                    {[
-                      { field:'Unit Growth', raw:'quantity' },
-                      { field:'ASP Growth',  raw:'asp' },
-                      { field:'Sales Growth',raw:'net_sales' },
-                      ...(activeTab !== 'new_or_reviving_skus' ? [{ field:'Sales Mix Change', raw:'sales_mix' }] : []),
-                      { field:'Profit Per Unit', raw:'unit_wise_profitability' },
-                      { field:'CM1 Profit Impact', raw:'profit' },
-                    ].map(({ field, raw }) => {
-                      const growth = item[field];
+{[
+  { field: 'Unit Growth' },
+  { field: 'ASP Growth' },
+  { field: 'Sales Growth' },
+  ...(activeTab !== 'new_or_reviving_skus' ? [{ field: 'Sales Mix Change' }] : []),
+   { field: 'CM1 Profit Impact' },
+  { field: 'Profit Per Unit' },
+ 
+].map(({ field }) => {
+  const growth = item[field] as GrowthCategory | undefined;
 
-                      if (activeTab === 'new_or_reviving_skus') {
-                        const v = item[raw];
-                        return <td key={field} className="border border-[#414042] px-2 py-2.5 text-center">{v != null ? Number(v).toFixed(2) : 'N/A'}</td>;
-                      }
+  if (!growth || growth.value == null) {
+    return (
+      <td key={field} className="border border-[#414042] px-2 py-2.5 text-center">
+        N/A
+      </td>
+    );
+  }
 
-                     if (!growth || (growth as GrowthCategory).value == null)
-  return <td key={field} className="border border-[#414042] px-2 py-2.5 text-center">N/A</td>;
+  const val = Number(growth.value);
+  const sign = val >= 0 ? '+' : '';
+  const text = `${sign}${val.toFixed(2)}%`;
 
-const g = growth as GrowthCategory;
-const val = Number(g.value);
-const sign = val >= 0 ? '+' : '';
-const text = `${sign}${val.toFixed(2)}%`;
+  if (growth.category === 'High Growth') {
+    return (
+      <td key={field} className="border border-[#414042] px-2 py-2.5 text-center" style={{ fontWeight: 600 }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#5EA68E' }}>
+          <FaArrowUp size={12} />
+          {text}
+        </span>
+      </td>
+    );
+  }
 
-// High Growth: green up arrow + number
-if (g.category === 'High Growth') {
+  if (growth.category === 'Negative Growth') {
+    return (
+      <td key={field} className="border border-[#414042] px-2 py-2.5 text-center" style={{ fontWeight: 600 }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#FF5C5C' }}>
+          <FaArrowDown size={12} />
+          {text}
+        </span>
+      </td>
+    );
+  }
+
+  // Low Growth / No Growth / No Data etc.
   return (
-    <td key={field} className="border border-[#414042] px-2 py-2.5 text-center" style={{ fontWeight: 600 }}>
-      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#5EA68E' }}>
-        <FaArrowUp size={12} />
-        {text}
-      </span>
+    <td key={field} className="border border-[#414042] px-2 py-2.5 text-center" style={{ fontWeight: 600, color: '#414042' }}>
+      {text}
     </td>
   );
-}
+})}
 
-// Negative Growth: red down arrow + number
-if (g.category === 'Negative Growth') {
-  return (
-    <td key={field} className="border border-[#414042] px-2 py-2.5 text-center" style={{ fontWeight: 600 }}>
-      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#FF5C5C' }}>
-        <FaArrowDown size={12} />
-        {text}
-      </span>
-    </td>
-  );
-}
-
-// Low Growth: ONLY number (no icon). Keep sign (+/-). Neutral color.
-return (
-  <td
-    key={field}
-    className="border border-[#414042] px-2 py-2.5 text-center"
-    style={{ fontWeight: 600, color: '#414042' }}
-  >
-    {text}
-  </td>
-);
-
-                    })}
+                  
 
                     {Object.keys(skuInsights).length > 0 && (
                       <td className="border border-[#414042] px-2 text-nowrap py-2.5 text-center">
@@ -1184,11 +1602,11 @@ return (
                           }
                           return (
                             <em style={{ color:'#888' }}>
-                              Not analyzed
+                              --
                               <br />
-                              <small style={{ fontSize: 10 }}>
+                              {/* <small style={{ fontSize: 10 }}>
                                 ({isGlobalData() ? 'Global/Product Name' : 'SKU'}: {item.product_name || item.sku || 'N/A'})
-                              </small>
+                              </small> */}
                             </em>
                           );
                         })()}
@@ -1198,22 +1616,75 @@ return (
                 ))}
               </tbody>
 
-              <tfoot>
-                <tr className="bg-[#D9D9D9E5]">
-                  <td className="border border-[#414042] px-2 py-2.5 text-center"></td>
-                  <td className="border border-[#414042] px-2 py-2.5 text-left font-bold"><strong>Total</strong></td>
-                  <td className="border border-[#414042] px-2 py-2.5 text-center font-bold">
-                    {categorizedGrowth[activeTab]
-                      ?.filter(r => r['Sales Mix (Month2)'] != null)
-                      ?.reduce((s, r) => s + Number(r['Sales Mix (Month2)'] || 0), 0)
-                      ?.toFixed(2)}%
-                  </td>
-                  {['Unit Growth','ASP Growth','Sales Growth',
-                    ...(activeTab!=='new_or_reviving_skus' ? ['Sales Mix Change'] : []),
-                    'Profit Per Unit','CM1 Profit Impact'].map((_, i) => <td key={i} className="border border-[#414042] px-2 py-2.5 text-center"></td>)}
-                  {Object.keys(skuInsights).length > 0 && <td className="border border-[#414042] px-2 py-2.5 text-center"></td>}
-                </tr>
-              </tfoot>
+            <tfoot>
+  <tr className="bg-[#D9D9D9E5]">
+    <td className="border border-[#414042] px-2 py-2.5 text-center"></td>
+    <td className="border border-[#414042] px-2 py-2.5 text-left font-bold">
+      <strong>Total</strong>
+    </td>
+
+    {/* Sales Mix total */}
+    <td className="border border-[#414042] px-2 py-2.5 text-center font-bold">
+      {(() => {
+        const rows = (categorizedGrowth[activeTab] || []) as any[];
+        const sum = rows.reduce((s, r) => s + Number(r?.['Sales Mix (Month2)'] ?? 0), 0);
+        return `${sum.toFixed(2)}%`;
+      })()}
+    </td>
+
+    {/* Growth totals computed from month1/month2 totals */}
+    {(() => {
+      const rows = (categorizedGrowth[activeTab] || []) as any[];
+
+      const sum = (key: string) =>
+        rows.reduce((s, r) => s + Number(r?.[key] ?? 0), 0);
+
+      const pct = (m1: number, m2: number) => {
+        if (!Number.isFinite(m1) || !Number.isFinite(m2)) return null;
+        if (m1 === 0) return 0; // same rule as backend
+        return ((m2 - m1) / m1) * 100;
+      };
+
+      const totalQty = pct(sum('quantity_month1'), sum('quantity_month2'));
+      const totalAsp = pct(sum('asp_month1'), sum('asp_month2'));
+      const totalSales = pct(sum('net_sales_month1'), sum('net_sales_month2'));
+
+      // Sales mix change: use summed sales_mix_month1/month2 if present, else blank
+      const mix1 = sum('sales_mix_month1');
+      const mix2 = sum('sales_mix_month2');
+      const totalMixChange =
+        mix1 || mix2 ? pct(mix1, mix2) : null;
+
+      const totalUnitProfit = pct(
+        sum('unit_wise_profitability_month1'),
+        sum('unit_wise_profitability_month2')
+      );
+      const totalProfit = pct(sum('profit_month1'), sum('profit_month2'));
+
+      const cells = [
+        totalQty,
+        totalAsp,
+        totalSales,
+        ...(activeTab !== 'new_or_reviving_skus' ? [totalMixChange] : []),
+        totalUnitProfit,
+        totalProfit,
+      ];
+
+      return cells.map((v, i) => (
+        <td key={i} className="border border-[#414042] px-2 py-2.5 text-center font-bold">
+          {v == null ? '' : `${v >= 0 ? '+' : ''}${v.toFixed(2)}%`}
+        </td>
+      ));
+    })()}
+
+    {Object.keys(skuInsights).length > 0 && (
+      <td className="border border-[#414042] px-2 py-2.5 text-center"></td>
+    )}
+  </tr>
+</tfoot>
+
+
+
             </table>
           </div>
         </div>
