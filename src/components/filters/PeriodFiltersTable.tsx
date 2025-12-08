@@ -608,23 +608,21 @@ export type Range = "monthly" | "quarterly" | "yearly";
 interface Props {
   range: "monthly" | "quarterly" | "yearly" | undefined;
   selectedMonth: string;
-  selectedQuarter: string;
+  selectedQuarter: string;          // e.g. "Q1", "Q2", ...
   selectedYear: string | number;
   yearOptions: (string | number)[];
   onRangeChange: (v: Range) => void;
   onMonthChange: (v: string) => void;
-  onQuarterChange: (v: string) => void;
+  onQuarterChange: (v: string) => void; // expects "Q1" / "Q2" / ...
   onYearChange: (v: string) => void;
   allowedRanges?: Range[];
-
-  /** 👇 NEW: latest fetched period (e.g. "november" / 2025) */
-  latestFetchedMonth?: string;              // lowercase month name: "november"
-  latestFetchedYear?: string | number;     // e.g. 2025
 }
 
 const ALL_RANGES: Range[] = ["monthly", "quarterly", "yearly"];
 
-const MONTHS = [
+type LatestPeriod = { month?: string; year?: string };
+
+const months = [
   "january",
   "february",
   "march",
@@ -639,6 +637,16 @@ const MONTHS = [
   "december",
 ];
 
+const cap = (s: string) => (s ? s[0].toUpperCase() + s.slice(1) : "");
+
+// map month -> Q1..Q4
+const monthToQuarter = (m?: string) => {
+  if (!m) return "";
+  const idx = months.indexOf(m.toLowerCase());
+  if (idx === -1) return "";
+  return `Q${Math.floor(idx / 3) + 1}`;
+};
+
 const PeriodFiltersTable: React.FC<Props> = (props) => {
   const {
     range,
@@ -651,13 +659,7 @@ const PeriodFiltersTable: React.FC<Props> = (props) => {
     onQuarterChange,
     onYearChange,
     allowedRanges = ALL_RANGES,
-    latestFetchedMonth,
-    latestFetchedYear,
   } = props;
-
-  const months = MONTHS;
-
-  const cap = (s: string) => (s ? s[0].toUpperCase() + s.slice(1) : "");
 
   const safeRange: Range | "" =
     range && allowedRanges.includes(range as Range) ? (range as Range) : "";
@@ -671,51 +673,89 @@ const PeriodFiltersTable: React.FC<Props> = (props) => {
   const currentMonthValue = months[now.getMonth()]; // "december" etc.
   const currentYear = now.getFullYear();
 
-  // ---------- NEW: auto-init from latest fetched period ----------
-  const normalizedLatestMonth = (latestFetchedMonth || "").toLowerCase();
-  const normalizedLatestYear =
-    latestFetchedYear !== undefined && latestFetchedYear !== null
-      ? String(latestFetchedYear)
-      : "";
+  // ------------- Read latest fetched period from localStorage -------------
+  const getLatestPeriod = (): LatestPeriod | null => {
+    if (typeof window === "undefined") return null;
+    try {
+      const raw = localStorage.getItem("latestFetchedPeriod");
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as LatestPeriod;
+      if (!parsed.month || !parsed.year) return null;
+      return {
+        month: parsed.month.toLowerCase(),
+        year: String(parsed.year),
+      };
+    } catch {
+      return null;
+    }
+  };
+
+  // ------------- Apply latest period when user changes "Period" -------------
+  const handleRangeChange = (nextRange: Range) => {
+    onRangeChange(nextRange);
+
+    const latest = getLatestPeriod();
+    if (!latest) return;
+
+    const { month, year } = latest;
+
+    // always set the year for all ranges if we have it
+    if (year) {
+      onYearChange(String(year));
+    }
+
+    if (nextRange === "monthly" && month) {
+      onMonthChange(month); // "november"
+    } else if (nextRange === "quarterly" && month) {
+      const q = monthToQuarter(month); // e.g. "Q4"
+      if (q) {
+        onQuarterChange(q);
+      }
+    }
+    // yearly: only year matters, already set above
+  };
+
+  // ------------- On first mount: auto seed based on latestFetchedPeriod -------------
+  const initializedRef = React.useRef(false);
 
   React.useEffect(() => {
-    // only care about monthly range
-    if (safeRange !== "monthly") return;
-    if (!normalizedLatestMonth || !normalizedLatestYear) return;
-    if (!months.includes(normalizedLatestMonth)) return;
+    if (initializedRef.current) return;
+    initializedRef.current = true;
 
-    const currentMonthStr = selectedMonth || "";
-    const currentYearStr =
-      selectedYear !== undefined && selectedYear !== null
-        ? String(selectedYear)
-        : "";
+    const latest = getLatestPeriod();
+    if (!latest) return;
 
-    // only set defaults if both month & year are effectively empty
-    if (!currentMonthStr && !currentYearStr) {
-      onMonthChange(normalizedLatestMonth);
-      onYearChange(normalizedLatestYear);
+    const { month, year } = latest;
+
+    // If parent hasn't given any selection yet, pre-fill from latestFetchedPeriod
+    const hasYear = selectedYear !== "" && selectedYear !== undefined;
+    const hasMonth = !!selectedMonth;
+    const hasQuarter = !!selectedQuarter && selectedQuarter !== "Range";
+
+    // seed year if empty
+    if (!hasYear && year) {
+      onYearChange(String(year));
     }
+
+    // seed based on current safeRange
+    if (safeRange === "monthly" && month && !hasMonth) {
+      onMonthChange(month);
+    } else if (safeRange === "quarterly" && month && !hasQuarter) {
+      const q = monthToQuarter(month);
+      if (q) {
+        onQuarterChange(q);
+      }
+    }
+    // yearly: only year, already handled above
   }, [
     safeRange,
-    normalizedLatestMonth,
-    normalizedLatestYear,
     selectedMonth,
+    selectedQuarter,
     selectedYear,
-    onMonthChange,
     onYearChange,
+    onMonthChange,
+    onQuarterChange,
   ]);
-
-  // also set a default year for quarterly/yearly if none chosen yet
-  React.useEffect(() => {
-    if (!normalizedLatestYear) return;
-    const currentYearStr =
-      selectedYear !== undefined && selectedYear !== null
-        ? String(selectedYear)
-        : "";
-    if (!currentYearStr) {
-      onYearChange(normalizedLatestYear);
-    }
-  }, [normalizedLatestYear, selectedYear, onYearChange]);
 
   return (
     <>
@@ -735,7 +775,7 @@ const PeriodFiltersTable: React.FC<Props> = (props) => {
         <div className="relative flex items-center">
           <select
             value={safeRange}
-            onChange={(e) => onRangeChange(e.target.value as Range)}
+            onChange={(e) => handleRangeChange(e.target.value as Range)}
             className="appearance-none bg-white px-3 py-2 pr-8 text-center focus:outline-none"
           >
             <option value="" disabled>
@@ -778,11 +818,7 @@ const PeriodFiltersTable: React.FC<Props> = (props) => {
                     isCurrentMonthAndYear && selectedMonth !== m;
 
                   return (
-                    <option
-                      key={m}
-                      value={m}
-                      disabled={shouldDisableMonth}
-                    >
+                    <option key={m} value={m} disabled={shouldDisableMonth}>
                       {cap(m)}
                     </option>
                   );
@@ -823,11 +859,7 @@ const PeriodFiltersTable: React.FC<Props> = (props) => {
                 String(selectedYear) !== String(currentYear);
 
               return (
-                <option
-                  key={y}
-                  value={y}
-                  disabled={shouldDisableYear}
-                >
+                <option key={y} value={y} disabled={shouldDisableYear}>
                   {y}
                 </option>
               );
