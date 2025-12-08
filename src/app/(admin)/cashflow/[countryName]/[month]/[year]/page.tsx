@@ -1112,12 +1112,30 @@ const CashFlowPage: React.FC = () => {
     [currentYear]
   );
 
+ // 🔹 NEW: compute whether the route params equal the *current* month & year
+  const today = new Date();
+  const currentMonthName = monthsList[today.getMonth()]; // e.g. "December"
+  const currentYearStr = String(today.getFullYear());
+
+  const isParamCurrentMonthYear =
+    paramMonth &&
+    paramYear &&
+    paramMonth.toLowerCase() === currentMonthName.toLowerCase() &&
+    String(paramYear) === currentYearStr;
+
+  // 🔹 NEW: initial values – ignore params if they are the current month+year
+  const initialMonth = !isParamCurrentMonthYear && paramMonth
+    ? capitalize(paramMonth)
+    : "";
+
+  const initialYear = !isParamCurrentMonthYear && paramYear
+    ? String(paramYear)
+    : "";
+
   // State
   const [selectedQuarter, setSelectedQuarter] = useState<string>("");
-  const [month, setMonth] = useState<string>(
-    paramMonth ? capitalize(paramMonth) : ""
-  );
-  const [year, setYear] = useState<string>(paramYear || "");
+  const [month, setMonth] = useState<string>(initialMonth);
+  const [year, setYear] = useState<string>(initialYear);
   const [periodType, setPeriodType] = useState<PeriodType>("monthly");
   const [error, setError] = useState<string>("");
   const [data, setData] = useState<APIResponse | null>(null);
@@ -1800,6 +1818,11 @@ const CashFlowPage: React.FC = () => {
     }));
   };
 
+  const canShowResults =
+  (periodType === "monthly" && !!month && !!year) ||
+  (periodType === "quarterly" && !!selectedQuarter && !!year) ||
+  (periodType === "yearly" && !!year);
+
 
   return (
     <div className="w-full">
@@ -1829,6 +1852,19 @@ const CashFlowPage: React.FC = () => {
           />
         </div>
       </div>
+
+            {/* Show alert until a valid period selection is made */}
+      {!canShowResults && (
+        <div className="mt-5 box-border flex w-full items-center justify-between rounded-md border-t-4 border-[#ff5c5c] bg-[#f2f2f2] px-4 py-3 text-sm text-[#414042] lg:max-w-fit">
+          <div className="flex items-center">
+            <i className="fa-solid fa-circle-exclamation mr-2 text-lg text-[#ff5c5c]" />
+            <span>
+              Choose a period to view cash flow.
+            </span>
+          </div>
+        </div>
+      )}
+
 
       {/* Loading – now using Loader */}
       {loading && (

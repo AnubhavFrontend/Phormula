@@ -92,7 +92,7 @@ const PageBreadcrumb: React.FC<BreadcrumbProps> = ({
     base: "text-sm sm:text-base md:text-base",
     lg: "text-base sm:text-lg md:text-lg",
     xl: "text-lg sm:text-xl md:text-xl",
-    "2xl": "text-lg sm:text-2xl md:text-2xl",
+    "2xl": "text-lg sm:text-2xl md:text-2xl ",
     "3xl": "text-lg sm:text-2xl md:text-3xl",
   };
 

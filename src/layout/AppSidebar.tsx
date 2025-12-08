@@ -556,16 +556,18 @@ const AppSidebar: React.FC = () => {
   }, [regionOptions, selectedPlatform]);
 
   // ===== Handle platform change from RegionSelect =====
+
+
   // const onRegionChange = (val: string) => {
   //   const platform = val as PlatformId;
 
-  //   // Shopify → redirect with query params if available
+  //   // Shopify → keep your special redirect
   //   if (platform === "shopify") {
   //     console.log("Shopify selected, store:", shopifyStore);
 
   //     if (shopifyStore?.shop && shopifyStore?.token && shopifyStore?.email) {
   //       const params = new URLSearchParams({
-  //         shop: shopifyStore.shop, // e.g. "skin-elements.myshopify.com"
+  //         shop: shopifyStore.shop,
   //         token: shopifyStore.token,
   //         email: shopifyStore.email,
   //       });
@@ -581,32 +583,27 @@ const AppSidebar: React.FC = () => {
   //     return;
   //   }
 
-  //   // Non-Shopify platforms
+  //   // 🔹 Non-Shopify platforms → just set global selection
   //   setSelectedPlatform(val);
-  //   const countryNameForRoutes = platformToCountryName(platform);
 
   //   if (typeof window !== "undefined") {
   //     localStorage.setItem("selectedPlatform", val);
   //     localStorage.removeItem("chatHistory");
   //   }
 
-
-
-
-  //   handleRegionChangeNext({
-  //     value: countryNameForRoutes,
-  //     ranged: undefined,
-  //     uploadHistory,
-  //     push: router.push,
-  //     onAddMore: () => router.push("/settings/countries"),
-  //     onBeforeNavigate: () => localStorage.removeItem("chatHistory"),
-  //   });
+  //   // ❌ NO handleRegionChangeNext here
   // };
 
   const onRegionChange = (val: string) => {
+    // 1) Special “Add More Countries” CTA
+    if (val === "add_more_countries") {
+      router.push("/settings/countries");
+      return;
+    }
+
     const platform = val as PlatformId;
 
-    // Shopify → keep your special redirect
+    // 2) Shopify → your existing redirect logic
     if (platform === "shopify") {
       console.log("Shopify selected, store:", shopifyStore);
 
@@ -628,15 +625,84 @@ const AppSidebar: React.FC = () => {
       return;
     }
 
-    // 🔹 Non-Shopify platforms → just set global selection
+    // 3) Non-Shopify platforms – update global selection
     setSelectedPlatform(val);
-
     if (typeof window !== "undefined") {
       localStorage.setItem("selectedPlatform", val);
       localStorage.removeItem("chatHistory");
     }
 
-    // ❌ NO handleRegionChangeNext here
+    // 4) If current route has country in the URL, swap it out
+    const newCountryName = platformToCountryName(platform); // e.g. "uk", "global", "us"
+    const segments = pathname.split("/").filter(Boolean);
+    const params: any = routeParams;
+
+    let newPath: string | null = null;
+
+    const ranged = params.ranged as string | undefined;
+    const month = (params.month as string) || currentParams.month;
+    const year = (params.year as string) || currentParams.year;
+
+    // Routes that have ranged + country + month + year
+    if (ranged && params.countryName) {
+      switch (segments[0]) {
+        case "country":
+          newPath = `/country/${ranged}/${newCountryName}/${month}/${year}`;
+          break;
+        case "live-business-insight":
+          newPath = `/live-business-insight/${ranged}/${newCountryName}/${month}/${year}`;
+          break;
+        case "improvements":
+          newPath = `/improvements/${ranged}/${newCountryName}/${month}/${year}`;
+          break;
+        case "chatbot":
+          newPath = `/chatbot/${ranged}/${newCountryName}/${month}/${year}`;
+          break;
+      }
+    }
+
+    // Routes that only have country + month + year
+    if (!newPath && params.countryName) {
+      switch (segments[0]) {
+        case "inventoryChoice":
+          newPath = `/inventoryChoice/${newCountryName}/${month}/${year}`;
+          break;
+        case "pnlforecast":
+          newPath = `/pnlforecast/${newCountryName}/${month}/${year}`;
+          break;
+        case "inputCost":
+          newPath = `/inputCost/${newCountryName}/${month}/${year}`;
+          break;
+        case "currentInventory":
+          newPath = `/currentInventory/${newCountryName}/${month}/${year}`;
+          break;
+        case "dispatch":
+          newPath = `/dispatch/${newCountryName}/${month}/${year}`;
+          break;
+        case "purchase-order":
+          newPath = `/purchase-order/${newCountryName}/${month}/${year}`;
+          break;
+        case "cashflow":
+          newPath = `/cashflow/${newCountryName}/${month}/${year}`;
+          break;
+        case "referral-fees":
+          newPath = `/referral-fees/${newCountryName}/${month}/${year}`;
+          break;
+        case "fba":
+          newPath = `/fba/${newCountryName}/${month}/${year}`;
+          break;
+        case "productwiseperformance": {
+          const productname = segments[1] ?? "Classic";
+          newPath = `/productwiseperformance/${productname}/${newCountryName}/${month}/${year}`;
+          break;
+        }
+      }
+    }
+
+    // 5) Finally navigate if we built a new path
+    if (newPath && newPath !== pathname) {
+      router.push(newPath);
+    }
   };
 
 
@@ -646,16 +712,16 @@ const AppSidebar: React.FC = () => {
   // const defaultMonth = "NA";
   // const defaultYear = "NA";
 
-const today = new Date();
+  const today = new Date();
 
-const monthNames = [
-  "january", "february", "march", "april", "may", "june",
-  "july", "august", "september", "october", "november", "december"
-];
+  const monthNames = [
+    "january", "february", "march", "april", "may", "june",
+    "july", "august", "september", "october", "november", "december"
+  ];
 
-const defaultRanged = "QTD";
-const defaultMonth = monthNames[today.getMonth()]; 
-const defaultYear = String(today.getFullYear());    
+  const defaultRanged = "QTD";
+  const defaultMonth = monthNames[today.getMonth()];
+  const defaultYear = String(today.getFullYear());
 
 
   const currentPlatform =
@@ -807,7 +873,7 @@ const defaultYear = String(today.getFullYear());
         {
           name: "Month-Wise Inventory",
           path: `/currentInventory/${currentParams.countryName}/${currentParams.month}/${currentParams.year}`,
-           // ✅ yeh add karo
+          // ✅ yeh add karo
         },
         {
           name: "Dispatches",

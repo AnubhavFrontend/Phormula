@@ -2880,7 +2880,6 @@ import {
 } from "@/lib/dashboard/format";
 
 import type { RegionKey, RegionMetrics } from "@/lib/dashboard/types";
-import AgeingInventorySection from "@/components/dashboard/AgeingInventorySection";
 
 
 type HomeCurrency = "USD" | "GBP";
