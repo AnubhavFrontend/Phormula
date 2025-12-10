@@ -73,8 +73,7 @@ interface CategorizedGrowth {
 
 interface SkuInsight {
   product_name: string;
-  insight: string;
-  [key: string]: any;
+  insight: string;  [key: string]: any;
 }
 
 interface ApiResponse {
@@ -521,6 +520,7 @@ const m2Abbr = `${getAbbr(month2)}'${String(year2).slice(2)}`;
 
   // 3) compute totals (sum)
   const totals = cleanRows.reduce(
+
     (acc, r) => {
       acc.qty1 += num(r.quantity_month1);
       acc.qty2 += num(r.quantity_month2);
@@ -544,36 +544,38 @@ const m2Abbr = `${getAbbr(month2)}'${String(year2).slice(2)}`;
     },
     { qty1: 0, qty2: 0, asp1: 0, asp2: 0, sales1: 0, sales2: 0, mix1: 0, mix2: 0, up1: 0, up2: 0, p1: 0, p2: 0 }
   );
+  const pct = (a: number, b: number) => (a ? ((b - a) / a) * 100 : null);
 
   // 4) append total row ALWAYS at the end (blank % columns to avoid confusion)
   formatted.push({
-    SKU: '',
-    Product: 'Total',
+  SKU: '',
+  Product: 'Total',
 
-    [`Qty ${m1Abbr}`]: totals.qty1,
-    [`Qty ${m2Abbr}`]: totals.qty2,
-    'Qty %': null,
+  [`Qty ${m1Abbr}`]: totals.qty1,
+  [`Qty ${m2Abbr}`]: totals.qty2,
+  'Qty %': pct(totals.qty1, totals.qty2),
 
-    [`ASP ${m1Abbr}`]: totals.asp1,
-    [`ASP ${m2Abbr}`]: totals.asp2,
-    'ASP %': null,
+  [`ASP ${m1Abbr}`]: totals.asp1,
+  [`ASP ${m2Abbr}`]: totals.asp2,
+  'ASP %': pct(totals.asp1, totals.asp2),
 
-    [`Net Sales ${m1Abbr}`]: totals.sales1,
-    [`Net Sales ${m2Abbr}`]: totals.sales2,
-    'Net Sales %': null,
+  [`Net Sales ${m1Abbr}`]: totals.sales1,
+  [`Net Sales ${m2Abbr}`]: totals.sales2,
+  'Net Sales %': pct(totals.sales1, totals.sales2),
 
-    [`Sales Mix ${m1Abbr}`]: totals.mix1,
-    [`Sales Mix ${m2Abbr}`]: totals.mix2,
-    'Sales Mix %': null,
+  [`Sales Mix ${m1Abbr}`]: totals.mix1,
+  [`Sales Mix ${m2Abbr}`]: totals.mix2,
+  'Sales Mix %': null, // or define properly
 
-    [`Unit Profit ${m1Abbr}`]: totals.up1,
-    [`Unit Profit ${m2Abbr}`]: totals.up2,
-    'Unit Profit %': null,
+  [`Unit Profit ${m1Abbr}`]: totals.up1,
+  [`Unit Profit ${m2Abbr}`]: totals.up2,
+  'Unit Profit %': pct(totals.up1, totals.up2),
 
-    [`CM1 Profit ${m1Abbr}`]: totals.p1,
-    [`CM1 Profit ${m2Abbr}`]: totals.p2,
-    'CM1 Profit %': null,
-  });
+  [`CM1 Profit ${m1Abbr}`]: totals.p1,
+  [`CM1 Profit ${m2Abbr}`]: totals.p2,
+  'CM1 Profit %': pct(totals.p1, totals.p2),
+});
+
 
   const addPercentToPercentColumns = (ws: XLSX.WorkSheet) => {
   const ref = ws['!ref'];
@@ -601,7 +603,6 @@ const m2Abbr = `${getAbbr(month2)}'${String(year2).slice(2)}`;
     }
   }
 };
-
 
   const ws = XLSX.utils.json_to_sheet(formatted);
   addPercentToPercentColumns(ws);
