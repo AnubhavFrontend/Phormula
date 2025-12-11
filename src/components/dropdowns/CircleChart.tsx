@@ -253,7 +253,7 @@
 //         },
 //       },
 //       tooltip: {
-        
+
 //         callbacks: {
 //           label: (ctx: TooltipItem<"pie">) => {
 //             const value = Math.abs(Number(ctx.raw ?? 0));
@@ -773,9 +773,10 @@ type CircleChartProps = {
   selectedQuarter?: Quarter;
   /** Supply from parent (Next.js route params) */
   countryName: string;
-  /** NEW: home currency, e.g. "usd", "inr", "gbp" */
-  homeCurrency: string;
+  /** 👇 NEW: only used when countryName === 'global' */
+  homeCurrency?: string;
 };
+
 
 type Summary = {
   advertising_total: number;
@@ -791,35 +792,29 @@ type UploadHistoryResponse = {
   summary?: Summary;
 };
 
-const getCurrencySymbol = (value: string) => {
-  const v = (value || "").toLowerCase();
-  switch (v) {
-    // currency codes
-    case "usd":
-    case "us":
-    case "united states":
-      return "$";
-    case "inr":
-    case "india":
-      return "₹";
-    case "gbp":
+const getCurrencySymbol = (codeOrCountry: string) => {
+  switch (codeOrCountry.toLowerCase()) {
     case "uk":
     case "gb":
-    case "united kingdom":
+    case "gbp":
       return "£";
-    case "eur":
+    case "india":
+    case "in":
+    case "inr":
+      return "₹";
+    case "us":
+    case "usa":
+    case "usd":
+      return "$";
     case "europe":
     case "eu":
+    case "eur":
       return "€";
-    case "cad":
-    case "canada":
-      return "C$";
-    case "global":
-      return "$";
     default:
       return "¤";
   }
 };
+
 
 const capitalizeFirstLetter = (str: string) =>
   str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
@@ -836,7 +831,11 @@ const CircleChart: React.FC<CircleChartProps> = ({
   homeCurrency,
 }) => {
   const normalizedHomeCurrency = (homeCurrency || "usd").toLowerCase();
-  const currencySymbol = getCurrencySymbol(normalizedHomeCurrency);
+  const isGlobalPage = countryName.toLowerCase() === "global";
+
+  const currencySymbol = isGlobalPage
+    ? getCurrencySymbol(homeCurrency || "usd") // GLOBAL → home currency
+    : getCurrencySymbol(countryName || "");    // Country → country currency
 
   const [uploadsData, setUploadsData] =
     useState<UploadHistoryResponse | null>(null);
@@ -875,8 +874,12 @@ const CircleChart: React.FC<CircleChartProps> = ({
         range,
         country: countryName || "",
         year: String(year ?? ""),
-        homeCurrency: normalizedHomeCurrency, // 👈 NEW
       });
+
+      if (countryName.toLowerCase() === "global" && homeCurrency) {
+        params.append("homeCurrency", homeCurrency);
+      }
+
 
       if (range === "monthly" && month) {
         params.append("month", month);
@@ -1041,15 +1044,7 @@ const CircleChart: React.FC<CircleChartProps> = ({
       <div className="mb-4">
         <div className="w-fit mx-auto md:mx-0">
           <PageBreadcrumb
-            pageTitle={`Expense Breakdown – <span class='text-[#5EA68E] font-bold'>
-        ${
-          range === "yearly"
-            ? `Year'${String(year).slice(-2)}`
-            : countryName?.toLowerCase() === "global"
-            ? "GLOBAL"
-            : countryName?.toUpperCase()
-        }
-      </span>`}
+            pageTitle={`Expense Breakdown`}
             variant="page"
             textSize="2xl"
             align="left"
@@ -1066,8 +1061,8 @@ const CircleChart: React.FC<CircleChartProps> = ({
         ].join(" ")}
       >
         {displayChartData &&
-        displayChartData.labels &&
-        displayChartData.datasets?.length ? (
+          displayChartData.labels &&
+          displayChartData.datasets?.length ? (
           <div
             className={[
               "mx-auto",

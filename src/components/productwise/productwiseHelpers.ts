@@ -541,6 +541,18 @@ export type APIResponse = {
   year?: number;
   quarter?: string | null;
 };
+// productwiseHelpers.ts
+
+export const normalizeCountryKey = (key: string): CountryKey => {
+  const lower = key.toLowerCase();
+
+  if (lower.startsWith("global")) return "global";
+  if (lower.startsWith("uk")) return "uk";
+  if (lower.startsWith("us")) return "us";
+  if (lower.startsWith("ca")) return "ca" as CountryKey;
+
+  return lower as CountryKey;
+};
 
 export const monthOrder = [
   "October", // you only care about ordering; your API uses capitalized names

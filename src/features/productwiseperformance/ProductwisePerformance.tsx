@@ -5552,6 +5552,18 @@ const normalizeProductSlug = (slug?: string) => {
   }
 };
 
+const normalizeCountryKey = (key: string): CountryKey => {
+  const lower = key.toLowerCase();
+
+  if (lower.startsWith("global")) return "global";
+  if (lower.startsWith("uk")) return "uk";
+  if (lower.startsWith("us")) return "us";
+  if (lower.startsWith("ca")) return "ca" as CountryKey;
+
+  return lower as CountryKey;
+};
+
+
 const months = [
   "january",
   "february",
@@ -5606,6 +5618,17 @@ const ProductwisePerformance: React.FC<ProductwisePerformanceProps> = ({
   // NEW: active platform, default "global"
   const [activePlatform, setActivePlatform] = useState<PlatformId>("global");
 
+  // pick currency we want to show on this page
+  const viewCurrency: HomeCurrency =
+    activePlatform === "amazon-uk"
+      ? "GBP"
+      : activePlatform === "amazon-ca"
+        ? "CAD"
+        : activePlatform === "amazon-us"
+          ? "USD"
+          : (userData?.homeCurrency?.toUpperCase() as HomeCurrency) || "USD";
+
+
   useEffect(() => {
     if (typeof window === "undefined") return;
     const saved = window.localStorage.getItem("selectedPlatform") as PlatformId | null;
@@ -5639,20 +5662,29 @@ const ProductwisePerformance: React.FC<ProductwisePerformanceProps> = ({
   // ---------- derive homeCurrency from profile ----------
   const profileHomeCurrency = (userData?.homeCurrency || "USD").toUpperCase() as HomeCurrency;
 
+  // useEffect(() => {
+  //   if (profileHomeCurrency && profileHomeCurrency !== homeCurrency) {
+  //     setHomeCurrency(profileHomeCurrency);
+  //   }
+  // }, [profileHomeCurrency, homeCurrency, setHomeCurrency]);
+
+  // ✅ keep useFx's homeCurrency in sync with viewCurrency
   useEffect(() => {
-    if (profileHomeCurrency && profileHomeCurrency !== homeCurrency) {
-      setHomeCurrency(profileHomeCurrency);
+    if (viewCurrency && viewCurrency !== homeCurrency) {
+      setHomeCurrency(viewCurrency);
     }
-  }, [profileHomeCurrency, homeCurrency, setHomeCurrency]);
+  }, [viewCurrency, homeCurrency, setHomeCurrency]);
+
 
   const globalKey: CountryKey =
-    profileHomeCurrency === "GBP"
+    viewCurrency === "GBP"
       ? "global_gbp"
-      : profileHomeCurrency === "INR"
+      : viewCurrency === "INR"
         ? "global_inr"
-        : profileHomeCurrency === "CAD"
+        : viewCurrency === "CAD"
           ? "global_cad"
           : "global"; // USD
+
 
   // ---------- controls ----------
   const [range, setRange] = useState<Range>("quarterly");
@@ -5800,8 +5832,9 @@ const ProductwisePerformance: React.FC<ProductwisePerformanceProps> = ({
         time_range: backendTimeRange,
         year: selectedYear,
         countries,
-        home_currency: profileHomeCurrency,
+        home_currency: viewCurrency,  // 👈 now depends on selected platform
       };
+
 
       if (range === "quarterly") {
         // selectedQuarter is like "Q1", "Q2", "Q3", "Q4"
@@ -5863,24 +5896,28 @@ const ProductwisePerformance: React.FC<ProductwisePerformanceProps> = ({
       connectedCountries.map((c) => c.toLowerCase())
     );
 
-    return (Object.entries(data.data) as [CountryKey, any][])
+    return (Object.entries(data.data) as [string, any][])
       .filter(([country, countryArray]) => {
         const lower = country.toLowerCase();
+        const norm = normalizeCountryKey(lower); // 👈
+
         // skip global* rows here – they’re handled separately as globalKey
-        if (lower === globalKey.toLowerCase()) return false;
+        if (norm === "global") return false;
+
         // only show if the platform is actually connected
-        if (!connectedSet.has(lower)) return false;
+        if (!connectedSet.has(norm)) return false;
 
         const rows: MonthDatum[] = Array.isArray(countryArray)
           ? (countryArray as MonthDatum[])
           : [];
+
         return rows.some(
           (m) => m.net_sales !== 0 || m.quantity !== 0 || m.profit !== 0
         );
       })
-      .map(([country]) => country);
+      // we return the backend key ("uk_usd" or "uk") so data.data[country] works
+      .map(([country]) => country as CountryKey);
   }, [data, globalKey, connectedCountries]);
-
 
   // helper: sort "January", "january", etc. by calendar month Jan–Dec
   const sortByCalendarMonth = (a: string, b: string) => {
@@ -5923,37 +5960,12 @@ const ProductwisePerformance: React.FC<ProductwisePerformanceProps> = ({
         : [];
       const found = monthly.find((m) => m.month === month);
 
-      // if (!found) return 0;
-
-      // const raw = found[metric] as number;
-
-      // // Quantities: just raw
-      // if (metric === "quantity") {
-      //   return raw;
-      // }
-
-      // // Money metrics: convert if needed
-      // const isGlobalSeries =
-      //   country.toLowerCase() === globalKey.toLowerCase();
-
-      // if (isGlobalSeries) {
-      //   // Backend global_* already in home currency
-      //   return raw;
-      // }
-
-      // // UK / US series: convert from source currency → homeCurrency
-      // let fromCurrency: FromCurrency = "USD";
-      // if (country === "uk") fromCurrency = "GBP";
-      // if (country === "us") fromCurrency = "USD";
-
-      // return convertToHomeCurrency(raw, fromCurrency);
-
       if (!found) return 0;
 
-      // Always use backend numbers as-is
+      // ✅ Backend has already converted everything into home_currency.
       return found[metric];
-
     };
+
 
     const makeDataset = (
       country: CountryKey,
@@ -5964,18 +5976,15 @@ const ProductwisePerformance: React.FC<ProductwisePerformanceProps> = ({
         getMetric(country, month, metric)
       );
 
-      const isGlobalSeries =
-        country.toLowerCase() === globalKey.toLowerCase();
+      const normalized = normalizeCountryKey(country);  // "uk_usd" -> "uk"
 
-      // For label, show "Global" instead of "global_inr" etc.
-      const displayCountry =
-        country.toLowerCase().startsWith("global") ? "global" : country;
+      const isGlobalSeries = normalized === "global";
 
       return {
-        label: `${formatCountryLabel(displayCountry)} ${labelSuffix}`,
+        label: `${formatCountryLabel(normalized)} ${labelSuffix}`, // "UK Net Sales"
         data: dataSeries,
-        borderColor: getCountryColor(displayCountry),
-        backgroundColor: getCountryColor(displayCountry),
+        borderColor: getCountryColor(normalized),
+        backgroundColor: getCountryColor(normalized),
         tension: 0.1,
         pointRadius: 3,
         fill: false,
@@ -5984,7 +5993,6 @@ const ProductwisePerformance: React.FC<ProductwisePerformanceProps> = ({
         order: isGlobalSeries ? 99 : 0,
       };
     };
-
     const metrics: { metric: keyof MonthDatum; suffix: string }[] = [
       { metric: "net_sales", suffix: "Net Sales" },
       { metric: "quantity", suffix: "Quantity" },
@@ -6017,7 +6025,6 @@ const ProductwisePerformance: React.FC<ProductwisePerformanceProps> = ({
     globalKey,
     nonEmptyCountriesFromApi,
     selectedCountries,
-    convertToHomeCurrency,
   ]);
 
   // helper to format "October" + 2025 -> "Oct '25"
@@ -6182,21 +6189,25 @@ const ProductwisePerformance: React.FC<ProductwisePerformanceProps> = ({
 
   /* ---------- summary cards ---------- */
   const cards = useMemo(() => {
-    if (!data?.data) return [] as { country: string; stats: any; isConnected: boolean }[];
+    if (!data?.data) {
+      return [] as { country: string; stats: any; isConnected: boolean }[];
+    }
 
     const connectedSet = new Set(
       connectedCountries.map((c) => c.toLowerCase())
     );
 
     return Object.entries(data.data)
-      // keep global* rows + only connected real countries
+      // keep global + only connected real countries (but normalised)
       .filter(([country]) => {
-        const key = country.toLowerCase();
-        if (key.startsWith("global")) return true;
-        return connectedSet.has(key);
+        const norm = normalizeCountryKey(country); // 👈 normalize "uk_usd" → "uk"
+        if (norm === "global") return true;       // always keep global
+        return connectedSet.has(norm);            // keep uk/us/ca only if connected
       })
       .map(([country, rawArray]) => {
-        const key = country.toLowerCase();
+        const backendKey = country.toLowerCase();         // e.g. "uk_usd"
+        const normKey = normalizeCountryKey(backendKey);  // e.g. "uk"
+
         const monthly: MonthDatum[] = Array.isArray(rawArray)
           ? (rawArray as MonthDatum[])
           : [];
@@ -6213,7 +6224,6 @@ const ProductwisePerformance: React.FC<ProductwisePerformanceProps> = ({
           monthsWithSales.length > 0 ? totalSales / monthsWithSales.length : 0;
 
         const avgSellingPrice = totalUnits > 0 ? totalSales / totalUnits : 0;
-
         const avgMonthlyProfit =
           monthly.length > 0 ? totalProfit / monthly.length : 0;
 
@@ -6232,10 +6242,12 @@ const ProductwisePerformance: React.FC<ProductwisePerformanceProps> = ({
             : { month: "", net_sales: 0, quantity: 0, profit: 0 };
 
         const isConnected =
-          key.startsWith("global") || connectedSet.has(key);
+          normKey === "global" || connectedSet.has(normKey);
 
         return {
-          country: key,
+          // store the backend key (so data.data[country] works),
+          // but we will normalize it for label/color inside CountryCard
+          country: backendKey,
           stats: {
             totalSales,
             totalProfit,
@@ -6251,6 +6263,7 @@ const ProductwisePerformance: React.FC<ProductwisePerformanceProps> = ({
         };
       });
   }, [data, connectedCountries]);
+
 
   const orderedCards = useMemo(() => {
     if (!cards.length) return [];
@@ -6421,16 +6434,6 @@ const ProductwisePerformance: React.FC<ProductwisePerformanceProps> = ({
             <div className="grid gap-5 grid-cols-1 md:grid-cols-[repeat(auto-fit,minmax(260px,1fr))]">
               {orderedCards.map((card) => {
                 const key = card.country.toLowerCase();
-                const isGlobal = key.startsWith("global");
-
-                if (
-                  !isGlobal &&
-                  card.stats.totalSales === 0 &&
-                  card.stats.totalUnits === 0 &&
-                  card.stats.totalProfit === 0
-                ) {
-                  return null;
-                }
 
                 return (
                   <CountryCard
@@ -6443,6 +6446,7 @@ const ProductwisePerformance: React.FC<ProductwisePerformanceProps> = ({
                   />
                 );
               })}
+
             </div>
           </div>
         </div>

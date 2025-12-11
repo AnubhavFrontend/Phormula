@@ -790,11 +790,11 @@ type CmChartOfSkuProps = {
   year: number | string;
   selectedQuarter?: Quarter;
   userId?: string | number;
-  /** Supply from parent, e.g. via Next.js route params */
   countryName: string;
-  /** NEW: home currency, e.g. "usd", "inr", "gbp" */
-  homeCurrency: string;
+  /** 👇 NEW */
+  homeCurrency?: string;
 };
+
 
 type PieApiSuccess = {
   success: true;
@@ -808,34 +808,29 @@ type PieApiError = {
 
 type PieApiResponse = PieApiSuccess | PieApiError;
 
-const getCurrencySymbol = (value?: string) => {
-  const v = (value || "").toLowerCase();
-  switch (v) {
-    case "usd":
-    case "us":
-    case "united states":
-      return "$";
-    case "inr":
-    case "india":
-      return "₹";
-    case "gbp":
+const getCurrencySymbol = (codeOrCountry: string) => {
+  switch (codeOrCountry.toLowerCase()) {
     case "uk":
     case "gb":
-    case "united kingdom":
+    case "gbp":
       return "£";
-    case "eur":
+    case "india":
+    case "in":
+    case "inr":
+      return "₹";
+    case "us":
+    case "usa":
+    case "usd":
+      return "$";
     case "europe":
     case "eu":
+    case "eur":
       return "€";
-    case "cad":
-    case "canada":
-      return "C$";
-    case "global":
-      return "$";
     default:
       return "¤";
   }
 };
+
 
 const CMchartofsku: React.FC<CmChartOfSkuProps> = ({
   range,
@@ -847,7 +842,11 @@ const CMchartofsku: React.FC<CmChartOfSkuProps> = ({
   homeCurrency,
 }) => {
   const normalizedHomeCurrency = (homeCurrency || "usd").toLowerCase();
-  const currencySymbol = getCurrencySymbol(normalizedHomeCurrency);
+  const isGlobalPage = countryName.toLowerCase() === "global";
+
+  const currencySymbol = isGlobalPage
+    ? getCurrencySymbol(homeCurrency || "usd")
+    : getCurrencySymbol(countryName || "");
 
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -905,8 +904,11 @@ const CMchartofsku: React.FC<CmChartOfSkuProps> = ({
           country: countryName || "",
           year: String(year ?? ""),
           range: range || "",
-          homeCurrency: normalizedHomeCurrency, // 👈 NEW
         });
+        if (countryName.toLowerCase() === "global" && homeCurrency) {
+          params.append("homeCurrency", homeCurrency);
+        }
+
 
         if (range === "monthly" && month) {
           params.append("month", month);
@@ -1020,16 +1022,16 @@ const CMchartofsku: React.FC<CmChartOfSkuProps> = ({
       return (
         <div className="flex flex-wrap items-baseline gap-2 justify-center sm:justify-start">
           <PageBreadcrumb
-            pageTitle="CM1 Profit Breakdown -"
+            pageTitle="SKU Wise CM1 Profit Breakdown"
             variant="page"
             align="left"
             textSize="2xl"
           />
-          <span className="text-[#5EA68E] font-bold text-lg sm:text-2xl md:text-2xl">
+          {/* <span className="text-[#5EA68E] font-bold text-lg sm:text-2xl md:text-2xl">
             {countryName?.toLowerCase() === "global"
               ? "GLOBAL"
               : countryName?.toUpperCase()}
-          </span>
+          </span> */}
         </div>
       );
     }
@@ -1037,28 +1039,28 @@ const CMchartofsku: React.FC<CmChartOfSkuProps> = ({
       return (
         <div className="flex gap-2">
           <PageBreadcrumb
-            pageTitle="CM1 Profit Breakdown -"
+            pageTitle="SKU Wise CM1 Profit Breakdown"
             variant="page"
             align="left"
             textSize="2xl"
           />
-          <span className="text-[#5EA68E] text-2xl">
+          {/* <span className="text-[#5EA68E] text-2xl">
             {convertToAbbreviatedMonth(month)}&apos;{y.slice(-2)}
-          </span>
+          </span> */}
         </div>
       );
     }
     return (
       <div className="flex gap-2">
         <PageBreadcrumb
-          pageTitle="CM1 Profit Breakdown - "
+          pageTitle="SKU Wise CM1 Profit Breakdown"
           variant="page"
           align="left"
           textSize="2xl"
         />
-        <span className="text-[#5EA68E] font-bold text-lg sm:text-2xl md:text-2xl">
+        {/* <span className="text-[#5EA68E] font-bold text-lg sm:text-2xl md:text-2xl">
           Year&apos;{y.slice(-2)}
-        </span>
+        </span> */}
       </div>
     );
   }, [range, month, year, selectedQuarter, countryName]);
@@ -1107,15 +1109,7 @@ const CMchartofsku: React.FC<CmChartOfSkuProps> = ({
       <div className="mb-4">
         <div className="w-fit mx-auto md:mx-0">
           <PageBreadcrumb
-            pageTitle={`CM1 Profit Breakdown – <span class='text-[#5EA68E] font-bold'>
-      ${
-        range === "yearly"
-          ? `Year'${String(year).slice(-2)}`
-          : countryName?.toLowerCase() === "global"
-          ? "GLOBAL"
-          : countryName?.toUpperCase()
-      }
-    </span>`}
+            pageTitle={`SKU Wise CM1 Profit Breakdown`}
             variant="page"
             align="left"
             textSize="2xl"
