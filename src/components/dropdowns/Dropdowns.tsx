@@ -20,6 +20,7 @@ import { MdEditDocument } from "react-icons/md";
 import { TbMoneybag } from "react-icons/tb";
 import { FcSalesPerformance } from "react-icons/fc";
 import Loader from "@/components/loader/Loader"; // 👈 NEW
+import { useGetUserDataQuery } from "@/lib/api/profileApi";
 
 /* ---------------------- Types ---------------------- */
 type Summary = {
@@ -53,23 +54,35 @@ type DropdownsProps = {
 };
 
 /* ---------------------- Utils ---------------------- */
-const getCurrencySymbol = (country: string) => {
-  switch (country.toLowerCase()) {
-    case "uk":
-      return "£";
+const getCurrencySymbol = (codeOrCountry: string) => {
+  const v = (codeOrCountry || "").toLowerCase();
+
+  switch (v) {
+    // Home currency codes
+    case "usd":
+    case "us":
+    case "global":
+      return "$";
+    case "inr":
     case "india":
       return "₹";
-    case "us":
-      return "$";
+    case "gbp":
+    case "uk":
+      return "£";
+    case "eur":
     case "europe":
     case "eu":
       return "€";
-    case "global":
-      return "$";
+    case "cad":
+    case "ca":
+    case "canada":
+      return "C$";
+
     default:
       return "¤";
   }
 };
+
 
 const getQuarterFromMonth = (m: string): Quarter | "" => {
   const month = (m ?? "").toLowerCase();
@@ -92,6 +105,12 @@ const Dropdowns: React.FC<DropdownsProps> = ({
   initialMonth,
   initialYear,
 }) => {
+
+  const { data: userData } = useGetUserDataQuery();
+
+  // Normalize currency: USD → usd
+  const homeCurrency = (userData?.homeCurrency || "USD").toLowerCase();
+
   const router = useRouter();
 
   // params from parent
@@ -100,7 +119,9 @@ const Dropdowns: React.FC<DropdownsProps> = ({
   const month = initialMonth;
   const year = initialYear;
 
-  const currencySymbol = countryName ? getCurrencySymbol(countryName) : "¤";
+// Prefer homeCurrency (already lowercase), fall back to country
+const currencySymbol = getCurrencySymbol(homeCurrency || "");
+
 
   const [range, setRange] = useState<RangeType>("");
   const [selectedMonth, setSelectedMonth] = useState<string>("");
@@ -194,6 +215,8 @@ const Dropdowns: React.FC<DropdownsProps> = ({
       url.searchParams.set("quarter", quarterVal);
       url.searchParams.set("year", yearVal);
       url.searchParams.set("country", country);
+      url.searchParams.set("homeCurrency", homeCurrency);
+
 
       const res = await fetch(url.toString(), {
         method: "GET",
@@ -285,7 +308,7 @@ const Dropdowns: React.FC<DropdownsProps> = ({
       countryName
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [range, selectedMonth, selectedQuarter, selectedYear, countryName]);
+  }, [range, selectedMonth, selectedQuarter, selectedYear, countryName, homeCurrency]);
 
   // Validate dropdown completeness
   useEffect(() => {
@@ -534,6 +557,7 @@ const Dropdowns: React.FC<DropdownsProps> = ({
             selectedMonth={selectedMonth}
             selectedYear={selectedYear}
             countryName={initialCountryName}
+            homeCurrency={homeCurrency}
             onNoDataChange={(noData) => {
               console.log("🔥 [Monthly] Bargraph → onNoDataChange:", noData);
               setShowNoDataOverlay(noData);
@@ -546,6 +570,7 @@ const Dropdowns: React.FC<DropdownsProps> = ({
                 month={selectedMonth}
                 year={selectedYear}
                 countryName={initialCountryName}
+                homeCurrency={homeCurrency}
               />
             </div>
             <div className="flex-1 min-w-[300px]">
@@ -554,6 +579,7 @@ const Dropdowns: React.FC<DropdownsProps> = ({
                 month={selectedMonth}
                 year={selectedYear}
                 countryName={initialCountryName}
+                homeCurrency={homeCurrency}
               />
             </div>
           </div>
@@ -562,6 +588,7 @@ const Dropdowns: React.FC<DropdownsProps> = ({
             month={selectedMonth}
             year={selectedYear}
             countryName={initialCountryName}
+            homeCurrency={homeCurrency}
           />
         </>
       )}
@@ -573,6 +600,7 @@ const Dropdowns: React.FC<DropdownsProps> = ({
             selectedQuarter={selectedQuarter}
             selectedYear={selectedYear}
             countryName={initialCountryName}
+            homeCurrency={homeCurrency}
             onNoDataChange={(noData) => {
               console.log("🔥 [Quarterly] GraphPage → onNoDataChange:", noData);
               setShowNoDataOverlay(noData);
@@ -585,6 +613,7 @@ const Dropdowns: React.FC<DropdownsProps> = ({
                 selectedQuarter={selectedQuarter}
                 year={selectedYear}
                 countryName={initialCountryName}
+                homeCurrency={homeCurrency}
               />
             </div>
             <div className="flex-1 min-w-[300px]">
@@ -593,6 +622,7 @@ const Dropdowns: React.FC<DropdownsProps> = ({
                 selectedQuarter={selectedQuarter}
                 year={selectedYear}
                 countryName={initialCountryName}
+                homeCurrency={homeCurrency}
               />
             </div>
           </div>
@@ -601,6 +631,7 @@ const Dropdowns: React.FC<DropdownsProps> = ({
             quarter={selectedQuarter}
             year={selectedYear}
             countryName={initialCountryName}
+            homeCurrency={homeCurrency}
           />
         </>
       )}
@@ -611,6 +642,7 @@ const Dropdowns: React.FC<DropdownsProps> = ({
             range={range}
             selectedYear={selectedYear}
             countryName={initialCountryName}
+            homeCurrency={homeCurrency}
             onNoDataChange={(noData) => {
               console.log("🔥 [Yearly] GraphPage → onNoDataChange:", noData);
               setShowNoDataOverlay(noData);
@@ -618,13 +650,13 @@ const Dropdowns: React.FC<DropdownsProps> = ({
           />
           <div className="flex flex-wrap justify-between gap-6 md:gap-4">
             <div className="flex-1 min-w-[300px]">
-              <CircleChart range={range} year={selectedYear} countryName={initialCountryName} />
+              <CircleChart range={range} year={selectedYear} countryName={initialCountryName} homeCurrency={homeCurrency}/>
             </div>
             <div className="flex-1 min-w-[300px]">
-              <CMchartofsku range={range} year={selectedYear} countryName={initialCountryName} />
+              <CMchartofsku range={range} year={selectedYear} countryName={initialCountryName} homeCurrency={homeCurrency}/>
             </div>
           </div>
-          <SKUtable range={range} year={selectedYear} countryName={initialCountryName} />
+          <SKUtable range={range} year={selectedYear} countryName={initialCountryName} homeCurrency={homeCurrency}/>
         </>
       )}
 
@@ -632,7 +664,7 @@ const Dropdowns: React.FC<DropdownsProps> = ({
         {/* Lock icon */}
         <div className="mb-4 flex items-center justify-center">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#D9D9D9]">
-           <IoMdLock className="text-green-500 text-2xl"/>
+            <IoMdLock className="text-green-500 text-2xl" />
           </div>
         </div>
 

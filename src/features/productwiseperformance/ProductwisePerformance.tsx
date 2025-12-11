@@ -5503,6 +5503,11 @@ import TrendChartSection from "@/components/productwise/TrendChartSection";
 import ProductwiseHeader from "@/components/productwise/ProductwiseHeader";
 import FiltersAndSearchRow from "@/components/productwise/FiltersAndSearchRow";
 import { useGetUserDataQuery } from "@/lib/api/profileApi";
+import { useConnectedPlatforms } from "@/lib/utils/useConnectedPlatforms";   // 👈 add this
+import {
+  PlatformId,
+  platformToCountryName,
+} from "@/lib/utils/platforms";
 
 ChartJS.register(
   CategoryScale,
@@ -5584,9 +5589,36 @@ const ProductwisePerformance: React.FC<ProductwisePerformanceProps> = ({
     useFx();
   const { data: userData } = useGetUserDataQuery();
 
+  // 🔹 which Amazon marketplaces are actually connected?
+  const connectedPlatforms = useConnectedPlatforms();
+
+  const connectedCountries = useMemo<CountryKey[]>(() => {
+    const arr: CountryKey[] = [];
+    if (connectedPlatforms.amazonUk) arr.push("uk");
+    if (connectedPlatforms.amazonUs) arr.push("us");
+    if (connectedPlatforms.amazonCa) arr.push("ca" as CountryKey);
+    return arr;
+  }, [connectedPlatforms]);
 
   const params = useParams();
   const router = useRouter();
+
+  // NEW: active platform, default "global"
+  const [activePlatform, setActivePlatform] = useState<PlatformId>("global");
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const saved = window.localStorage.getItem("selectedPlatform") as PlatformId | null;
+    if (
+      saved &&
+      ["global", "amazon-uk", "amazon-us", "amazon-ca", "shopify"].includes(saved)
+    ) {
+      setActivePlatform(saved);
+    }
+  }, []);
+
+  const platformCountryName = platformToCountryName(activePlatform); // "global" | "uk" | "us" | "ca"
+
 
   const rawSlug = params?.productname as string | undefined;
   const urlProductName = normalizeProductSlug(rawSlug);
@@ -5676,14 +5708,26 @@ const ProductwisePerformance: React.FC<ProductwisePerformanceProps> = ({
 
   const [selectedCountries, setSelectedCountries] = useState<
     Record<CountryKey, boolean>
-  >({
-    uk: true,
-    us: true,
-    global: true,
-    global_gbp: true,
-    global_inr: true,
-    global_cad: true,
-  });
+  >({} as Record<CountryKey, boolean>);
+
+  // Seed toggles once we know globalKey + connected countries
+  useEffect(() => {
+    setSelectedCountries((prev) => {
+      // if user already toggled something, keep it
+      if (Object.keys(prev).length > 0) return prev;
+
+      const initial: Record<CountryKey, boolean> = {
+        [globalKey]: true,
+      } as Record<CountryKey, boolean>;
+
+      connectedCountries.forEach((c) => {
+        initial[c] = true;
+      });
+
+      return initial;
+    });
+  }, [globalKey, connectedCountries]);
+
 
   const years = useMemo(
     () => Array.from({ length: 2 }, (_, i) => new Date().getFullYear() - i),
@@ -5741,7 +5785,8 @@ const ProductwisePerformance: React.FC<ProductwisePerformanceProps> = ({
     setError("");
 
     try {
-      const countries: string[] = [globalKey, "uk", "us"];
+      // 🔹 always include globalKey + only *connected* country codes
+      const countries: string[] = [globalKey, ...connectedCountries];
 
       const backendTimeRange =
         range === "yearly"
@@ -5814,9 +5859,18 @@ const ProductwisePerformance: React.FC<ProductwisePerformanceProps> = ({
   const nonEmptyCountriesFromApi = useMemo(() => {
     if (!data?.data) return [] as CountryKey[];
 
+    const connectedSet = new Set(
+      connectedCountries.map((c) => c.toLowerCase())
+    );
+
     return (Object.entries(data.data) as [CountryKey, any][])
       .filter(([country, countryArray]) => {
-        if (country.toLowerCase() === globalKey.toLowerCase()) return false;
+        const lower = country.toLowerCase();
+        // skip global* rows here – they’re handled separately as globalKey
+        if (lower === globalKey.toLowerCase()) return false;
+        // only show if the platform is actually connected
+        if (!connectedSet.has(lower)) return false;
+
         const rows: MonthDatum[] = Array.isArray(countryArray)
           ? (countryArray as MonthDatum[])
           : [];
@@ -5825,7 +5879,8 @@ const ProductwisePerformance: React.FC<ProductwisePerformanceProps> = ({
         );
       })
       .map(([country]) => country);
-  }, [data, globalKey]);
+  }, [data, globalKey, connectedCountries]);
+
 
   // helper: sort "January", "january", etc. by calendar month Jan–Dec
   const sortByCalendarMonth = (a: string, b: string) => {
@@ -5867,30 +5922,37 @@ const ProductwisePerformance: React.FC<ProductwisePerformanceProps> = ({
         ? countryArr
         : [];
       const found = monthly.find((m) => m.month === month);
+
+      // if (!found) return 0;
+
+      // const raw = found[metric] as number;
+
+      // // Quantities: just raw
+      // if (metric === "quantity") {
+      //   return raw;
+      // }
+
+      // // Money metrics: convert if needed
+      // const isGlobalSeries =
+      //   country.toLowerCase() === globalKey.toLowerCase();
+
+      // if (isGlobalSeries) {
+      //   // Backend global_* already in home currency
+      //   return raw;
+      // }
+
+      // // UK / US series: convert from source currency → homeCurrency
+      // let fromCurrency: FromCurrency = "USD";
+      // if (country === "uk") fromCurrency = "GBP";
+      // if (country === "us") fromCurrency = "USD";
+
+      // return convertToHomeCurrency(raw, fromCurrency);
+
       if (!found) return 0;
 
-      const raw = found[metric] as number;
+      // Always use backend numbers as-is
+      return found[metric];
 
-      // Quantities: just raw
-      if (metric === "quantity") {
-        return raw;
-      }
-
-      // Money metrics: convert if needed
-      const isGlobalSeries =
-        country.toLowerCase() === globalKey.toLowerCase();
-
-      if (isGlobalSeries) {
-        // Backend global_* already in home currency
-        return raw;
-      }
-
-      // UK / US series: convert from source currency → homeCurrency
-      let fromCurrency: FromCurrency = "USD";
-      if (country === "uk") fromCurrency = "GBP";
-      if (country === "us") fromCurrency = "USD";
-
-      return convertToHomeCurrency(raw, fromCurrency);
     };
 
     const makeDataset = (
@@ -5958,6 +6020,55 @@ const ProductwisePerformance: React.FC<ProductwisePerformanceProps> = ({
     convertToHomeCurrency,
   ]);
 
+  // helper to format "October" + 2025 -> "Oct '25"
+  const formatAxisMonth = (monthName: string, year: number | "" | string) => {
+    if (!monthName) return "";
+
+    const fullNames = [
+      "january",
+      "february",
+      "march",
+      "april",
+      "may",
+      "june",
+      "july",
+      "august",
+      "september",
+      "october",
+      "november",
+      "december",
+    ];
+
+    const abbrs = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
+
+    const lower = monthName.toLowerCase();
+    let idx = fullNames.indexOf(lower);
+    if (idx === -1) {
+      idx = fullNames.findIndex((full) =>
+        lower.startsWith(full.slice(0, 3))
+      );
+    }
+
+    const abbr = idx >= 0 ? abbrs[idx] : monthName.slice(0, 3);
+    const yStr = year === "" ? "" : String(year);
+    const shortYear = yStr ? yStr.slice(-2) : "";
+
+    return shortYear ? `${abbr} '${shortYear}` : abbr;
+  };
+
 
   /* ---------- chart options (currency-aware) ---------- */
   const yAxisLabel = (() => {
@@ -5999,14 +6110,24 @@ const ProductwisePerformance: React.FC<ProductwisePerformanceProps> = ({
                 return `${datasetLabel}: ${value.toLocaleString()}`;
               }
 
-              // 💰 always format in home currency now
+              // 💰 still using home-currency formatter you already have
               return `${datasetLabel}: ${formatHomeAmount(value)}`;
             },
           },
         },
       },
       scales: {
-        x: { title: { display: true, text: "Month" } },
+        x: {
+          title: { display: true, text: "Month" },
+          ticks: {
+            callback: function (val: any) {
+              // "this" is the X scale; get the raw label ("October", etc.)
+              // @ts-ignore
+              const rawLabel = this.getLabelForValue(val) as string;
+              return formatAxisMonth(rawLabel, selectedYear || "");
+            },
+          },
+        },
         y: {
           title: { display: true, text: yAxisLabel },
           min: 0,
@@ -6014,8 +6135,9 @@ const ProductwisePerformance: React.FC<ProductwisePerformanceProps> = ({
         },
       },
     }),
-    [formatHomeAmount, yAxisLabel]
+    [formatHomeAmount, yAxisLabel, selectedYear]
   );
+
 
 
   const yearShort =
@@ -6060,63 +6182,75 @@ const ProductwisePerformance: React.FC<ProductwisePerformanceProps> = ({
 
   /* ---------- summary cards ---------- */
   const cards = useMemo(() => {
-    if (!data?.data) return [] as { country: string; stats: any }[];
+    if (!data?.data) return [] as { country: string; stats: any; isConnected: boolean }[];
 
-    return Object.entries(data.data).map(([country, rawArray]) => {
-      const key = country.toLowerCase();
-      const monthly: MonthDatum[] = Array.isArray(rawArray)
-        ? (rawArray as MonthDatum[])
-        : [];
+    const connectedSet = new Set(
+      connectedCountries.map((c) => c.toLowerCase())
+    );
 
-      const totalSales = monthly.reduce((s, m) => s + m.net_sales, 0);
-      const totalProfit = monthly.reduce((s, m) => s + m.profit, 0);
-      const totalUnits = monthly.reduce((s, m) => s + m.quantity, 0);
+    return Object.entries(data.data)
+      // keep global* rows + only connected real countries
+      .filter(([country]) => {
+        const key = country.toLowerCase();
+        if (key.startsWith("global")) return true;
+        return connectedSet.has(key);
+      })
+      .map(([country, rawArray]) => {
+        const key = country.toLowerCase();
+        const monthly: MonthDatum[] = Array.isArray(rawArray)
+          ? (rawArray as MonthDatum[])
+          : [];
 
-      const gross_margin_avg =
-        totalSales > 0 ? (totalProfit / totalSales) * 100 : 0;
+        const totalSales = monthly.reduce((s, m) => s + m.net_sales, 0);
+        const totalProfit = monthly.reduce((s, m) => s + m.profit, 0);
+        const totalUnits = monthly.reduce((s, m) => s + m.quantity, 0);
 
-      const monthsWithSales = monthly.filter((m) => m.net_sales > 0);
-      const avgSales =
-        monthsWithSales.length > 0 ? totalSales / monthsWithSales.length : 0;
+        const gross_margin_avg =
+          totalSales > 0 ? (totalProfit / totalSales) * 100 : 0;
 
-      const avgSellingPrice = totalUnits > 0 ? totalSales / totalUnits : 0;
+        const monthsWithSales = monthly.filter((m) => m.net_sales > 0);
+        const avgSales =
+          monthsWithSales.length > 0 ? totalSales / monthsWithSales.length : 0;
 
-      const avgMonthlyProfit =
-        monthly.length > 0 ? totalProfit / monthly.length : 0;
+        const avgSellingPrice = totalUnits > 0 ? totalSales / totalUnits : 0;
 
-      const maxSalesMonth =
-        monthly.length > 0
-          ? monthly.reduce((max, m) =>
-            m.net_sales > max.net_sales ? m : max
-          )
-          : { month: "", net_sales: 0, quantity: 0, profit: 0 };
+        const avgMonthlyProfit =
+          monthly.length > 0 ? totalProfit / monthly.length : 0;
 
-      const maxUnitsMonth =
-        monthly.length > 0
-          ? monthly.reduce((max, m) =>
-            m.quantity > max.quantity ? m : max
-          )
-          : { month: "", net_sales: 0, quantity: 0, profit: 0 };
+        const maxSalesMonth =
+          monthly.length > 0
+            ? monthly.reduce((max, m) =>
+              m.net_sales > max.net_sales ? m : max
+            )
+            : { month: "", net_sales: 0, quantity: 0, profit: 0 };
 
-      return {
-        // keep the REAL key: "global", "global_inr", "uk", "us"
-        country: key,
-        stats: {
-          totalSales,
-          totalProfit,
-          totalUnits,
-          gross_margin_avg,
-          avgSales,
-          avgSellingPrice,
-          avgMonthlyProfit,
-          maxSalesMonth,
-          maxUnitsMonth,
-        },
-      };
-    });
-  }, [data]);
+        const maxUnitsMonth =
+          monthly.length > 0
+            ? monthly.reduce((max, m) =>
+              m.quantity > max.quantity ? m : max
+            )
+            : { month: "", net_sales: 0, quantity: 0, profit: 0 };
 
+        const isConnected =
+          key.startsWith("global") || connectedSet.has(key);
 
+        return {
+          country: key,
+          stats: {
+            totalSales,
+            totalProfit,
+            totalUnits,
+            gross_margin_avg,
+            avgSales,
+            avgSellingPrice,
+            avgMonthlyProfit,
+            maxSalesMonth,
+            maxUnitsMonth,
+          },
+          isConnected,
+        };
+      });
+  }, [data, connectedCountries]);
 
   const orderedCards = useMemo(() => {
     if (!cards.length) return [];
@@ -6219,6 +6353,18 @@ const ProductwisePerformance: React.FC<ProductwisePerformanceProps> = ({
 
       {canShowResults && data && !loading && (
         <div className="flex flex-col">
+          {/* <TrendChartSection
+            productname={productname}
+            title={getTitle()}
+            chartDataList={chartDataList}
+            chartOptions={chartOptions}
+            nonEmptyCountriesFromApi={nonEmptyCountriesFromApi}
+            selectedCountries={selectedCountries}
+            onToggleCountry={handleCountryChange}
+            authToken={authToken}
+            onProductSelect={handleProductSelect}
+          /> */}
+
           <TrendChartSection
             productname={productname}
             title={getTitle()}
@@ -6229,7 +6375,47 @@ const ProductwisePerformance: React.FC<ProductwisePerformanceProps> = ({
             onToggleCountry={handleCountryChange}
             authToken={authToken}
             onProductSelect={handleProductSelect}
+            onViewBusinessInsights={() => {
+              // use last fetched period as a sensible default
+              let effectiveMonth = selectedMonth;
+              let effectiveYear =
+                selectedYear === ""
+                  ? ""
+                  : String(selectedYear);
+
+              if (typeof window !== "undefined") {
+                try {
+                  const raw = localStorage.getItem("latestFetchedPeriod");
+                  if (raw) {
+                    const parsed = JSON.parse(raw) as { month?: string; year?: string };
+                    if (!effectiveMonth && parsed.month) {
+                      effectiveMonth = parsed.month.toLowerCase();
+                    }
+                    if (!effectiveYear && parsed.year) {
+                      effectiveYear = String(parsed.year);
+                    }
+                  }
+                } catch {
+                  // ignore parse errors
+                }
+              }
+
+              if (!effectiveYear) {
+                effectiveYear = String(new Date().getFullYear());
+              }
+
+              const countrySlug = (countryName || "global").toLowerCase();
+              const monthSlug = effectiveMonth || "na";
+
+              // navigate to Business Insights for the same batch
+              router.push(
+                `/improvements/QTD/${encodeURIComponent(
+                  countrySlug
+                )}/${encodeURIComponent(monthSlug)}/${encodeURIComponent(effectiveYear)}`
+              );
+            }}
           />
+
 
           <div className="mt-8">
             <div className="grid gap-5 grid-cols-1 md:grid-cols-[repeat(auto-fit,minmax(260px,1fr))]">
@@ -6253,6 +6439,7 @@ const ProductwisePerformance: React.FC<ProductwisePerformanceProps> = ({
                     stats={card.stats}
                     selectedYear={selectedYear}
                     homeCurrency={homeCurrency}
+                    activeCountry={(countryName || "global").toLowerCase()}
                   />
                 );
               })}

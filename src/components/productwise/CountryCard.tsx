@@ -407,47 +407,129 @@ import {
   formatMonthYear,
   getCountryColor,
 } from "./productwiseHelpers";
+import type { HomeCurrency } from "@/components/dashboard/useFx";
 
 interface CountryCardProps {
   country: string;
   stats: any;
   selectedYear: number | "";
   homeCurrency: "USD" | "GBP" | "INR" | "CAD";
+  activeCountry: string;
 }
+
+const inferCurrencyFromKey = (key: CountryKey): "USD" | "GBP" | "INR" | "CAD" => {
+  switch (key) {
+    case "uk":
+    case "global_gbp":
+      return "GBP";
+    case "global_inr":
+      return "INR";
+    case "global_cad":
+      return "CAD";
+    case "global":
+    case "us":
+    default:
+      return "USD";
+  }
+};
 
 const CountryCard: React.FC<CountryCardProps> = ({
   country,
   stats,
   selectedYear,
-  homeCurrency, // now actually influencing the symbol
+  homeCurrency,
+  activeCountry,
 }) => {
   const countryKey = country.toLowerCase() as CountryKey;
+  const active = (activeCountry || "global").toLowerCase();
+  const isGlobalSnapshot = active === "global";
 
   /**
-   * Decide which "currency profile" to use for the symbol.
-   * - UK card should always show native GBP (Amazon UK rule).
-   * - All other countries should use the user's homeCurrency symbol.
-   */
+     * Decide which "currency profile" to use purely for the SYMBOL.
+     *
+     * - Global Snapshot:
+     *     → ALL cards use homeCurrency symbol
+     * - Platform = specific country (e.g. "uk"):
+     *     → that country's card uses its native currency
+     *     → GLOBAL card uses $
+     *     → others fall back to homeCurrency symbol
+     */
   const getSymbolKey = (): CountryKey => {
-    // Amazon UK: always show native GBP
-    if (countryKey === "uk") return "uk";
+    // 1) GLOBAL SNAPSHOT: everything uses home currency symbol
+    if (isGlobalSnapshot) {
+      switch (homeCurrency) {
+        case "INR":
+          return "global_inr"; // ₹
+        case "GBP":
+          return "global_gbp"; // £
+        case "CAD":
+          return "global_cad"; // CA$
+        case "USD":
+        default:
+          return "global"; // $
+      }
+    }
 
-    // Everything else: show in home currency symbol
+    if (countryKey === "uk") {
+      return "uk";
+    }
+
+    // US card → native USD
+    if (countryKey === "us") {
+      return "global"; // uses $
+    }
+
+    // CA card → native CAD
+    // if (countryKey === "ca") {
+    //   return "global_cad"; // uses CA$
+    // }
+
+    // GLOBAL card when a specific country is selected:
+    // you asked: "Global card in $ and UK card in GBP" → always $
+    if (countryKey.startsWith("global")) {
+      return "global";
+    }
+
+    // Fallback (any other card): use homeCurrency symbol
     switch (homeCurrency) {
       case "INR":
-        return "global_inr"; // gives ₹
+        return "global_inr";
       case "GBP":
-        return "global_gbp"; // gives £
+        return "global_gbp";
       case "CAD":
-        return "global_cad"; // gives CA$
+        return "global_cad";
       case "USD":
       default:
-        return "global"; // gives $
+        return "global";
     }
   };
 
+  const symbolKey = getSymbolKey();
+
+  const formatAmountWith2Decimals = (value: number) => {
+    const symbolKey = getSymbolKey();
+    const currency = inferCurrencyFromKey(symbolKey);
+
+    return new Intl.NumberFormat(
+      currency === "GBP"
+        ? "en-GB"
+        : currency === "INR"
+          ? "en-IN"
+          : currency === "CAD"
+            ? "en-CA"
+            : "en-US",
+      {
+        style: "currency",
+        currency,
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }
+    ).format(value);
+  };
+
+
   const formatAmount = (value: number) => {
-    return formatCurrencyByCountry(getSymbolKey(), value);
+    return formatCurrencyByCountry(symbolKey, value);
   };
 
   // For color + label, normalize "global_*" variants to "GLOBAL"
@@ -517,8 +599,9 @@ const CountryCard: React.FC<CountryCardProps> = ({
               Avg. Selling Price
             </p>
             <p className="text-[clamp(12px,0.95vw,16px)] font-semibold">
-              {formatAmount(Number(stats.avgSellingPrice.toFixed(2)))}
+              {formatAmountWith2Decimals(stats.avgSellingPrice)}
             </p>
+
           </div>
 
           <div className="rounded-lg border border-gray-300 bg-gray-200/40 p-2 sm:p-3">
@@ -550,7 +633,7 @@ const CountryCard: React.FC<CountryCardProps> = ({
             <p className="text-[clamp(12px,0.95vw,16px)] font-semibold">
               {formatMonthYear(stats.maxSalesMonth.month, selectedYear || "")}
             </p>
-            <p className="text-[clamp(12px,0.95vw,16px)]">
+            <p className="text-[clamp(12px,0.95vw,16px)] font-semibold">
               {formatAmount(stats.maxSalesMonth.net_sales)}
             </p>
           </div>
@@ -569,7 +652,7 @@ const CountryCard: React.FC<CountryCardProps> = ({
             <p className="text-[clamp(12px,0.95vw,16px)] font-semibold">
               {formatMonthYear(stats.maxUnitsMonth.month, selectedYear || "")}
             </p>
-            <p className="text-[clamp(12px,0.95vw,16px)]">
+            <p className="text-[clamp(12px,0.95vw,16px)] font-semibold">
               {stats.maxUnitsMonth.quantity.toLocaleString()}
             </p>
           </div>
@@ -588,7 +671,7 @@ const CountryCard: React.FC<CountryCardProps> = ({
             <p className="text-[clamp(12px,0.95vw,16px)] font-semibold">
               {formatMonthYear(stats.maxSalesMonth.month, selectedYear || "")}
             </p>
-            <p className="text-[clamp(12px,0.95vw,16px)]">
+            <p className="text-[clamp(12px,0.95vw,16px)] font-semibold">
               {formatAmount(stats.maxSalesMonth.profit)}
             </p>
           </div>
