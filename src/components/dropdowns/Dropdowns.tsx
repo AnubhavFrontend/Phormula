@@ -1420,269 +1420,321 @@ const Dropdowns: React.FC<DropdownsProps> = ({
             );
           })()} */}
 
-          {/* Summary Cards */}
-{uploadsData?.summary &&
-  (() => {
-    const summary = displayData;
+        {/* Summary Cards */}
+        {uploadsData?.summary &&
+          (() => {
+            const summary = displayData;
 
-    // Try both camelCase and snake_case from backend
-    const rawComparisons =
-      (uploadsData as any).summaryComparisons ??
-      (uploadsData as any).summary_comparisons;
+            // Try both camelCase and snake_case from backend
+            const rawComparisons =
+              (uploadsData as any).summaryComparisons ??
+              (uploadsData as any).summary_comparisons;
 
-    const comparisons: SummaryComparisons | undefined = rawComparisons
-      ? (rawComparisons as SummaryComparisons)
-      : undefined;
+            const comparisons: SummaryComparisons | undefined = rawComparisons
+              ? (rawComparisons as SummaryComparisons)
+              : undefined;
 
-    console.log("🔍 comparisons from API:", comparisons);
+            console.log("🔍 comparisons from API:", comparisons);
 
-    const isSummaryZero =
-      summary.unit_sold === 0 &&
-      summary.total_sales === 0 &&
-      summary.total_expense === 0 &&
-      summary.cm2_profit === 0;
+            const isSummaryZero =
+              summary.unit_sold === 0 &&
+              summary.total_sales === 0 &&
+              summary.total_expense === 0 &&
+              summary.cm2_profit === 0;
 
-    const cm2Percent =
-      summary.total_sales > 0
-        ? (summary.cm2_profit / summary.total_sales) * 100
-        : 0;
+            const cm2Percent =
+              summary.total_sales > 0
+                ? (summary.cm2_profit / summary.total_sales) * 100
+                : 0;
 
-    const formatMoney = (val: number) =>
-      `${currencySymbol} ${val.toLocaleString(undefined, {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 2,
-      })}`;
+            const formatMoney = (val: number) =>
+              `${currencySymbol} ${val.toLocaleString(undefined, {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 2,
+              })}`;
 
-    const formatUnits = (val: number) =>
-      val.toLocaleString(undefined, {
-        maximumFractionDigits: 0,
-      });
+            const formatUnits = (val: number) =>
+              val.toLocaleString(undefined, {
+                maximumFractionDigits: 0,
+              });
 
-    const formatPercent = (val: number) =>
-      `${val.toLocaleString(undefined, {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 2,
-      })}%`;
+            const formatPercent = (val: number) =>
+              `${val.toLocaleString(undefined, {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 2,
+              })}%`;
 
-    // ---------- numeric comparisons helper ----------
-    const getComparisons = (metric: keyof Summary) => {
-      if (!comparisons) return [];
+            // ---------- numeric comparisons helper ----------
+            const getComparisons = (metric: keyof Summary) => {
+              if (!comparisons) return [];
 
-      const current = summary[metric] ?? 0;
+              const current = summary[metric] ?? 0;
 
-      const lm = comparisons.lastMonth?.[metric];
-      const lq = comparisons.lastQuarter?.[metric];
-      const ly = comparisons.lastYear?.[metric];
+              const lm = comparisons.lastMonth?.[metric];
+              const lq = comparisons.lastQuarter?.[metric];
+              const ly = comparisons.lastYear?.[metric];
 
-      const makeItem = (label: string, prevVal?: number) => {
-        if (prevVal === undefined) return null;
-        const diffPct =
-          prevVal === 0 ? null : ((current - prevVal) / prevVal) * 100;
+              const makeItem = (label: string, prevVal?: number) => {
+                if (prevVal === undefined) return null;
+                const diffPct =
+                  prevVal === 0 ? null : ((current - prevVal) / prevVal) * 100;
 
-        return { label, value: prevVal, diffPct };
-      };
+                return { label, value: prevVal, diffPct };
+              };
 
-      return [
-        makeItem("Last month", lm),
-        makeItem("Last quarter", lq),
-        makeItem("Last year", ly),
-      ].filter(
-        (x): x is { label: string; value: number; diffPct: number | null } =>
-          Boolean(x)
-      );
-    };
+              return [
+                makeItem("Last month", lm),
+                makeItem("Last quarter", lq),
+                makeItem("Last year", ly),
+              ].filter(
+                (x): x is { label: string; value: number; diffPct: number | null } =>
+                  Boolean(x)
+              );
+            };
 
- const renderComparisons = (
-  metric: keyof Summary,
-  formatter: (val: number) => string
-) => {
-  const items = getComparisons(metric);
-  if (!items.length) return null;
+            // const renderComparisons = (
+            //   metric: keyof Summary,
+            //   formatter: (val: number) => string
+            // ) => {
+            //   const items = getComparisons(metric);
+            //   if (!items.length) return null;
 
-  return (
-    <div className="mt-3 space-y-1.5">
-      {items.map((item) => (
-        <div
-          key={item.label}
-          className="flex items-center justify-between text-xs"
-        >
-          {/* LEFT: label + value */}
-          <div className="flex items-baseline gap-1">
-            <span className="font-semibold text-gray-600">
-              {item.label}:
-            </span>
-            <span className="font-semibold text-gray-700">
-              {formatter(item.value)}
-            </span>
-          </div>
+            //   return (
+            //     <div className="mt-3 space-y-1.5">
+            //       {items.map((item) => (
+            //         <div
+            //           key={item.label}
+            //           className="flex items-center justify-between text-xs"
+            //         >
+            //           {/* LEFT: label + value */}
+            //           <div className="flex items-baseline gap-1">
+            //             <span className="font-semibold text-gray-600">
+            //               {item.label}:
+            //             </span>
+            //             <span className="font-semibold text-gray-700">
+            //               {formatter(item.value)}
+            //             </span>
+            //           </div>
 
-          {/* RIGHT: percentage only */}
-          {item.diffPct !== null && (
-            <span
-              className={`font-bold ${
-                item.diffPct >= 0 ? "text-emerald-600" : "text-red-600"
-              }`}
-            >
-              {item.diffPct >= 0 ? "▲" : "▼"}{" "}
-              {Math.abs(item.diffPct).toFixed(1)}%
-            </span>
-          )}
-        </div>
-      ))}
-    </div>
-  );
-};
-
+            //           {/* RIGHT: percentage only */}
+            //           {item.diffPct !== null && (
+            //             <span
+            //               className={`font-bold ${item.diffPct >= 0 ? "text-emerald-600" : "text-red-600"
+            //                 }`}
+            //             >
+            //               {item.diffPct >= 0 ? "▲" : "▼"}{" "}
+            //               {Math.abs(item.diffPct).toFixed(1)}%
+            //             </span>
+            //           )}
+            //         </div>
+            //       ))}
+            //     </div>
+            //   );
+            // };
 
 
-    // ---------- CM2 % comparisons helper ----------
-    const getCm2Percent = (s?: Summary) =>
-      s && s.total_sales > 0 ? (s.cm2_profit / s.total_sales) * 100 : 0;
 
-    const cm2PercentComparisons = () => {
-      if (!comparisons) return [];
+            // ---------- CM2 % comparisons helper ----------
 
-      const lm = comparisons.lastMonth
-        ? getCm2Percent(comparisons.lastMonth)
-        : undefined;
-      const lq = comparisons.lastQuarter
-        ? getCm2Percent(comparisons.lastQuarter)
-        : undefined;
-      const ly = comparisons.lastYear
-        ? getCm2Percent(comparisons.lastYear)
-        : undefined;
+            const renderComparisons = (
+              metric: keyof Summary,
+              formatter: (val: number) => string
+            ) => {
+              let items = getComparisons(metric);
 
-      const makeItem = (label: string, prevVal?: number) => {
-        if (prevVal === undefined) return null;
-        const diffPct =
-          prevVal === 0 ? null : ((cm2Percent - prevVal) / prevVal) * 100;
+              // ✅ HIDE last quarter when Monthly view is selected
+              if (range === "monthly") {
+                items = items.filter((item) => item.label !== "Last quarter");
+              }
 
-        return { label, value: prevVal, diffPct };
-      };
+              if (!items.length) return null;
 
-      return [
-        makeItem("Last month", lm),
-        makeItem("Last quarter", lq),
-        makeItem("Last year", ly),
-      ].filter(
-        (x): x is { label: string; value: number; diffPct: number | null } =>
-          Boolean(x)
-      );
-    };
+              return (
+                <div className="mt-3 space-y-1.5">
+                  {items.map((item) => (
+                    <div
+                      key={item.label}
+                      className="flex items-center justify-between text-[11px]"
+                    >
+                      {/* LEFT: label + value */}
+                      <div className="flex items-baseline gap-2">
+                        <span className="font-semibold text-gray-600">
+                          {item.label}
+                        </span>
+                        <span className="font-semibold text-gray-700">
+                          {formatter(item.value)}
+                        </span>
+                      </div>
 
- const renderCm2PercentComparisons = () => {
-  const items = cm2PercentComparisons();
-  if (!items.length) return null;
-
-  return (
-    <div className="mt-3 space-y-1.5">
-      {items.map((item) => (
-        <div
-          key={item.label}
-          className="flex items-center justify-between text-[11px]"
-        >
-          {/* LEFT: label + value (%) */}
-          <div className="flex items-baseline gap-2">
-            <span className="font-semibold text-gray-600">
-              {item.label}
-            </span>
-            <span className="font-semibold text-gray-700">
-              {formatPercent(item.value)}
-            </span>
-          </div>
-
-          {/* RIGHT: percentage change */}
-          {item.diffPct !== null && (
-            <span
-              className={`font-bold ${
-                item.diffPct >= 0 ? "text-emerald-600" : "text-red-600"
-              }`}
-            >
-              {item.diffPct >= 0 ? "▲" : "▼"}{" "}
-              {Math.abs(item.diffPct).toFixed(1)}%
-            </span>
-          )}
-        </div>
-      ))}
-    </div>
-  );
-};
+                      {/* RIGHT: percentage */}
+                      {item.diffPct !== null && (
+                        <span
+                          className={`font-bold ${item.diffPct >= 0 ? "text-emerald-600" : "text-red-600"
+                            }`}
+                        >
+                          {item.diffPct >= 0 ? "▲" : "▼"}{" "}
+                          {Math.abs(item.diffPct).toFixed(1)}%
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              );
+            };
 
 
-    return (
-      <div
-        className={[
-          "w-full flex flex-wrap gap-7",
-          isSummaryZero ? "opacity-30" : "opacity-100",
-        ].join(" ")}
-      >
-        {/* Units */}
-        <div className="flex-1 min-w-[180px] max-w-xs rounded-2xl border border-[#87AD12] bg-[#87AD1226] shadow-sm px-4 py-3 flex flex-col justify-between">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-xs text-charcoal-500">Units</span>
-            <FaBoxArchive color="#87AD12" size={16} />
-          </div>
-          <div className="text-xl font-extrabold text-charcoal-500">
-            {formatUnits(summary.unit_sold)}
-          </div>
 
-          {renderComparisons("unit_sold", formatUnits)}
-        </div>
+            const getCm2Percent = (s?: Summary) =>
+              s && s.total_sales > 0 ? (s.cm2_profit / s.total_sales) * 100 : 0;
 
-        {/* Sales */}
-        <div className="flex-1 min-w-[180px] max-w-xs rounded-2xl border border-[#FFBE25] bg-[#FFBE2526] shadow-sm px-4 py-3 flex flex-col justify-between">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-xs text-charcoal-500">Sales</span>
-            <FcSalesPerformance fill="000" color="#000" size={16} />
-          </div>
-          <div className="text-xl font-extrabold text-charcoal-500">
-            {formatMoney(summary.total_sales)}
-          </div>
+            const cm2PercentComparisons = () => {
+              if (!comparisons) return [];
 
-          {renderComparisons("total_sales", formatMoney)}
-        </div>
+              const lm = comparisons.lastMonth
+                ? getCm2Percent(comparisons.lastMonth)
+                : undefined;
+              const lq = comparisons.lastQuarter
+                ? getCm2Percent(comparisons.lastQuarter)
+                : undefined;
+              const ly = comparisons.lastYear
+                ? getCm2Percent(comparisons.lastYear)
+                : undefined;
 
-        {/* Expenses */}
-        <div className="flex-1 min-w-[180px] max-w-xs rounded-2xl border border-[#FF5C5C] bg-[#FF5C5C26] shadow-sm px-4 py-3 flex flex-col justify-between">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-xs text-charcoal-500">Expenses</span>
-            <MdEditDocument color="#FF5C5C" size={16} />
-          </div>
-          <div className="text-xl font-extrabold text-charcoal-500">
-            {formatMoney(summary.total_expense)}
-          </div>
+              const makeItem = (label: string, prevVal?: number) => {
+                if (prevVal === undefined) return null;
+                const diffPct =
+                  prevVal === 0 ? null : ((cm2Percent - prevVal) / prevVal) * 100;
 
-          {renderComparisons("total_expense", formatMoney)}
-        </div>
+                return { label, value: prevVal, diffPct };
+              };
 
-        {/* CM2 Profit */}
-        <div className="flex-1 min-w-[180px] max-w-xs rounded-2xl border border-[#AB64B5] bg-[#AB64B526] shadow-sm px-4 py-3 flex flex-col justify-between">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-xs text-charcoal-500">CM2 Profit</span>
-            <TbMoneybag fill="#AB64B5" color="#AB64B5" size={16} />
-          </div>
-          <div className="text-xl font-extrabold text-charcoal-500">
-            {formatMoney(summary.cm2_profit)}
-          </div>
+              return [
+                makeItem("Last month", lm),
+                makeItem("Last quarter", lq),
+                makeItem("Last year", ly),
+              ].filter(
+                (x): x is { label: string; value: number; diffPct: number | null } =>
+                  Boolean(x)
+              );
+            };
 
-          {renderComparisons("cm2_profit", formatMoney)}
-        </div>
+            const renderCm2PercentComparisons = () => {
+              let items = cm2PercentComparisons();
 
-        {/* CM2 Profit % */}
-        <div className="flex-1 min-w-[180px] max-w-xs rounded-2xl border border-[#00627B] bg-[#00627B26] shadow-sm px-4 py-3 flex flex-col justify-between">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-xs text-charcoal-500">CM2 Profit %</span>
-            <FaMoneyBillTrendUp color="#00627B" size={16} />
-          </div>
-          <div className="text-xl font-extrabold text-charcoal-500">
-            {formatPercent(cm2Percent)}
-          </div>
+              // ✅ Hide last quarter in Monthly view
+              if (range === "monthly") {
+                items = items.filter((item) => item.label !== "Last quarter");
+              }
 
-          {renderCm2PercentComparisons()}
-        </div>
-      </div>
-    );
-  })()}
+              if (!items.length) return null;
+
+              return (
+                <div className="mt-3 space-y-1.5">
+                  {items.map((item) => (
+                    <div
+                      key={item.label}
+                      className="flex items-center justify-between text-[11px]"
+                    >
+                      <div className="flex items-baseline gap-2">
+                        <span className="font-semibold text-gray-600">
+                          {item.label}
+                        </span>
+                        <span className="font-semibold text-gray-700">
+                          {formatPercent(item.value)}
+                        </span>
+                      </div>
+
+                      {item.diffPct !== null && (
+                        <span
+                          className={`font-bold ${item.diffPct >= 0 ? "text-emerald-600" : "text-red-600"
+                            }`}
+                        >
+                          {item.diffPct >= 0 ? "▲" : "▼"}{" "}
+                          {Math.abs(item.diffPct).toFixed(1)}%
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              );
+            };
+
+
+
+            return (
+              <div
+                className={[
+                  "w-full flex flex-wrap gap-7",
+                  isSummaryZero ? "opacity-30" : "opacity-100",
+                ].join(" ")}
+              >
+                {/* Units */}
+                <div className="flex-1 min-w-[180px] max-w-xs rounded-2xl border border-[#87AD12] bg-[#87AD1226] shadow-sm px-4 py-3 flex flex-col justify-between">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-xs text-charcoal-500">Units</span>
+                    <FaBoxArchive color="#87AD12" size={16} />
+                  </div>
+                  <div className="text-xl font-extrabold text-charcoal-500">
+                    {formatUnits(summary.unit_sold)}
+                  </div>
+
+                  {renderComparisons("unit_sold", formatUnits)}
+                </div>
+
+                {/* Sales */}
+                <div className="flex-1 min-w-[180px] max-w-xs rounded-2xl border border-[#FFBE25] bg-[#FFBE2526] shadow-sm px-4 py-3 flex flex-col justify-between">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-xs text-charcoal-500">Sales</span>
+                    <FcSalesPerformance fill="000" color="#000" size={16} />
+                  </div>
+                  <div className="text-xl font-extrabold text-charcoal-500">
+                    {formatMoney(summary.total_sales)}
+                  </div>
+
+                  {renderComparisons("total_sales", formatMoney)}
+                </div>
+
+                {/* Expenses */}
+                <div className="flex-1 min-w-[180px] max-w-xs rounded-2xl border border-[#FF5C5C] bg-[#FF5C5C26] shadow-sm px-4 py-3 flex flex-col justify-between">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-xs text-charcoal-500">Expenses</span>
+                    <MdEditDocument color="#FF5C5C" size={16} />
+                  </div>
+                  <div className="text-xl font-extrabold text-charcoal-500">
+                    {formatMoney(summary.total_expense)}
+                  </div>
+
+                  {renderComparisons("total_expense", formatMoney)}
+                </div>
+
+                {/* CM2 Profit */}
+                <div className="flex-1 min-w-[180px] max-w-xs rounded-2xl border border-[#AB64B5] bg-[#AB64B526] shadow-sm px-4 py-3 flex flex-col justify-between">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-xs text-charcoal-500">CM2 Profit</span>
+                    <TbMoneybag fill="#AB64B5" color="#AB64B5" size={16} />
+                  </div>
+                  <div className="text-xl font-extrabold text-charcoal-500">
+                    {formatMoney(summary.cm2_profit)}
+                  </div>
+
+                  {renderComparisons("cm2_profit", formatMoney)}
+                </div>
+
+                {/* CM2 Profit % */}
+                <div className="flex-1 min-w-[180px] max-w-xs rounded-2xl border border-[#00627B] bg-[#00627B26] shadow-sm px-4 py-3 flex flex-col justify-between">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-xs text-charcoal-500">CM2 Profit %</span>
+                    <FaMoneyBillTrendUp color="#00627B" size={16} />
+                  </div>
+                  <div className="text-xl font-extrabold text-charcoal-500">
+                    {formatPercent(cm2Percent)}
+                  </div>
+
+                  {renderCm2PercentComparisons()}
+                </div>
+              </div>
+            );
+          })()}
 
       </div>
 
@@ -1814,7 +1866,7 @@ const Dropdowns: React.FC<DropdownsProps> = ({
 
       {showNoDataOverlay && (
         <div
-          className="fixed inset-y-0 z-[99999] flex items-center justify-center pointer-events-none"
+          className="fixed inset-y-0 z-[9999] flex items-center justify-center pointer-events-none"
           style={{ left: overlayBounds.left, width: overlayBounds.width || "100%" }}
         >
           <div className="bg-white border border-[#D9D9D9] rounded-xl shadow-xl p-6 max-w-lg w-[90%] text-center pointer-events-auto">

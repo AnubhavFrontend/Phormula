@@ -126,8 +126,7 @@ const getDisplayProductNameFromRow = (row: TableRow): string => {
         name !== undefined &&
         name !== null &&
         name !== "" &&
-        name !== "0" &&
-        name !== 0;
+        name !== "0";
 
     if (hasName) return String(name);
 
@@ -363,33 +362,59 @@ const SKUtable: React.FC<SKUtableProps> = ({
                             ? `skuwisemonthly_${userid}_${countryName}_${(month || "").toLowerCase()}${year}_table`
                             : `skuwisemonthly_${userid}_${countryName.toLowerCase()}_${(month || "").toLowerCase()}${year}`;
 
-                    response = await fetch(
-                        `http://127.0.0.1:5000/skutableprofit/${skuwiseFileName}`,
-                        {
-                            method: "GET",
-                            headers: token ? { Authorization: `Bearer ${token}` } : {},
-                            cache: "no-store",
-                        }
-                    );
-                } else if (range === "quarterly") {
+                    const url = new URL(`http://127.0.0.1:5000/skutableprofit/${skuwiseFileName}`);
+
+                    // ✅ send these always (backend uses them if present)
+                    url.searchParams.set("country", countryName);
+                    url.searchParams.set("month", (month || "").toLowerCase());
+                    url.searchParams.set("year", String(year));
+
+                    // ✅ GLOBAL only
+                    if (isGlobalPage && homeCurrency) {
+                        url.searchParams.set("homeCurrency", homeCurrency.toLowerCase());
+                    }
+
+                    response = await fetch(url.toString(), {
+                        method: "GET",
+                        headers: token ? { Authorization: `Bearer ${token}` } : {},
+                        cache: "no-store",
+                    });
+                }
+                else if (range === "quarterly") {
                     const backendQuarter = quarterMapping[quarter] || "";
-                    response = await fetch(
-                        `http://127.0.0.1:5000/quarterlyskutable?quarter=${backendQuarter}&country=${countryName}&year=${year}&userid=${userid}`,
-                        {
-                            method: "GET",
-                            headers: token ? { Authorization: `Bearer ${token}` } : {},
-                            cache: "no-store",
-                        }
-                    );
-                } else if (range === "yearly") {
-                    response = await fetch(
-                        `http://127.0.0.1:5000/YearlySKU?&country=${countryName}&year=${year}`,
-                        {
-                            method: "GET",
-                            headers: token ? { Authorization: `Bearer ${token}` } : {},
-                            cache: "no-store",
-                        }
-                    );
+
+                    const url = new URL("http://127.0.0.1:5000/quarterlyskutable");
+                    url.searchParams.set("quarter", backendQuarter);
+                    url.searchParams.set("country", countryName);
+                    url.searchParams.set("year", String(year));
+                    url.searchParams.set("userid", String(userid)); // not used by backend, but harmless
+
+                    // ✅ GLOBAL only
+                    if (isGlobalPage && homeCurrency) {
+                        url.searchParams.set("homeCurrency", homeCurrency.toLowerCase());
+                    }
+
+                    response = await fetch(url.toString(), {
+                        method: "GET",
+                        headers: token ? { Authorization: `Bearer ${token}` } : {},
+                        cache: "no-store",
+                    });
+                }
+                else if (range === "yearly") {
+                    const url = new URL("http://127.0.0.1:5000/YearlySKU");
+                    url.searchParams.set("country", countryName);
+                    url.searchParams.set("year", String(year));
+
+                    // ✅ GLOBAL only
+                    if (isGlobalPage && homeCurrency) {
+                        url.searchParams.set("homeCurrency", homeCurrency.toLowerCase());
+                    }
+
+                    response = await fetch(url.toString(), {
+                        method: "GET",
+                        headers: token ? { Authorization: `Bearer ${token}` } : {},
+                        cache: "no-store",
+                    });
                 }
 
                 if (!response || !response.ok) {
