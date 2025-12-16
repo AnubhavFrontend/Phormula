@@ -2855,9 +2855,7 @@ import DashboardBargraphCard from "@/components/dashboard/DashboardBargraphCard"
 import ValueOrSkeleton from "@/components/common/ValueOrSkeleton";
 import SalesTargetCard from "@/components/dashboard/SalesTargetCard";
 import AmazonStatCard from "@/components/dashboard/AmazonStatCard";
-// import CurrentInventorySection from "@/components/dashboard/CurrentInventorySection";
 import CurrentInventorySection from "@/components/dashboard/CurrentInventorySection";
-
 
 import { RootState } from "@/lib/store";
 import { useAmazonConnections } from "@/lib/utils/useAmazonConnections";
@@ -2881,9 +2879,33 @@ import {
 
 import type { RegionKey, RegionMetrics } from "@/lib/dashboard/types";
 import { useGetUserDataQuery } from "@/lib/api/profileApi";
-
+import { usePlatform } from "@/components/context/PlatformContext";
+import type { PlatformId } from "@/lib/utils/platforms";
 
 type HomeCurrency = "USD" | "GBP" | "INR" | "CAD";
+
+const platformToRegionKey = (platform: PlatformId): RegionKey => {
+  switch (platform) {
+    case "global":
+      return "Global";
+
+    case "amazon-uk":
+      return "UK";
+
+    case "amazon-us":
+      return "US";
+
+    case "amazon-ca":
+      return "CA";
+
+    case "shopify":
+      // Shopify contributes to Global in your dashboard
+      return "Global";
+
+    default:
+      return "Global";
+  }
+};
 
 /* ===================== ENV & ENDPOINTS ===================== */
 const baseURL =
@@ -2931,6 +2953,8 @@ const MANUAL_LAST_MONTH_USD_CA = Number(
   process.env.NEXT_PUBLIC_MANUAL_LAST_MONTH_USD_CA || "0"
 );
 
+
+
 /* ===================== LOCAL HELPERS ===================== */
 
 const parsePercentToNumber = (
@@ -2961,10 +2985,15 @@ const getCurrencySymbol = (country: string) => {
   }
 };
 
+
+
 /* ===================== MAIN PAGE ===================== */
 
 export default function DashboardPage() {
-  // Amazon
+  const { platform } = usePlatform();
+
+
+
   const [loading, setLoading] = useState(false);
   const [unauthorized, setUnauthorized] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -2993,6 +3022,7 @@ export default function DashboardPage() {
   // Shopify store info (shop_name + access_token)
   const [shopifyStore, setShopifyStore] = useState<any | null>(null);
 
+  const [salesTargetRegion, setSalesTargetRegion] = useState<RegionKey>("Global");
   // which region tab is selected in the Amazon card
   const [amazonRegion, setAmazonRegion] = useState<RegionKey>("Global");
 
@@ -3138,50 +3168,50 @@ export default function DashboardPage() {
   );
 
   const formatHomeK = useCallback(
-  (value: number | null | undefined) => {
-    const n = toNumberSafe(value ?? 0);
+    (value: number | null | undefined) => {
+      const n = toNumberSafe(value ?? 0);
 
-    if (!n) return formatHomeAmount(0);
+      if (!n) return formatHomeAmount(0);
 
-    const abs = Math.abs(n);
-    const isK = abs >= 1000;
+      const abs = Math.abs(n);
+      const isK = abs >= 1000;
 
-    const displayValue = isK ? n / 1000 : n;
-    const suffix = isK ? "k" : "";
+      const displayValue = isK ? n / 1000 : n;
+      const suffix = isK ? "k" : "";
 
-    let formatted: string;
+      let formatted: string;
 
-    switch (homeCurrency) {
-      case "USD":
-        formatted = fmtUSD(displayValue);
-        break;
+      switch (homeCurrency) {
+        case "USD":
+          formatted = fmtUSD(displayValue);
+          break;
 
-      case "GBP":
-        formatted = fmtGBP(displayValue);
-        break;
+        case "GBP":
+          formatted = fmtGBP(displayValue);
+          break;
 
-      case "CAD":
-        formatted = new Intl.NumberFormat("en-CA", {
-          style: "currency",
-          currency: "CAD",
-        }).format(displayValue);
-        break;
+        case "CAD":
+          formatted = new Intl.NumberFormat("en-CA", {
+            style: "currency",
+            currency: "CAD",
+          }).format(displayValue);
+          break;
 
-      case "INR":
-        formatted = new Intl.NumberFormat("en-IN", {
-          style: "currency",
-          currency: "INR",
-        }).format(displayValue);
-        break;
+        case "INR":
+          formatted = new Intl.NumberFormat("en-IN", {
+            style: "currency",
+            currency: "INR",
+          }).format(displayValue);
+          break;
 
-      default:
-        formatted = fmtNum(displayValue);
-    }
+        default:
+          formatted = fmtNum(displayValue);
+      }
 
-    return `${formatted}${suffix}`;
-  },
-  [homeCurrency, formatHomeAmount]
-);
+      return `${formatted}${suffix}`;
+    },
+    [homeCurrency, formatHomeAmount]
+  );
 
 
   const inventoryCountry = useMemo(() => {
@@ -3288,6 +3318,18 @@ export default function DashboardPage() {
   useEffect(() => {
     fetchFxRates();
   }, [fetchFxRates]);
+
+  useEffect(() => {
+    const r = platformToRegionKey(platform);
+
+    setSalesTargetRegion(r);
+
+    // Amazon card should probably only switch to country tabs, not "Global"
+    // If r is Global, keep it Global or default to first available later.
+    setAmazonRegion(r === "Global" ? "UK" : r); // tweak as you prefer
+
+    setGraphRegion(r);
+  }, [platform]);
 
   /* ===================== BRAND NAME ===================== */
 
@@ -4904,9 +4946,18 @@ export default function DashboardPage() {
             <aside className="col-span-12 lg:col-span-4 order-1 lg:order-2">
               <div className="lg:sticky lg:top-6 w-full">
                 {/* <SalesTargetCard regions={regions} defaultRegion="Global" /> */}
-                <SalesTargetCard
+                {/* <SalesTargetCard
                   regions={regions}
                   defaultRegion="Global"
+                  homeCurrency={homeCurrency}
+                  convertToHomeCurrency={convertToHomeCurrency}
+                  formatHomeK={formatHomeK}
+                /> */}
+
+                <SalesTargetCard
+                  regions={regions}
+                  value={salesTargetRegion}
+                  onChange={setSalesTargetRegion}
                   homeCurrency={homeCurrency}
                   convertToHomeCurrency={convertToHomeCurrency}
                   formatHomeK={formatHomeK}
