@@ -2398,21 +2398,21 @@ const SKUtable: React.FC<SKUtableProps> = ({
                     <td className="whitespace-nowrap border border-gray-300 px-2 py-2 text-[clamp(12px,0.729vw,16px)] text-green-700">
                       (+)
                     </td>
-                    <td className="whitespace-nowrap border border-gray-300 px-2 py-2 text-[clamp(12px,0.729vw,16px)]">
+                    <td className="whitespace-nowrap border border-gray-300 px-2 py-2 text-[clamp(12px,0.729vw,16px)] text-[#ff5c5c]">
                       (-)
                     </td>
                     <td
                       onClick={handleAmazonFeeClick}
-                      className="whitespace-nowrap border border-gray-300 px-2 py-2 text-[clamp(12px,0.729vw,16px)]"
+                      className="whitespace-nowrap border border-gray-300 px-2 py-2 text-[clamp(12px,0.729vw,16px)] text-[#ff5c5c]"
                     >
                       (-)
                     </td>
                     {showamazonfee && (
                       <>
-                        <td className="whitespace-nowrap border border-gray-300 px-2 py-2 text-[clamp(12px,0.729vw,16px)]">
+                        <td className="whitespace-nowrap border border-gray-300 px-2 py-2 text-[clamp(12px,0.729vw,16px)] text-[#ff5c5c]">
                           (-)
                         </td>
-                        <td className="whitespace-nowrap border border-gray-300 px-2 py-2 text-[clamp(12px,0.729vw,16px)]">
+                        <td className="whitespace-nowrap border border-gray-300 px-2 py-2 text-[clamp(12px,0.729vw,16px)] text-[#ff5c5c]">
                           (-)
                         </td>
                       </>
