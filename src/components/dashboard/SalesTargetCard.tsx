@@ -544,7 +544,7 @@ type CurrencyCode = "USD" | "GBP" | "INR" | "CAD";
 // type Props = {
 //   regions: Record<RegionKey, RegionMetrics>;
 //   defaultRegion?: RegionKey;
- // ✅ pass from DashboardPage
+// ✅ pass from DashboardPage
 //   homeCurrency: CurrencyCode;
 //   convertToHomeCurrency: (
 //     value: number,
@@ -557,7 +557,8 @@ type Props = {
   regions: Record<RegionKey, RegionMetrics>;
   value: RegionKey;
   onChange: (r: RegionKey) => void;
-
+  defaultRegion?: RegionKey;
+  hideTabs?: boolean;
   homeCurrency: CurrencyCode;
   convertToHomeCurrency: (value: number, from: CurrencyCode) => number;
   formatHomeK: (value: number) => string;
@@ -570,6 +571,7 @@ export default function SalesTargetCard({
   homeCurrency,
   convertToHomeCurrency,
   formatHomeK,
+  hideTabs,
 }: Props) {
   const tab = value;
 
@@ -661,10 +663,18 @@ export default function SalesTargetCard({
   const badgeStr =
     (badgeIsUp ? "▲ " : "▼ ") + `${Math.abs(deltaPct).toFixed(2)}%`;
 
+
+  const salesTrendPct =
+    lastMtdHome > 0 ? ((mtdHome - lastMtdHome) / lastMtdHome) * 100 : 0;
+
+  const targetTrendPct =
+    lastMonthTotalHome > 0
+      ? ((targetHome - lastMonthTotalHome) / lastMonthTotalHome) * 100
+      : 0;
   return (
-    <div className="rounded-2xl border bg-white py-4 px-3 shadow-sm flex flex-col gap-3">
-      {/* Header with tabs */}
-      <div className="flex flex-col items-center justify-between gap-1">
+    <div className="rounded-2xl border bg-white p-5 shadow-sm h-full flex flex-col">
+      {/* Header */}
+      <div className="relative flex flex-col items-center gap-1">
         <PageBreadcrumb
           pageTitle="Sales Target"
           textSize="2xl"
@@ -672,53 +682,37 @@ export default function SalesTargetCard({
           align="center"
         />
 
-        <SegmentedToggle<RegionKey>
-          value={tab}
-          options={availableRegions.map((r) => ({ value: r }))}
-          onChange={onChange} 
-          className="my-1"
-        />
-
-        {/* Optional: show current home currency */}
-        <div className="text-xs text-gray-500">
-          Currency: <span className="font-medium">{homeCurrency}</span>
-        </div>
+        {!hideTabs && (
+          <SegmentedToggle<RegionKey>
+            value={tab}
+            options={availableRegions.map((r) => ({ value: r }))}
+            onChange={onChange}
+            className="mt-2"
+          />
+        )}
       </div>
 
       {/* Legend */}
-      <div className="mt-2 flex items-center gap-2 text-xs">
-        <div className="flex flex-1 items-center justify-center gap-2">
-          <span
-            className="block h-3 w-3 rounded-sm shrink-0"
-            style={{ backgroundColor: "#5EA68E" }}
-          />
+      <div className="mt-3 flex items-center justify-center gap-6 text-xs">
+        <div className="flex items-center gap-2">
+          <span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: "#5EA68E" }} />
           <span className="text-gray-600">MTD Sales</span>
         </div>
 
-        <div className="flex flex-1 items-center justify-center gap-2">
-          <span
-            className="block h-3 w-3 rounded-sm shrink-0"
-            style={{ backgroundColor: "#9ca3af" }}
-          />
+        <div className="flex items-center gap-2">
+          <span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: "#9ca3af" }} />
           <span className="text-gray-600">{thisMonthLabel} Target</span>
         </div>
 
-        <div className="flex flex-1 items-center justify-center gap-2">
-          <span
-            className="block h-3 w-3 rounded-sm shrink-0"
-            style={{ backgroundColor: "#FFBE25" }}
-          />
+        <div className="flex items-center gap-2">
+          <span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: "#FFBE25" }} />
           <span className="text-gray-600">{prevLabel} MTD</span>
         </div>
       </div>
 
       {/* Gauge */}
-      <div className="mt-3 flex flex-col items-center justify-center">
-        <svg
-          width={size}
-          height={size / 2}
-          viewBox={`0 0 ${size} ${size / 2}`}
-        >
+      <div className="mt-6 flex flex-col items-center justify-center">
+        <svg width={size} height={size / 2} viewBox={`0 0 ${size} ${size / 2}`}>
           <path
             d={arcPath(fullFrom, fullTo, rTarget)}
             fill="none"
@@ -758,51 +752,66 @@ export default function SalesTargetCard({
           />
         </svg>
 
-        {/* Center metrics */}
-        <div className="mt-1 text-center">
-          <div className="text-2xl font-bold">{(pct * 100).toFixed(1)}%</div>
+        <div className="mt-2 text-center">
+          <div className="text-3xl font-semibold">{(pct * 100).toFixed(1)}%</div>
+          <div className="text-xs text-gray-500 mt-1">Target Achieved</div>
+
           <div
-            className={`mx-auto mt-1 inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ${
-              badgeIsUp
-                ? "bg-green-50 text-green-700"
-                : "bg-rose-50 text-rose-700"
-            }`}
+            className={`mx-auto mt-2 inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ${badgeIsUp ? "bg-green-50 text-green-700" : "bg-rose-50 text-rose-700"
+              }`}
           >
             {badgeStr}
           </div>
         </div>
       </div>
 
-      {/* Bottom cards */}
-      <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
-        <div className="flex flex-col text-center items-center justify-between rounded-xl bg-gray-50 p-2.5">
-          <div className="text-charcoal-500">Today's Sale</div>
-          <div className="mt-0.5 font-semibold">
-            {formatHomeK(todayApproxHome)}
+      {/* Bottom section pinned lower to help "match height" */}
+      <div className="mt-auto pt-6">
+        {/* ✅ One grid for all 6 tiles */}
+        <div className="grid grid-cols-2 xl:grid-cols-3 gap-3 text-sm">
+          <div className="rounded-xl bg-gray-50 p-3 text-center h-full flex flex-col justify-between">
+            <div className="text-charcoal-500">Today</div>
+            <div className="mt-1 font-semibold">{formatHomeK(todayApproxHome)}</div>
           </div>
-        </div>
 
-        <div className="flex flex-col text-center items-center justify-between rounded-xl bg-gray-50 p-2.5">
-          <div className="text-charcoal-500">MTD Sales</div>
-          <div className="mt-0.5 font-semibold">
-            {formatHomeK(mtdHome)}
+          <div className="rounded-xl bg-gray-50 p-3 text-center h-full flex flex-col justify-between">
+            <div className="text-charcoal-500">MTD Sales</div>
+            <div className="mt-1 font-semibold">{formatHomeK(mtdHome)}</div>
           </div>
-        </div>
 
-        <div className="flex flex-col text-center items-center justify-between rounded-xl bg-gray-50 p-2.5">
-          <div className="text-charcoal-500">Sales Target</div>
-          <div className="mt-0.5 font-semibold">
-            {formatHomeK(targetHome)}
+          <div className="rounded-xl bg-gray-50 p-3 text-center h-full flex flex-col justify-between">
+            <div className="text-charcoal-500">Target</div>
+            <div className="mt-1 font-semibold">{formatHomeK(targetHome)}</div>
           </div>
-        </div>
 
-        <div className="flex flex-col text-center items-center justify-between rounded-xl bg-gray-50 p-2.5">
-          <div className="text-charcoal-500">{prevLabel} Sales</div>
-          <div className="mt-0.5 font-semibold">
-            {formatHomeK(lastMonthTotalHome)}
+          <div className="rounded-xl bg-gray-50 p-3 text-center h-full flex flex-col justify-between">
+            <div className="text-charcoal-500">{prevLabel}</div>
+            <div className="mt-1 font-semibold">{formatHomeK(lastMonthTotalHome)}</div>
+          </div>
+
+          <div className="rounded-xl bg-gray-50 p-3 text-center h-full flex flex-col justify-between">
+            <div className="text-charcoal-500">Sales Trend</div>
+            <div className="mt-1 font-semibold">
+              {salesTrendPct >= 0 ? "+" : ""}
+              {salesTrendPct.toFixed(2)}%
+            </div>
+            <div className="mt-0.5 text-[11px] text-gray-500">vs {prevLabel} MTD</div>
+          </div>
+
+          <div className="rounded-xl bg-gray-50 p-3 text-center h-full flex flex-col justify-between">
+            <div className="text-charcoal-500">Target Trend</div>
+            <div className="mt-1 font-semibold">
+              {targetTrendPct >= 0 ? "+" : ""}
+              {targetTrendPct.toFixed(2)}%
+            </div>
+            <div className="mt-0.5 text-[11px] text-gray-500">
+              target vs {prevLabel} total
+            </div>
           </div>
         </div>
       </div>
+
     </div>
   );
+
 }
