@@ -765,51 +765,68 @@ export default function SalesTargetCard({
         </div>
       </div>
 
-      {/* Bottom section pinned lower to help "match height" */}
-      <div className="mt-auto pt-6">
-        {/* ✅ One grid for all 6 tiles */}
-        <div className="grid grid-cols-2 xl:grid-cols-3 gap-3 text-sm">
-          <div className="rounded-xl bg-gray-50 p-3 text-center h-full flex flex-col justify-between">
-            <div className="text-charcoal-500">Today</div>
-            <div className="mt-1 font-semibold">{formatHomeK(todayApproxHome)}</div>
-          </div>
+{/* Bottom section pinned lower to help "match height" */}
+<div className="mt-auto pt-6">
+  <div className="grid grid-cols-2 xl:grid-cols-3 gap-3 text-sm">
+    {[
+      {
+        title: "Today",
+        value: formatHomeK(todayApproxHome),
+        helper: "\u00A0",
+      },
+      {
+        title: "MTD Sales",
+        value: formatHomeK(mtdHome),
+        helper: "\u00A0",
+      },
+      {
+        title: "Target",
+        value: formatHomeK(targetHome),
+        helper: "\u00A0",
+      },
+      {
+        title: prevLabel,
+        value: formatHomeK(lastMonthTotalHome),
+        helper: "\u00A0",
+      },
+      {
+        title: "Sales Trend",
+        value: `${salesTrendPct >= 0 ? "+" : ""}${salesTrendPct.toFixed(2)}%`,
+        helper: `vs ${prevLabel} MTD`,
+      },
+      {
+        title: "Target Trend",
+        value: `${targetTrendPct >= 0 ? "+" : ""}${targetTrendPct.toFixed(2)}%`,
+        helper: `target vs ${prevLabel} total`,
+      },
+    ].map((t) => (
+      <div
+        key={t.title}
+        className="rounded-xl bg-gray-50 p-3 text-center h-full flex flex-col items-center"
+      >
+        {/* Title: always one line */}
+        <div className="text-charcoal-500 whitespace-nowrap leading-none">
+          {t.title}
+        </div>
 
-          <div className="rounded-xl bg-gray-50 p-3 text-center h-full flex flex-col justify-between">
-            <div className="text-charcoal-500">MTD Sales</div>
-            <div className="mt-1 font-semibold">{formatHomeK(mtdHome)}</div>
-          </div>
+        {/* Value: always one line */}
+        <div className="mt-2 font-semibold whitespace-nowrap leading-none">
+          {t.value}
+        </div>
 
-          <div className="rounded-xl bg-gray-50 p-3 text-center h-full flex flex-col justify-between">
-            <div className="text-charcoal-500">Target</div>
-            <div className="mt-1 font-semibold">{formatHomeK(targetHome)}</div>
-          </div>
-
-          <div className="rounded-xl bg-gray-50 p-3 text-center h-full flex flex-col justify-between">
-            <div className="text-charcoal-500">{prevLabel}</div>
-            <div className="mt-1 font-semibold">{formatHomeK(lastMonthTotalHome)}</div>
-          </div>
-
-          <div className="rounded-xl bg-gray-50 p-3 text-center h-full flex flex-col justify-between">
-            <div className="text-charcoal-500">Sales Trend</div>
-            <div className="mt-1 font-semibold">
-              {salesTrendPct >= 0 ? "+" : ""}
-              {salesTrendPct.toFixed(2)}%
-            </div>
-            <div className="mt-0.5 text-[11px] text-gray-500">vs {prevLabel} MTD</div>
-          </div>
-
-          <div className="rounded-xl bg-gray-50 p-3 text-center h-full flex flex-col justify-between">
-            <div className="text-charcoal-500">Target Trend</div>
-            <div className="mt-1 font-semibold">
-              {targetTrendPct >= 0 ? "+" : ""}
-              {targetTrendPct.toFixed(2)}%
-            </div>
-            <div className="mt-0.5 text-[11px] text-gray-500">
-              target vs {prevLabel} total
-            </div>
-          </div>
+        {/* Helper text: always below, reserved space even when blank */}
+        <div
+          className={`mt-1 text-[11px] leading-none ${
+            t.helper === "\u00A0" ? "text-transparent select-none" : "text-gray-500"
+          }`}
+        >
+          {t.helper}
         </div>
       </div>
+    ))}
+  </div>
+</div>
+
 
     </div>
   );

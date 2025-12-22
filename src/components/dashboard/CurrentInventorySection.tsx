@@ -2016,6 +2016,20 @@ const formatRatio = (n: number | null | undefined) => {
   return v.toFixed(1);
 };
 
+const normKey = (s: string) =>
+  String(s || "")
+    .toLowerCase()
+    .replace(/\s+/g, "")
+    .replace(/[_-]+/g, "");
+
+const getNumberByPossibleKeys = (row: InventoryRow, possible: string[]) => {
+  const wanted = possible.map(normKey);
+
+  const foundKey = Object.keys(row).find((k) => wanted.includes(normKey(k)));
+  return foundKey ? toNumberSafe(row[foundKey]) : 0;
+};
+
+
 /* ===================== COMPONENT ===================== */
 
 export default function CurrentInventorySection({
@@ -2190,10 +2204,27 @@ export default function CurrentInventorySection({
       const mtdSales = toNumberSafe(mtdKey ? r[mtdKey] : 0);
       const sales30 = toNumberSafe(sales30Key ? r[sales30Key] : 0);
 
-      // ✅ Age buckets used only for 180+ rollup
-      const age181to270 = toNumberSafe(r["inv-age-181-to-270-days"]);
-      const age271to365 = toNumberSafe(r["inv-age-271-to-365-days"]);
-      const age365plus = toNumberSafe(r["inv-age-365-plus-days"]);
+      const age181to270 = getNumberByPossibleKeys(r, [
+        "inv-age-181-to-270-days",
+        "inv_age_181_to_270_days",
+        "Inventory Age 181 to 270 Days",
+        "inv age 181 to 270 days",
+      ]);
+
+      const age271to365 = getNumberByPossibleKeys(r, [
+        "inv-age-271-to-365-days",
+        "inv_age_271_to_365_days",
+        "Inventory Age 271 to 365 Days",
+        "inv age 271 to 365 days",
+      ]);
+
+      const age365plus = getNumberByPossibleKeys(r, [
+        "inv-age-365-plus-days",
+        "inv_age_365_plus_days",
+        "Inventory Age 365+ Days",
+        "inv age 365 plus days",
+        "inv-age-365+-days",
+      ]);
 
       const inventory180Plus = age181to270 + age271to365 + age365plus;
 
@@ -2255,10 +2286,10 @@ export default function CurrentInventorySection({
           mtdSales + sales30 <= 0
             ? ""
             : coverage < 1
-            ? "Low"
-            : coverage < 2
-            ? "Watch"
-            : "",
+              ? "Low"
+              : coverage < 2
+                ? "Watch"
+                : "",
       };
     });
 
@@ -2290,15 +2321,13 @@ export default function CurrentInventorySection({
       uiRows.push({
         rowType: "others",
         sno: "",
-        productName: <span className="font-semibold">OTHERS</span>,
-        currentInventory: <span className="font-semibold">{formatInt(agg.currentInventory)}</span>,
-        inventory180Plus: <span className="font-semibold">{formatInt(agg.inventory180Plus)}</span>,
+        productName: "Others",
+        currentInventory: formatInt(agg.currentInventory),
+        inventory180Plus: formatInt(agg.inventory180Plus),
+        mtdSales: formatInt(agg.mtdSales),
+        sales30: formatInt(agg.mtdSales + agg.sales30),
+        coverageMonths: formatRatio(coverage),
 
-        salesRank: agg.salesRank ? <span className="font-semibold">{formatInt(agg.salesRank)}</span> : "—",
-        estStorage: agg.estStorage ? <span className="font-semibold">{formatInt(agg.estStorage)}</span> : "—",
-        mtdSales: <span className="font-semibold">{formatInt(agg.mtdSales)}</span>,
-        sales30: <span className="font-semibold">{formatInt(agg.mtdSales + agg.sales30)}</span>,
-        coverageMonths: <span className="font-semibold">{formatRatio(coverage)}</span>,
         alert: "",
       });
     }
@@ -2456,7 +2485,7 @@ export default function CurrentInventorySection({
               emptyMessage="No inventory data."
               rowClassName={(row) => {
                 if (row.rowType === "total") return "bg-slate-100 font-semibold";
-                if (row.rowType === "others") return "bg-slate-50 font-semibold";
+                if (row.rowType === "others") return "bg-slate-50";
                 return "";
               }}
             />
