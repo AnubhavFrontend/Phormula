@@ -489,6 +489,7 @@ axisLabel: {
   {
     name: 'New/Reviving',
     type: 'line',
+     smooth: true,
     stack: 'Total',
     symbol: 'none',
    areaStyle: {
@@ -504,6 +505,7 @@ axisLabel: {
   {
     name: 'Other SKUs',
     type: 'line',
+     smooth: true,
     stack: 'Total',
     symbol: 'none',
     areaStyle: {
@@ -519,6 +521,7 @@ axisLabel: {
   {
     name: 'Top 80%',
     type: 'line',
+     smooth: true,
     stack: 'Total',
     symbol: 'none',
     areaStyle: {
@@ -668,6 +671,7 @@ yAxis: {
   {
     name: 'New/Reviving',
     type: 'line',
+      smooth: true,
     stack: 'Total',
     symbol: 'none',
 areaStyle: {
@@ -683,6 +687,7 @@ areaStyle: {
   {
     name: 'Other SKUs',
     type: 'line',
+      smooth: true,
     stack: 'Total',
     symbol: 'none',
     areaStyle: {
@@ -699,6 +704,7 @@ areaStyle: {
   {
     name: 'Top 80%',
     type: 'line',
+      smooth: true,
     stack: 'Total',
     symbol: 'none',
     areaStyle: {
@@ -837,6 +843,7 @@ useEffect(() => {
         {
           name: 'New/Reviving',
           type: 'line',
+      smooth: true,
           stack: 'Total',
           symbol: 'none',
           areaStyle: {
@@ -852,6 +859,7 @@ useEffect(() => {
         {
           name: 'Other SKUs',
           type: 'line',
+      smooth: true, 
           stack: 'Total',
           symbol: 'none',
           areaStyle: {
@@ -867,6 +875,7 @@ useEffect(() => {
         {
           name: 'Top 80%',
           type: 'line',
+      smooth: true,
           stack: 'Total',
           symbol: 'none',
           areaStyle: {
@@ -1003,6 +1012,7 @@ useEffect(() => {
         {
           name: 'New/Reviving',
           type: 'line',
+      smooth: true,
           stack: 'Total',
           symbol: 'none',
           areaStyle: {
@@ -1018,6 +1028,7 @@ useEffect(() => {
         {
           name: 'Other SKUs',
           type: 'line',
+      smooth: true,
           stack: 'Total',
           symbol: 'none',
           areaStyle: {
@@ -1033,6 +1044,7 @@ useEffect(() => {
         {
           name: 'Top 80%',
           type: 'line',
+      smooth: true,
           stack: 'Total',
           symbol: 'none',
           areaStyle: {
@@ -2017,7 +2029,7 @@ const totalsLine = useMemo(() => {
       fill: false,
       borderColor: d.color,
       backgroundColor: d.color,
-      tension: 0.1,
+      tension: 0.4,
     }));
 
   // ✅ RETURN ME OLD datasets array replace karke yeh use karo
@@ -2615,6 +2627,11 @@ useEffect(() => {
     margin-bottom:4px;
   }
 
+
+.introjs-progressbar {
+    background-color: #5EA68E;
+     }
+
   .month-dot.selected .dot{ background:#5EA68E; }
 
   /* ✅ NEW: selected month label */
@@ -2701,7 +2718,7 @@ useEffect(() => {
 @media (max-width: 1440px){
   .tablec th,
   .tablec td{
-    padding:6px 6px;       /* 🔥 tighter */
+    padding:4px 4px;       /* 🔥 tighter */
     font-size:12px;
   }
 
@@ -2786,68 +2803,10 @@ useEffect(() => {
 `}</style>
 
 
-{/* {tourStep === 1 && (
-  <>
-    <div className="tour-overlay" />
-    <div
-  className="tour-box"
-  style={{
-    top: tourPos.top,
-    left: tourPos.left,
-  }}
->
-      <b>Select Year</b>
-      <p>First Select Year</p>
 
-      <div className="tour-actions">
-        <button onClick={finishTour}>Skip</button>
-        <button onClick={() => setTourStep(2)}>Next</button>
-      </div>
-    </div>
-  </>
-)}
-{tourStep === 2 && (
-  <>
-    <div className="tour-overlay" />
-   <div
-  className="tour-box"
-  style={{
-    top: tourPos.top,
-    left: tourPos.left,
-  }}
->
-      <b>Select Month</b>
-      <p>Click on Highlighted Month</p>
-
-      <div className="tour-actions">
-        <button onClick={finishTour}>Skip</button>
-        <button onClick={() => setTourStep(3)}>Next</button>
-      </div>
-    </div>
-  </>
-)}
-{tourStep === 3 && (
-  <>
-    <div className="tour-overlay" />
-    <div
-  className="tour-box"
-  style={{
-    top: tourPos.top,
-    left: tourPos.left,
-  }}
->
-      <b>Compare</b>
-      <p>Then Click Compare Button to Compare</p>
-
-      <div className="tour-actions">
-        <button onClick={finishTour}>Got it</button>
-      </div>
-    </div>
-  </>
-)} */}
 <div className='w-full'>
       {/* Month selectors */}
-      <h2 className="text-2xl font-bold text-[#414042] mb-2">
+      <h2 className="sm:text-2xl text-xl font-bold text-[#414042] mb-2">
           Business Insights - AI Analyst&nbsp;- 
           <span className="text-[#5EA68E] pl-1">
               {countryName && formatCountryLabel(countryName)}<span className="text-[#5EA68E] px-2">
@@ -2905,7 +2864,7 @@ useEffect(() => {
 </span>
           </span>
         </h2>
-        <p><i className="">Select the year and month for both periods to compare growth metrics.</i></p>
+        <p><i className="sm:text-base text-sm">Select the year and month for both periods to compare growth metrics.</i></p>
       <form onSubmit={handleSubmit} className="month-form ">
         {/* Row 1 */}
         <div className="month-row">
@@ -2999,7 +2958,7 @@ const disabled =
       {error && <p style={{ color: 'red' }}>{error}</p>}
 
      <div className="mt-4 mb-3 rounded-xl border border-gray-200  p-3 w-full bg-[#D9D9D933]">
-  <div className="text-2xl font-bold text-[#414042]">Profitability</div>
+  <div className="sm:text-2xl text-xl font-bold text-[#414042]">Profitability</div>
 
  {/* Center labels like GraphPage */}
 <div className="mt-3 sm:mt-4 flex flex-wrap items-center justify-center gap-3 sm:gap-4 md:gap-5 w-full mx-auto transition-opacity duration-300">
@@ -3061,30 +3020,30 @@ const disabled =
  
   <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
     <div>
-      <div className="text-2xl font-bold text-[#414042]">Units Sold</div>
+      <div className="sm:text-2xl text-xl font-bold text-[#414042]">Units Sold</div>
       <div ref={unitsChartRef} className="h-[320px] w-full" />
     </div>
 
     <div>
-      <div className="text-2xl font-bold text-[#414042]">Net Sales</div>
+      <div className="sm:text-2xl text-xl font-bold text-[#414042]">Net Sales</div>
       <div ref={chartRef} className="h-[320px] w-full" />
     </div>
   
 
   {/* Row 2: Profit */}
   <div className="mt-3">
-    <div className="text-2xl font-bold text-[#414042]">CM1 Profit</div>
+    <div className="sm:text-2xl text-xl font-bold text-[#414042]">CM1 Profit</div>
     <div ref={profitChartRef} className="h-[320px] w-full" />
   </div>
 
   <div className="mt-3">
-  <div className="text-2xl font-bold text-[#414042]">Average Selling Price</div>
+  <div className="sm:text-2xl text-xl font-bold text-[#414042]">Average Selling Price</div>
   <div ref={aspChartRef} className="h-[320px] w-full" />
 </div>
 </div>
 
   {/* Shared legend bottom center */}
-  <div className="mt-3 flex flex-wrap justify-center gap-4 text-[14px] font-semibold text-[#414042]">
+  <div className="mt-3 flex flex-wrap justify-center gap-4 sm:text-sm text-xs font-semibold text-[#414042]">
     <span className="inline-flex items-center gap-2">
       <span className="inline-block h-[10px] w-[10px] rounded-full bg-[#F47A00]" />
       Top 80%
@@ -3110,8 +3069,8 @@ const disabled =
 ) && (
         <div className='border border-gray-200 rounded-xl p-4 mt-6 w-full bg-white'>
           <div className='flex xl:flex-row flex-col lg:justify-between justify-start xl:items-center items-start '>
-            <div className='flex xl:flex-row flex-col lg:justify-between justify-start xl:items-center items-start w-full'>
-<h2 className="xl:text-2xl text-xl font-bold text-[#414042] mb-4">Performance-based SKU split</h2>
+            <div className='flex xl:flex-row flex-col lg:justify-between justify-start xl:items-center items-start w-full xl:gap-0 gap-3'>
+<h2 className="xl:text-2xl text-xl font-bold text-[#414042]">Performance-based SKU split</h2>
             <div className='flex flex-col md:flex-row justify-center gap-3'>
 
   <div
@@ -3138,7 +3097,7 @@ onClick={() => setActiveTab(key)}
                     fontWeight: activeTab === key ? 600 : 400
                   }}
                 >
-                  {getTabLabel(key as keyof CategorizedGrowth)}
+                  {getTabLabel(key)}
                 </button>
               ))}
             </div>
@@ -3522,7 +3481,10 @@ const sign = val > 0 ? '+' : '';
 </tfoot>
 
 </table>
-            < div className='flex justify-center mt-2'>
+           
+             
+          </div>
+           < div className='flex justify-center mt-2'>
  <div
   style={{
     display: 'flex',
@@ -3562,8 +3524,6 @@ const sign = val > 0 ? '+' : '';
 </span>
 </div>
             </div>
-             
-          </div>
         </div>
       )}
 </div>

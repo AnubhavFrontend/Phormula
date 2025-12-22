@@ -1468,7 +1468,7 @@ const AppSidebar: React.FC = () => {
       name: "LIVE ANALYTICS",
       icon: (
         <Image
-          src="/images/brand/business.png"
+          src="/images/brand/live.png"
           alt="Logo"
           width={20}
           height={20}
@@ -1789,7 +1789,7 @@ const AppSidebar: React.FC = () => {
                                 onClick={() => {
                                   if (subItem.onClick) subItem.onClick();
                                 }}
-                                className={`block px-2 py-1.5 text-sm text-gray-700 hover:bg-[#5EA68E]/20 rounded transition-colors ${isActive(subItem.path as any)
+                                className={`block px-2 py-1.5 ml-2  text-sm text-gray-700 hover:bg-[#5EA68E]/20 rounded transition-colors ${isActive(subItem.path as any)
                                   ? "bg-[#5EA68E]/20 text-[#5EA68E] font-medium"
                                   : ""
                                   }`}
