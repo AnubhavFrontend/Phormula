@@ -2166,8 +2166,8 @@ const FileUploadForm = ({ initialCountry, onClose, onComplete }: FileUploadFormP
   return (
     <>
       <div className="w-full h-full overflow-y-auto flex flex-col items-center shadow-[6px_6px_7px_0px_#00000026] ">
-        <div className="w-full flex justify-center rounded-xl">
-          <div className="w-full    bg-white  p-4 md:p-5 lg:p-6 text-[13px] md:text-[14px] border border-[#D9D9D9]">
+        <div className="w-full flex justify-center ">
+          <div className="w-full   rounded-xl bg-white  p-4 md:p-5 lg:p-6 text-[13px] md:text-[14px] border border-[#D9D9D9]">
             <h2 className="text-center text-2xl md:text-3xl font-semibold text-[#5EA68E] my-3 md:my-4">
               Upload File <i className="fa-solid fa-cloud-arrow-up" />
             </h2>

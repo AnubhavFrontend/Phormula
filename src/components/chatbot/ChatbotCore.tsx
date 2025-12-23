@@ -457,7 +457,7 @@ const text = rawText || ''
       </div>
 
       {/* Input */}
-      <div className="px-2 border-t border-gray-300 py-2">
+      <div className="px-2 border-t border-gray-300 py-2 shrink-0">
         <div className="flex-1 flex items-center bg-[#D9D9D9] rounded-full px-3 py-2">
         <input
           placeholder="Ask me anything..."
@@ -480,12 +480,13 @@ const text = rawText || ''
     }
   }}
   disabled={loading}
+  
 />
         </div>
         
       </div>
 
-      <p className="text-[10px] text-center text-gray-400 pb-2">
+      <p className="text-[10px] text-center text-gray-400 pb-2 shrink-0">
         AI-generated responses. Verify critical info.
       </p>
     </div>

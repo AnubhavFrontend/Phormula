@@ -957,7 +957,7 @@ const AppSidebar: React.FC = () => {
       name: "LIVE ANALYTICS",
       icon: (
         <Image
-          src="/images/brand/live.png"
+          src="/images/brand/business.png"
           alt="Logo"
           width={18}
           height={18}
@@ -1226,23 +1226,23 @@ const AppSidebar: React.FC = () => {
                     )}
                   </button>
 
-                    {/* Sub-items */}
-                    {openSections[section.key] &&
-                      (isExpanded || isHovered || isMobileOpen) && (
-                        <div className="ml-6 mt-1 space-y-1 overflow-hidden">
-                          {section.subItems.map((subItem, idx) => {
-                            const resolvedPath =
-                              typeof subItem.path === "function"
-                                ? subItem.path(currentParams)
-                                : subItem.path;
-                            return (
-                              <Link
-                                key={idx}
-                                href={resolvedPath}
-                                onClick={() => {
-                                  if (subItem.onClick) subItem.onClick();
-                                }}
-                                className={`block px-2 py-1.5 ml-2  text-sm text-gray-700 hover:bg-[#5EA68E]/20 rounded transition-colors ${isActive(subItem.path as any)
+                  {openSections[section.key] && showText && (
+                    <div className="ml-4 sm:ml-5 lg:ml-6 mt-1 space-y-1 overflow-hidden">
+                      {section.subItems.map((subItem, idx) => {
+                        const resolvedPath =
+                          typeof subItem.path === "function"
+                            ? (subItem.path as any)(currentParams)
+                            : subItem.path;
+
+                        return (
+                          <Link
+                            key={idx}
+                            href={resolvedPath}
+                            onClick={() => subItem.onClick?.()}
+                            className={`block rounded transition-colors
+                              ${padItem} ${textMain} text-gray-700 hover:bg-[#5EA68E]/15
+                              ${
+                                isActive(subItem.path as any)
                                   ? "bg-[#5EA68E]/20 text-[#5EA68E] font-medium"
                                   : ""
                               }`}
