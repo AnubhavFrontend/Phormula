@@ -24,6 +24,7 @@ import {
 } from "chart.js";
 import introJs from 'intro.js';
 import 'intro.js/introjs.css';
+import { AiButton } from '@/components/ui/button/AiButton';
 
 
 
@@ -3119,7 +3120,7 @@ const MonthsforBI: React.FC = () => {
 
 
                     <div className='flex gap-3'>
-                      <button
+                      {/* <button
                         onClick={analyzeSkus}
                         disabled={
                           !['top_80_skus', 'new_or_reviving_skus', 'other_skus'].some(
@@ -3154,7 +3155,15 @@ const MonthsforBI: React.FC = () => {
                           }}
                         />
                         {loadingInsight ? "Generating..." : "AI Insights"}
-                      </button>
+                      </button> */}
+
+                      <AiButton onClick={analyzeSkus}
+                        disabled={
+                          !['top_80_skus', 'new_or_reviving_skus', 'other_skus'].some(
+                            (k) =>
+                              (categorizedGrowth[k as keyof CategorizedGrowth] as SkuItem[])?.length > 0
+                          )
+                        } >  {loadingInsight ? "Generating..." : "AI Insights"}</AiButton>
 
                       <button
                         onClick={() => {
@@ -3180,6 +3189,8 @@ const MonthsforBI: React.FC = () => {
 
 
                     </div>
+
+
 
                   </div>
                 </div>

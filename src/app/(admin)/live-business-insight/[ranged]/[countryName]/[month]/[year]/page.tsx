@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -15,8 +14,8 @@ import Loader from '@/components/loader/Loader';
 import DataTable, { ColumnDef } from '@/components/ui/table/DataTable';
 import DownloadIconButton from '@/components/ui/button/DownloadIconButton';
 import SegmentedToggle from '@/components/ui/SegmentedToggle';
+import { AiButton } from '@/components/ui/button/AiButton';
 
-// import DataTable, { ColumnDef, Row as DataTableRow } from '@/components/DataTable'; 
 
 type MonthsforBIProps = {
   countryName: string; // "uk" | "us" | "ca"
@@ -1052,7 +1051,7 @@ const MonthsforBI: React.FC<MonthsforBIProps> = ({
       const lower = part.toLowerCase();
       if (greenWords.includes(lower)) {
         return (
-          <span key={idx} style={{ color: '#16a34a', fontWeight: 600 }}>
+          <span key={idx} style={{ color: '#5EA68E', fontWeight: 600 }}>
             {part}
           </span>
         );
@@ -1330,7 +1329,7 @@ const MonthsforBI: React.FC<MonthsforBIProps> = ({
       out.push({
         type: 'num',
         value: `${Number(num).toFixed(2)}${suffix}`,
-        color: isIncrease ? '#16a34a' : '#dc2626',
+        color: isIncrease ? '#5EA68E' : '#dc2626',
       });
 
       lastIndex = end;
@@ -1607,60 +1606,62 @@ const MonthsforBI: React.FC<MonthsforBIProps> = ({
     return { value: v, category: '' };
   };
 
-  const renderGrowthOrNA = (g?: GrowthCategory) => {
-    if (!g || g.value == null) return <span>N/A</span>;
+  // ✅ ADD this helper inside MonthsforBI component (place it ABOVE `renderGrowthOrNA`)
+const GrowthCell = ({
+  val,
+  color,
+  showArrow,
+}: {
+  val: number;
+  color: string;
+  showArrow: boolean;
+}) => {
+  const abs = Math.abs(val).toFixed(2);
+  const text = `${val > 0 ? "+" : ""}${val.toFixed(2)}%`; // keeps + only for positive
+  const Icon = val > 0 ? FaArrowUp : FaArrowDown;
 
-    const val = Number(g.value);
-    const abs = Math.abs(val).toFixed(2);
-
-    const baseStyle: React.CSSProperties = {
-      display: 'inline-flex',        // 🔑 NOT flex
-      alignItems: 'center',           // 🔑 vertical fix
-      justifyContent: 'center',
-      gap: 6,
-      width: '100%',
-      lineHeight: '1',                // 🔑 arrow/text same line
-      fontWeight: 600,
-      fontSize: 13,
-    };
-
-    // 0% → no arrow
-    if (val === 0) {
-      return (
-        <span style={{ ...baseStyle, color: '#414042' }}>
-          0.00%
-        </span>
-      );
-    }
-
-    // > +5% (High positive)
-    if (val > 5) {
-      return (
-        <span style={{ ...baseStyle, color: '#16a34a' }}>
-          <FaArrowUp size={12} />
-          +{abs}%
-        </span>
-      );
-    }
-
-    // < -5% (High negative)
-    if (val < -5) {
-      return (
-        <span style={{ ...baseStyle, color: '#dc2626' }}>
-          <FaArrowDown size={12} />
-          -{abs}%
-        </span>
-      );
-    }
-
-    // -5% to +5% (Low growth → black)
-    return (
-      <span style={{ ...baseStyle, color: '#414042' }}>
-        {val > 0 ? <FaArrowUp size={12} /> : <FaArrowDown size={12} />}
-        {val > 0 ? `+${abs}%` : `-${abs}%`}
+  return (
+    <span
+      className="inline-flex items-center justify-center gap-2 w-full font-semibold"
+      style={{ color }}
+    >
+      {/* ✅ fixed icon slot (never collapses) */}
+      <span className="w-4 flex justify-center shrink-0">
+        {showArrow ? (
+          <Icon size={12} />
+        ) : (
+          <Icon size={12} style={{ visibility: "hidden" }} />
+        )}
       </span>
-    );
-  };
+
+      {/* ✅ fixed number width so columns stay aligned */}
+      <span className="tabular-nums inline-block w-[50px] 2xl:w-[60px] text-right">
+        {val === 0 ? "0.00%" : text}
+      </span>
+    </span>
+  );
+};
+
+// ✅ REPLACE your current `renderGrowthOrNA` with this version
+const renderGrowthOrNA = (g?: GrowthCategory) => {
+  if (!g || g.value == null) return <span>N/A</span>;
+
+  const val = Number(g.value);
+
+  // ✅ same thresholds you were using
+  let color = "#414042";
+  if (val > 5) color = "#5EA68E";
+  else if (val < -5) color = "#dc2626";
+
+  // ✅ keep icon space even for 0
+  return (
+    <GrowthCell
+      val={val}
+      color={color}
+      showArrow={val !== 0}
+    />
+  );
+};
 
 
   const renderNewRevGrowthOrDash = (g?: GrowthCategory) => {
@@ -1974,12 +1975,13 @@ const MonthsforBI: React.FC<MonthsforBIProps> = ({
             profit: renderGrowthOrNA(segmentTotal?.['CM1 Profit Impact']),
           }
           : {
-            unit: '',
-            asp: '',
-            sales: '',
-            unitProfit: '',
-            profit: '',
-          }),
+            unit: '-',
+            asp: '-',
+            sales: '-',
+            unitProfit: '-',
+            profit: '-',
+          }
+      ),
       ...(Object.keys(skuInsights).length > 0 ? { ai: '' } : {}),
     };
 
@@ -2000,6 +2002,7 @@ const MonthsforBI: React.FC<MonthsforBIProps> = ({
     }
     return 'bg-white';
   };
+
 
   // =========================
   // Render
@@ -2080,7 +2083,7 @@ const MonthsforBI: React.FC<MonthsforBIProps> = ({
 
 
                   <div className="flex gap-3">
-                    <button
+                    {/* <button
                       onClick={analyzeSkus}
                       disabled={!hasAnySkus}
                       className="
@@ -2103,7 +2106,16 @@ const MonthsforBI: React.FC<MonthsforBIProps> = ({
                     >
                       <BsStars style={{ fontSize: '12px', color: '#F8EDCE' }} />
                       {loadingInsight ? 'Generating...' : 'AI Insights'}
-                    </button>
+                    </button> */}
+
+                    <AiButton onClick={analyzeSkus}
+                      disabled={
+                        !['top_80_skus', 'new_or_reviving_skus', 'other_skus'].some(
+                          (k) =>
+                            (categorizedGrowth[k as keyof CategorizedGrowth] as SkuItem[])?.length > 0
+                        )
+                      } >  {loadingInsight ? "Generating..." : "AI Insights"}</AiButton>
+
 
                     {/* <button
                       onClick={() => {
@@ -2158,35 +2170,51 @@ const MonthsforBI: React.FC<MonthsforBIProps> = ({
                 </div>
 
               )}
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'center',
-                  gap: 24,
-                  marginTop: 12,
-                  fontSize: 13,
-                  fontWeight: 600,
-                  color: '#414042',
-                }}
-              >
-                {/* High Growth */}
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                  <FaArrowUp size={12} color="#16a34a" />
-                  <span style={{ color: '#16a34a' }}>High Growth (&gt; +5%)</span>
-                </div>
+              < div className='flex justify-center mt-2'>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 42,
+                    flexWrap: 'wrap',
+                    fontSize: 14,
+                    color: '#414042',
+                    marginTop: 6,
+                  }}
+                >
 
-                {/* Negative Growth */}
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                  <FaArrowDown size={12} color="#dc2626" />
-                  <span style={{ color: '#dc2626' }}>Negative Growth (&lt; -5%)</span>
-                </div>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#5EA68E', fontWeight: 700 }}>
+                      <FaArrowUp size={12} /> High growth
+                    </span>
+                  </span>
 
-                {/* Low Growth */}
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                  <FaArrowUp size={12} color="#414042" />
-                  <span>Low Growth (-5% to +5%)</span>
-                </div>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#FF5C5C', fontWeight: 700 }}>
+                      <FaArrowDown size={12} /> Negative growth
+                    </span>
+                  </span>
 
+                  <span
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      fontWeight: 700,
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    <span style={{ color: '#414042', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                      <FaArrowUp size={12} /> + / <FaArrowDown size={12} /> -
+                    </span>
+                    Low growth
+                  </span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontWeight: 700 }}>
+                    <span style={{ fontSize: 16, lineHeight: 1 }}>-</span>
+                    Past data for SKU is not available
+                  </span>
+
+                </div>
               </div>
             </div>
           </div>
